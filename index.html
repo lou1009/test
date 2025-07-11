@@ -1,12 +1,58 @@
-<section id="chat-support" style="padding: 1rem;">
-  <h2 style="font-size: 1.2rem; margin-bottom: 1rem; text-align: center;">線上客服</h2>
-  <div style="width: 100%; max-width: 600px; margin: 0 auto;">
-    <div style="position: relative; padding-top: 150%; overflow: hidden; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-      <iframe
-        src="https://embed.tawk.to/683b0329541e1e190b59db8b/1iuvnme21"
-        style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
-        allow="microphone; camera">
-      </iframe>
-    </div>
-  </div>
-</section>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>客服測試頁面</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    header {
+      background-color: #222;
+      color: white;
+      padding: 1rem;
+    }
+    #tawk_683b0329541e1e190b59db8b {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    main {
+      padding: 2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>歡迎來到客服測試頁面</h1>
+  </header>
+
+  <main>
+    <p>下方是內嵌的客服視窗：</p>
+
+    <!-- 客服嵌入容器 -->
+    <div id="tawk_683b0329541e1e190b59db8b"></div>
+  </main>
+
+  <!--Start of Tawk.to Script-->
+  <script type="text/javascript">
+    var Tawk_API = Tawk_API || {}, Tawk_LoadStart = new Date();
+    Tawk_API.embedded = 'tawk_683b0329541e1e190b59db8b';
+    (function() {
+      var s1 = document.createElement("script"), s0 = document.getElementsByTagName("script")[0];
+      s1.async = true;
+      s1.src = 'https://embed.tawk.to/683b0329541e1e190b59db8b/1iufs17h4';
+      s1.charset = 'UTF-8';
+      s1.setAttribute('crossorigin', '*');
+      s0.parentNode.insertBefore(s1, s0);
+    })();
+  </script>
+  <!--End of Tawk.to Script-->
+
+</body>
+</html>
