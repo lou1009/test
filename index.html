@@ -1,28 +1,138 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NBA 即時比分 | 660002.com</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>NBA 比賽列表</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #111; color: #eee; padding: 20px; }
+  input[type="date"] { padding: 5px; margin-bottom: 10px; }
+  button { padding: 5px 10px; margin: 0 5px; }
+  .game-card { border: 1px solid #444; padding: 10px; margin-bottom: 10px; border-radius: 5px; background: #1a1a1a; }
+  .game-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+  .team-block img { width: 30px; height: 30px; vertical-align: middle; margin-right: 5px; }
+  .score-big { font-weight: bold; }
+  .live-score { color: red; }
+  .live-status { color: red; font-weight: bold; margin-top: 5px; }
+</style>
 </head>
 <body>
 
-<header>
-  <h1>🏀 NBA 即時比分</h1>
-  <div class="date-control">
-    <button onclick="changeDate(-1)">‹</button>
-    <input type="date" id="gameDate">
-    <button onclick="changeDate(1)">›</button>
-  </div>
-</header>
+<h2>NBA 比賽列表</h2>
+<button onclick="changeDate(-1)">前一天</button>
+<input type="date" id="gameDate">
+<button onclick="changeDate(1)">後一天</button>
 
-<section id="games"></section>
+<div id="games">載入中...</div>
 
-<footer>
-  © 2026 660002.com
-</footer>
+<script>
+document.getElementById("gameDate").valueAsDate = new Date();
+document.getElementById("gameDate").addEventListener("change", loadGames);
 
-<script src="script.js"></script>
+function changeDate(offset) {
+  const input = document.getElementById("gameDate");
+  const date = new Date(input.value);
+  date.setDate(date.getDate() + offset);
+  input.valueAsDate = date;
+  loadGames();
+}
+
+// NBA 隊伍 logo 對照表 (balldontlie team full_name => NBA 官方隊徽 ID)
+const teamLogoMap = {
+  "Atlanta Hawks": "1610612737",
+  "Boston Celtics": "1610612738",
+  "Brooklyn Nets": "1610612751",
+  "Charlotte Hornets": "1610612766",
+  "Chicago Bulls": "1610612741",
+  "Cleveland Cavaliers": "1610612739",
+  "Dallas Mavericks": "1610612742",
+  "Denver Nuggets": "1610612743",
+  "Detroit Pistons": "1610612765",
+  "Golden State Warriors": "1610612744",
+  "Houston Rockets": "1610612745",
+  "Indiana Pacers": "1610612754",
+  "Los Angeles Clippers": "1610612746",
+  "Los Angeles Lakers": "1610612747",
+  "Memphis Grizzlies": "1610612763",
+  "Miami Heat": "1610612748",
+  "Milwaukee Bucks": "1610612749",
+  "Minnesota Timberwolves": "1610612750",
+  "New Orleans Pelicans": "1610612740",
+  "New York Knicks": "1610612752",
+  "Oklahoma City Thunder": "1610612760",
+  "Orlando Magic": "1610612753",
+  "Philadelphia 76ers": "1610612755",
+  "Phoenix Suns": "1610612756",
+  "Portland Trail Blazers": "1610612757",
+  "Sacramento Kings": "1610612758",
+  "San Antonio Spurs": "1610612759",
+  "Toronto Raptors": "1610612761",
+  "Utah Jazz": "1610612762",
+  "Washington Wizards": "1610612764"
+};
+
+async function loadGames() {
+  const container = document.getElementById("games");
+  container.innerHTML = "載入中...";
+  const date = document.getElementById("gameDate").value;
+
+  try {
+    const res = await fetch(`https://www.balldontlie.io/api/v1/games?dates[]=${date}`);
+    const data = await res.json();
+
+    container.innerHTML = "";
+
+    if (!data.data.length) {
+      container.innerHTML = "當日無比賽";
+      return;
+    }
+
+    data.data.forEach(game => {
+      const home = game.home_team;
+      const away = game.visitor_team;
+      const isLive = game.status.includes("Q"); // 當 status 有 Q 就認為正在比賽
+
+      const logoHome = teamLogoMap[home.full_name]
+        ? `https://cdn.nba.com/logos/nba/${teamLogoMap[home.full_name]}/global/L/logo.svg`
+        : "";
+      const logoAway = teamLogoMap[away.full_name]
+        ? `https://cdn.nba.com/logos/nba/${teamLogoMap[away.full_name]}/global/L/logo.svg`
+        : "";
+
+      container.innerHTML += `
+        <div class="game-card">
+          <div class="game-row">
+            <div class="team-block">
+              ${logoAway ? `<img src="${logoAway}">` : ""}
+              ${away.full_name}
+            </div>
+            <div class="score-big ${isLive ? "live-score" : ""}">${game.visitor_team_score}</div>
+          </div>
+          <div class="game-row">
+            <div class="team-block">
+              ${logoHome ? `<img src="${logoHome}">` : ""}
+              ${home.full_name}
+            </div>
+            <div class="score-big ${isLive ? "live-score" : ""}">${game.home_team_score}</div>
+          </div>
+          ${isLive 
+            ? `<div class="live-status">LIVE: ${game.status}</div>` 
+            : `<div class="game-status">${game.status}</div>`}
+        </div>
+      `;
+    });
+
+  } catch (err) {
+    container.innerHTML = "API 讀取失敗";
+    console.error(err);
+  }
+}
+
+// 首次載入
+loadGames();
+
+// 每 30 秒自動刷新
+setInterval(loadGames, 30000);
+</script>
+
 </body>
 </html>
