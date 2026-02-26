@@ -1,84 +1,93 @@
-/* =========================
-   遊戲卡片 CSS 完整優化
-========================= */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+header {
+  text-align: center;
+  padding: 20px;
+  background: #1e293b;
+}
+h1 { margin: 0; }
+#update-time { font-size: 14px; margin-top: 5px; }
+
+.games-grid {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
 .game-card {
   background: #1e293b;
   border-radius: 18px;
   padding: 18px;
-  margin-bottom: 15px;
   transition: 0.3s;
   text-align: center;
 }
 
 .game-card:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   background: #334155;
 }
 
-/* 四欄佈局：左隊 / 主隊分數 / 客隊分數 / 右隊 */
-.game-row {
-  display: grid;
-  grid-template-columns: 1fr 60px 60px 1fr; /* 調整分數欄寬度 */
-  align-items: center;
-  gap: 10px;
-}
-
-/* 左右隊伍欄：隊徽在上，隊名在下 */
-.team-block {
+/* 隊伍隊徽+分數+隊名 */
+.team {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px; /* 隊徽和隊名間距 */
+  gap: 5px;
+  margin: 10px 0;
 }
-
-.team-block img {
-  width: 30px;   /* 桌面隊徽尺寸 */
+.team img {
+  width: 30px;
   height: 30px;
   object-fit: contain;
 }
-
-.team-name {
+.team strong {
+  font-size: 24px;
+}
+.team span {
   font-size: 14px;
-  text-align: center;
 }
 
-/* 分數欄 */
-.score-big {
-  font-size: 28px;  /* 桌面分數大小 */
-  font-weight: bold;
-  text-align: center;
-}
-
-/* 狀態欄在卡片底部中央 */
-.status, .game-status {
+/* 狀態欄 */
+.status {
   margin-top: 10px;
   font-size: 14px;
   text-align: center;
 }
-
-.live { color: #22c55e; }
+.live { color: #22c55e; animation: blink 1s infinite; }
 .final { color: #94a3b8; }
 .scheduled { color: #facc15; }
 
-/* =========================
-   手機自適應
-========================= */
+@keyframes blink {
+  0%, 50%, 100% { opacity: 1; }
+  25%, 75% { opacity: 0.3; }
+}
+
+/* 分區戰績 */
+.standings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 15px;
+}
+.team-row {
+  background: #1e293b;
+  padding: 6px;
+  border-radius: 6px;
+  margin: 4px 0;
+}
+.playoff {
+  background: #065f46;
+}
+
+/* 手機自適應 */
 @media (max-width: 600px) {
-  .team-block img {
-    width: 24px;  /* 手機隊徽縮小 */
-    height: 24px;
-  }
-
-  .team-name {
-    font-size: 12px;
-  }
-
-  .score-big {
-    font-size: 22px; /* 手機分數縮小 */
-  }
-
-  .game-row {
-    grid-template-columns: 1fr 50px 50px 1fr; /* 分數欄更窄 */
-  }
+  .team img { width: 24px; height: 24px; }
+  .team strong { font-size: 20px; }
+  .team span { font-size: 12px; }
 }
