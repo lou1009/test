@@ -1,44 +1,66 @@
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+header {
+  text-align: center;
+  padding: 20px;
+  background: #1e293b;
+}
+h1 { margin: 0; }
+#update-time { font-size: 14px; margin-top: 5px; }
+
+/* 比賽卡片 */
 .game-card {
   background: #1e293b;
   border-radius: 18px;
   padding: 12px;
-  text-align: center;
+  margin: 10px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.game-card .team {
-  display: flex;
+/* 四欄排列：主隊隊徽+隊名 / 主隊分數 / 客隊分數 / 客隊隊徽+隊名 */
+.teams-row {
+  display: grid;
+  grid-template-columns: 1fr 60px 60px 1fr;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
-  margin: 8px 0;
+  gap: 10px;
 }
 
-/* 隊徽+隊名 置於隊伍區塊 */
-.game-card .team span {
+/* 隊伍區塊 */
+.team-block {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
   font-size: 14px;
 }
-
-/* 隊徽大小固定 */
-.game-card .team img {
+.team-block img {
   width: 30px;
   height: 30px;
   object-fit: contain;
 }
-
-/* 分數置中 */
-.game-card .team strong {
-  font-size: 24px;
+.team-block .team-name {
+  text-align: center;
 }
 
-/* 狀態在下 */
-.game-card .status {
+/* 分數區塊 */
+.score-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+/* 狀態文字在卡片底部 */
+.status {
   margin-top: 8px;
   font-size: 14px;
   text-align: center;
@@ -52,9 +74,25 @@
   25%, 75% { opacity: 0.3; }
 }
 
+/* 分區戰績 */
+.standings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 15px;
+}
+.team-row {
+  background: #1e293b;
+  padding: 6px;
+  border-radius: 6px;
+  margin: 4px 0;
+}
+.playoff { background: #065f46; }
+
 /* 手機自適應 */
 @media (max-width: 600px) {
-  .game-card .team img { width: 24px; height: 24px; }
-  .game-card .team strong { font-size: 20px; }
-  .game-card .team span { font-size: 12px; }
+  .team-block img { width: 24px; height: 24px; }
+  .score-block { font-size: 20px; }
+  .team-block { font-size: 12px; }
+  .teams-row { grid-template-columns: 1fr 50px 50px 1fr; }
 }
