@@ -1,94 +1,103 @@
-const teamNames = {
-  "Lakers": "湖人",
-  "Warriors": "勇士",
-  "Celtics": "塞爾提克",
-  "Bucks": "公鹿",
-  "Nets": "籃網"
-};
+const scheduleDiv = document.getElementById("schedule");
+const updateTime = document.getElementById("update-time");
+const datePicker = document.getElementById("datePicker");
 
-document.getElementById("gameDate").valueAsDate = new Date();
+// 預設今天
+let selectedDate = new Date();
 
-function changeDate(offset) {
-  const input = document.getElementById("gameDate");
-  const date = new Date(input.value);
-  date.setDate(date.getDate() + offset);
-  input.valueAsDate = date;
-  loadGames();
+// URL 讀取日期參數
+const params = new URLSearchParams(window.location.search);
+if (params.get("date")) {
+  selectedDate = new Date(params.get("date"));
 }
 
-document.getElementById("gameDate").addEventListener("change", loadGames);
+datePicker.valueAsDate = selectedDate;
 
-function loadGames() {
-  const container = document.getElementById("games");
-  const date = document.getElementById("gameDate").value;
+function formatDate(date) {
+  return date.toISOString().split("T")[0];
+}
 
-  container.innerHTML = "";
+function changeDate(offset) {
+  selectedDate.setDate(selectedDate.getDate() + offset);
+  datePicker.valueAsDate = selectedDate;
+  updateURL();
+  fetchSchedule();
+}
 
-  // 這裡用假資料示範（你之後可接 API）
-  const games = [
-    {
-      home: "Lakers",
-      away: "Warriors",
-      homeScore: 102,
-      awayScore: 98
-    }
-  ];
+datePicker.addEventListener("change", () => {
+  selectedDate = new Date(datePicker.value);
+  updateURL();
+  fetchSchedule();
+});
 
-  games.forEach(game => {
-    container.innerHTML += `
+function updateURL() {
+  const newDate = formatDate(selectedDate);
+  history.replaceState(null, "", `?date=${newDate}`);
+}
+
+function getStatusClass(status) {
+  if (status.includes("Final")) return "final";
+  if (status.includes("Q") || status.includes("Half")) return "live";
+  return "scheduled";
+}
+
+async function fetchSchedule() {
+  const dateStr = formatDate(selectedDate).replaceAll("-", "");
+
+  const res = await fetch(
+    `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`
+  );
+
+  const data = await res.json();
+  scheduleDiv.innerHTML = "";
+
+  if (!data.events || data.events.length === 0) {
+    scheduleDiv.innerHTML = "<p>當天沒有比賽</p>";
+    return;
+  }
+
+  data.events.forEach(game => {
+    const home = game.competitions[0].competitors.find(t => t.homeAway === "home");
+    const away = game.competitions[0].competitors.find(t => t.homeAway === "away");
+
+    const status = game.status.type.description;
+    const statusClass = getStatusClass(status);
+
+    scheduleDiv.innerHTML += `
       <div class="game-card">
         <div class="team">
-          <span>${teamNames[game.away] || game.away}</span>
-          <span class="score">${game.awayScore}</span>
+          <span>
+            <img src="${away.team.logo}" />
+            ${away.team.displayName}
+          </span>
+          <strong>${away.score || 0}</strong>
         </div>
+
         <div class="team">
-          <span>${teamNames[game.home] || game.home}</span>
-          <span class="score">${game.homeScore}</span>
+          <span>
+            <img src="${home.team.logo}" />
+            ${home.team.displayName}
+          </span>
+          <strong>${home.score || 0}</strong>
+        </div>
+
+        <div class="status ${statusClass}">
+          ${status}
         </div>
       </div>
     `;
   });
+
+  updateTime.innerText =
+    "最後更新：" + new Date().toLocaleTimeString();
 }
 
-/* ----------- 新聞 ----------- */
+fetchSchedule();
 
-async function fetchNews() {
-  const newsContainer = document.getElementById("news-container");
-
-  const rssUrl = encodeURIComponent(
-    "https://news.google.com/rss/search?q=NBA&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
-  );
-
-  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${rssUrl}`;
-
-  try {
-    const res = await fetch(apiUrl);
-    const data = await res.json();
-
-    newsContainer.innerHTML = '<div class="news-grid"></div>';
-    const grid = document.querySelector(".news-grid");
-
-    data.items.slice(0, 6).forEach(item => {
-      const imgMatch = item.description.match(/<img.*?src="(.*?)"/);
-      const image = imgMatch ? imgMatch[1] : "";
-
-      grid.innerHTML += `
-        <div class="news-card">
-          <a href="${item.link}" target="_blank">
-            ${image ? `<img src="${image}" />` : ""}
-            <div class="news-content">
-              <h3>${item.title}</h3>
-              <p>${item.description.replace(/<[^>]+>/g, "").slice(0, 80)}...</p>
-            </div>
-          </a>
-        </div>
-      `;
-    });
-
-  } catch (error) {
-    newsContainer.innerHTML = "<p>新聞載入失敗</p>";
+// 只有今天才自動更新
+setInterval(() => {
+  const today = new Date().toISOString().split("T")[0];
+  if (formatDate(selectedDate) === today) {
+    fetchSchedule();
   }
-}
-
-loadGames();
-fetchNews();
+}, 60000);
