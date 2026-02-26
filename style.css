@@ -24,7 +24,7 @@ h1 { margin: 0; }
   align-items: center;
 }
 
-/* 四欄排列：主隊隊徽+隊名 / 主隊分數 / 客隊分數 / 客隊隊徽+隊名 */
+/* 四欄排列 */
 .teams-row {
   display: grid;
   grid-template-columns: 1fr 60px 60px 1fr;
@@ -40,12 +40,10 @@ h1 { margin: 0; }
   align-items: center;
   gap: 2px;
 }
-
 .team-block img {
-  height: 14px; /* 桌面隊徽和文字一樣高 */
+  height: 30px; /* 桌面隊徽大小 */
   width: auto;
 }
-
 .team-block .team-name {
   font-size: 14px;
   text-align: center;
@@ -56,7 +54,7 @@ h1 { margin: 0; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px; /* 桌面分數大 */
+  font-size: 40px; /* 桌面分數 */
   font-weight: bold;
 }
 
@@ -92,25 +90,21 @@ h1 { margin: 0; }
 
 /* 手機自適應 */
 @media (max-width: 600px) {
-  .team-block img,
-  .team-block .team-name {
-    height: 12px;    /* 手機隊徽和文字同高 */
-    font-size: 12px;
-  }
-
+  .team-block img { height: 24px; }
+  .team-block .team-name { font-size: 12px; }
   .score-block { font-size: 28px; }
 
   /* 手機改兩列排列 */
-  .teams-row {
+  .teams-row { 
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 上排兩隊隊徽+隊名 */
+    grid-template-columns: 1fr 1fr; 
     gap: 10px;
     margin-bottom: 5px;
   }
 
   /* 分數下排跨兩欄置中 */
-  .score-block {
+  .score-block { 
     grid-column: span 2;
-    justify-self: center;
+    justify-self: center; 
   }
 }
