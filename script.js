@@ -20,7 +20,6 @@ const teamMap = {
   "Philadelphia 76ers": "費城七六人",
   "Toronto Raptors": "多倫多暴龍",
   "Washington Wizards": "華盛頓巫師",
-
   "Dallas Mavericks": "達拉斯獨行俠",
   "Denver Nuggets": "丹佛金塊",
   "Golden State Warriors": "金州勇士",
@@ -48,6 +47,7 @@ function getStatusClass(status) {
   return "scheduled";
 }
 
+// 渲染賽程
 async function fetchSchedule() {
   const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard`);
   const data = await res.json();
@@ -63,25 +63,19 @@ async function fetchSchedule() {
 
     scheduleDiv.innerHTML += `
       <div class="game-card">
-        <div class="team">
-          <span>
-            <img src="${away.team.logo}" />
-            ${getTeamName(away.team.displayName)}
-          </span>
-          <strong>${away.score || 0}</strong>
+        <div class="teams-row">
+          <div class="team-block">
+            <img src="${home.team.logo}" alt="${home.team.displayName}" />
+            <div class="team-name">${getTeamName(home.team.displayName)}</div>
+          </div>
+          <div class="score-block">${home.score || 0}</div>
+          <div class="score-block">${away.score || 0}</div>
+          <div class="team-block">
+            <img src="${away.team.logo}" alt="${away.team.displayName}" />
+            <div class="team-name">${getTeamName(away.team.displayName)}</div>
+          </div>
         </div>
-
-        <div class="team">
-          <span>
-            <img src="${home.team.logo}" />
-            ${getTeamName(home.team.displayName)}
-          </span>
-          <strong>${home.score || 0}</strong>
-        </div>
-
-        <div class="status ${statusClass}">
-          ${status}
-        </div>
+        <div class="status ${statusClass}">${status}</div>
       </div>
     `;
   });
@@ -89,6 +83,7 @@ async function fetchSchedule() {
   updateTime.innerText = "最後更新：" + new Date().toLocaleTimeString();
 }
 
+// 渲染戰績
 async function fetchStandings() {
   const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/standings`);
   const data = await res.json();
