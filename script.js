@@ -118,4 +118,4 @@ async function fetchStandings() {
 
 fetchSchedule();
 fetchStandings();
-setInterval(fetchSchedule, 60000);
+setInterval(fetchSchedule, 10000);
