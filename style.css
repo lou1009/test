@@ -55,7 +55,7 @@ h1 { margin: 0; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 40px; /* 分數加大 */
   font-weight: bold;
 }
 
@@ -91,18 +91,19 @@ h1 { margin: 0; }
 
 /* 手機自適應 */
 @media (max-width: 600px) {
-  .team-block img { width: 20px; height: 20px; }
-  .score-block { font-size: 18px; }
+  .team-block img { width: 24px; height: 24px; }
   .team-block { font-size: 12px; }
+  .score-block { font-size: 28px; }
 
-  /* 小螢幕兩欄排版 */
+  /* 手機改兩列排版 */
   .teams-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* 上排兩隊隊徽+隊名 */
     gap: 10px;
+    margin-bottom: 5px;
   }
 
-  /* 分數置中跨欄 */
+  /* 分數下排跨兩欄置中 */
   .score-block {
     grid-column: span 2;
     justify-self: center;
