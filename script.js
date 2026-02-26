@@ -1,4 +1,5 @@
-const API_KEY = "91585da6-0d40-468f-a33e-5f208434cd5b";
+const API_KEY = "91585da6-0d40-468f-a33e-5f208434cd5b
+";
 
 document.getElementById("gameDate").valueAsDate = new Date();
 document.getElementById("gameDate").addEventListener("change", loadGames);
