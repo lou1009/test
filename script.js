@@ -1,38 +1,45 @@
 const scheduleDiv = document.getElementById("schedule");
+const eastDiv = document.getElementById("east");
+const westDiv = document.getElementById("west");
 const updateTime = document.getElementById("update-time");
-const datePicker = document.getElementById("datePicker");
 
-// 預設今天
-let selectedDate = new Date();
+// NBA 球隊中文對照
+const teamMap = {
+  "Atlanta Hawks": "亞特蘭大老鷹",
+  "Boston Celtics": "波士頓塞爾提克",
+  "Brooklyn Nets": "布魯克林籃網",
+  "Charlotte Hornets": "夏洛特黃蜂",
+  "Chicago Bulls": "芝加哥公牛",
+  "Cleveland Cavaliers": "克里夫蘭騎士",
+  "Detroit Pistons": "底特律活塞",
+  "Indiana Pacers": "印第安納溜馬",
+  "Miami Heat": "邁阿密熱火",
+  "Milwaukee Bucks": "密爾瓦基公鹿",
+  "New York Knicks": "紐約尼克",
+  "Orlando Magic": "奧蘭多魔術",
+  "Philadelphia 76ers": "費城七六人",
+  "Toronto Raptors": "多倫多暴龍",
+  "Washington Wizards": "華盛頓巫師",
 
-// URL 讀取日期參數
-const params = new URLSearchParams(window.location.search);
-if (params.get("date")) {
-  selectedDate = new Date(params.get("date"));
-}
+  "Dallas Mavericks": "達拉斯獨行俠",
+  "Denver Nuggets": "丹佛金塊",
+  "Golden State Warriors": "金州勇士",
+  "Houston Rockets": "休士頓火箭",
+  "LA Clippers": "洛杉磯快艇",
+  "Los Angeles Lakers": "洛杉磯湖人",
+  "Memphis Grizzlies": "曼菲斯灰熊",
+  "Minnesota Timberwolves": "明尼蘇達灰狼",
+  "New Orleans Pelicans": "紐奧良鵜鶘",
+  "Oklahoma City Thunder": "奧克拉荷馬雷霆",
+  "Phoenix Suns": "鳳凰城太陽",
+  "Portland Trail Blazers": "波特蘭拓荒者",
+  "Sacramento Kings": "沙加緬度國王",
+  "San Antonio Spurs": "聖安東尼奧馬刺",
+  "Utah Jazz": "猶他爵士"
+};
 
-datePicker.valueAsDate = selectedDate;
-
-function formatDate(date) {
-  return date.toISOString().split("T")[0];
-}
-
-function changeDate(offset) {
-  selectedDate.setDate(selectedDate.getDate() + offset);
-  datePicker.valueAsDate = selectedDate;
-  updateURL();
-  fetchSchedule();
-}
-
-datePicker.addEventListener("change", () => {
-  selectedDate = new Date(datePicker.value);
-  updateURL();
-  fetchSchedule();
-});
-
-function updateURL() {
-  const newDate = formatDate(selectedDate);
-  history.replaceState(null, "", `?date=${newDate}`);
+function getTeamName(name) {
+  return teamMap[name] || name;
 }
 
 function getStatusClass(status) {
@@ -42,19 +49,10 @@ function getStatusClass(status) {
 }
 
 async function fetchSchedule() {
-  const dateStr = formatDate(selectedDate).replaceAll("-", "");
-
-  const res = await fetch(
-    `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`
-  );
-
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard`);
   const data = await res.json();
-  scheduleDiv.innerHTML = "";
 
-  if (!data.events || data.events.length === 0) {
-    scheduleDiv.innerHTML = "<p>當天沒有比賽</p>";
-    return;
-  }
+  scheduleDiv.innerHTML = "";
 
   data.events.forEach(game => {
     const home = game.competitions[0].competitors.find(t => t.homeAway === "home");
@@ -68,7 +66,7 @@ async function fetchSchedule() {
         <div class="team">
           <span>
             <img src="${away.team.logo}" />
-            ${away.team.displayName}
+            ${getTeamName(away.team.displayName)}
           </span>
           <strong>${away.score || 0}</strong>
         </div>
@@ -76,7 +74,7 @@ async function fetchSchedule() {
         <div class="team">
           <span>
             <img src="${home.team.logo}" />
-            ${home.team.displayName}
+            ${getTeamName(home.team.displayName)}
           </span>
           <strong>${home.score || 0}</strong>
         </div>
@@ -88,16 +86,36 @@ async function fetchSchedule() {
     `;
   });
 
-  updateTime.innerText =
-    "最後更新：" + new Date().toLocaleTimeString();
+  updateTime.innerText = "最後更新：" + new Date().toLocaleTimeString();
+}
+
+async function fetchStandings() {
+  const res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/standings`);
+  const data = await res.json();
+
+  eastDiv.innerHTML = "";
+  westDiv.innerHTML = "";
+
+  data.children.forEach(conf => {
+    conf.standings.entries.forEach((team, index) => {
+      const wins = team.stats.find(s => s.name === "wins").value;
+      const losses = team.stats.find(s => s.name === "losses").value;
+
+      const row = `
+        <div class="team-row ${index < 8 ? "playoff" : ""}">
+          ${index + 1}. ${getTeamName(team.team.displayName)} (${wins}-${losses})
+        </div>
+      `;
+
+      if (conf.name.includes("Eastern")) {
+        eastDiv.innerHTML += row;
+      } else {
+        westDiv.innerHTML += row;
+      }
+    });
+  });
 }
 
 fetchSchedule();
-
-// 只有今天才自動更新
-setInterval(() => {
-  const today = new Date().toISOString().split("T")[0];
-  if (formatDate(selectedDate) === today) {
-    fetchSchedule();
-  }
-}, 60000);
+fetchStandings();
+setInterval(fetchSchedule, 60000);
