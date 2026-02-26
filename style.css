@@ -1,6 +1,7 @@
 /* =========================
-   遊戲卡片佈局調整
+   遊戲卡片 CSS 完整優化
 ========================= */
+
 .game-card {
   background: #1e293b;
   border-radius: 18px;
@@ -15,51 +16,45 @@
   background: #334155;
 }
 
-/* game-row 調整為四欄 */
+/* 四欄佈局：左隊 / 主隊分數 / 客隊分數 / 右隊 */
 .game-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 60px 60px 1fr; /* 調整分數欄寬度 */
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
 }
 
-/* 左右隊伍欄垂直排列 */
+/* 左右隊伍欄：隊徽在上，隊名在下 */
 .team-block {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  width: 20%;
+  gap: 4px; /* 隊徽和隊名間距 */
 }
 
 .team-block img {
-  width: 40px;
-  height: 40px;
+  width: 30px;   /* 桌面隊徽尺寸 */
+  height: 30px;
   object-fit: contain;
 }
 
 .team-name {
   font-size: 14px;
-}
-
-/* 中間分數欄 */
-.score-block {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 15%;
-}
-
-.score-big {
-  font-size: 32px;
-  font-weight: bold;
-}
-
-/* 狀態欄位在下方正中 */
-.game-status {
   text-align: center;
-  margin-top: 12px;
+}
+
+/* 分數欄 */
+.score-big {
+  font-size: 28px;  /* 桌面分數大小 */
+  font-weight: bold;
+  text-align: center;
+}
+
+/* 狀態欄在卡片底部中央 */
+.status, .game-status {
+  margin-top: 10px;
   font-size: 14px;
-  color: #9ca3af;
+  text-align: center;
 }
 
 .live { color: #22c55e; }
@@ -71,19 +66,19 @@
 ========================= */
 @media (max-width: 600px) {
   .team-block img {
-    width: 32px;
-    height: 32px;
+    width: 24px;  /* 手機隊徽縮小 */
+    height: 24px;
   }
-  .score-big {
-    font-size: 28px;
-  }
+
   .team-name {
     font-size: 12px;
   }
-  .team-block {
-    width: 25%;
+
+  .score-big {
+    font-size: 22px; /* 手機分數縮小 */
   }
-  .score-block {
-    width: 12%;
+
+  .game-row {
+    grid-template-columns: 1fr 50px 50px 1fr; /* 分數欄更窄 */
   }
 }
