@@ -1,5 +1,12 @@
+const teamNames = {
+  "Lakers": "湖人",
+  "Warriors": "勇士",
+  "Celtics": "塞爾提克",
+  "Bucks": "公鹿",
+  "Nets": "籃網"
+};
+
 document.getElementById("gameDate").valueAsDate = new Date();
-document.getElementById("gameDate").addEventListener("change", loadGames);
 
 function changeDate(offset) {
   const input = document.getElementById("gameDate");
@@ -9,42 +16,35 @@ function changeDate(offset) {
   loadGames();
 }
 
+document.getElementById("gameDate").addEventListener("change", loadGames);
+
 function loadGames() {
   const container = document.getElementById("games");
+  const date = document.getElementById("gameDate").value;
+
   container.innerHTML = "";
 
+  // 這裡用假資料示範（你之後可接 API）
   const games = [
     {
-      homeName: "湖人",
-      awayName: "勇士",
-      homeLogo: "https://cdn.nba.com/logos/nba/1610612747/global/L/logo.svg",
-      awayLogo: "https://cdn.nba.com/logos/nba/1610612744/global/L/logo.svg",
+      home: "Lakers",
+      away: "Warriors",
       homeScore: 102,
-      awayScore: 98,
-      status: "Final"
+      awayScore: 98
     }
   ];
 
   games.forEach(game => {
     container.innerHTML += `
       <div class="game-card">
-        <div class="game-row">
-          <div class="team-block">
-            <img src="${game.awayLogo}">
-            <div class="team-name">${game.awayName}</div>
-          </div>
-          <div class="score-big">${game.awayScore}</div>
+        <div class="team">
+          <span>${teamNames[game.away] || game.away}</span>
+          <span class="score">${game.awayScore}</span>
         </div>
-
-        <div class="game-row">
-          <div class="team-block">
-            <img src="${game.homeLogo}">
-            <div class="team-name">${game.homeName}</div>
-          </div>
-          <div class="score-big">${game.homeScore}</div>
+        <div class="team">
+          <span>${teamNames[game.home] || game.home}</span>
+          <span class="score">${game.homeScore}</span>
         </div>
-
-        <div class="game-status">${game.status}</div>
       </div>
     `;
   });
