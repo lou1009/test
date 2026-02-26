@@ -91,8 +91,20 @@ h1 { margin: 0; }
 
 /* 手機自適應 */
 @media (max-width: 600px) {
-  .team-block img { width: 24px; height: 24px; }
-  .score-block { font-size: 20px; }
+  .team-block img { width: 20px; height: 20px; }
+  .score-block { font-size: 18px; }
   .team-block { font-size: 12px; }
-  .teams-row { grid-template-columns: 1fr 50px 50px 1fr; }
+
+  /* 小螢幕兩欄排版 */
+  .teams-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* 分數置中跨欄 */
+  .score-block {
+    grid-column: span 2;
+    justify-self: center;
+  }
 }
