@@ -3,35 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NBA 即時比分</title>
+  <title>NBA 即時比分 | 660002.com</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <header>
-    <h1>🏀 NBA 即時比分</h1>
-    <p id="update-time"></p>
-  </header>
+<header>
+  <h1>🏀 NBA 即時比分</h1>
+  <div class="date-control">
+    <button onclick="changeDate(-1)">‹</button>
+    <input type="date" id="gameDate">
+    <button onclick="changeDate(1)">›</button>
+  </div>
+</header>
 
-  <section>
-    <h2>今日賽程</h2>
-    <div id="schedule" class="games-grid"></div>
-  </section>
+<section id="games"></section>
 
-  <section>
-    <h2>聯盟戰績</h2>
-    <div class="standings">
-      <div>
-        <h3>東區</h3>
-        <div id="east"></div>
-      </div>
-      <div>
-        <h3>西區</h3>
-        <div id="west"></div>
-      </div>
-    </div>
-  </section>
+<footer>
+  © 2026 660002.com
+</footer>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
