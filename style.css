@@ -1,66 +1,13 @@
 /* =========================
-   全局設置
+   遊戲卡片佈局調整
 ========================= */
-body {
-  margin: 0;
-  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #0f172a; /* 保留原本深色風格 */
-  color: white;
-}
-
-/* =========================
-   Header
-========================= */
-header {
-  text-align: center;
-  padding: 20px;
-  background: linear-gradient(180deg,#111827,#0f172a); /* 漸層效果 */
-}
-
-h1 {
-  margin: 0;
-  font-size: 22px;
-}
-
-/* 日期控制 */
-.date-control {
-  margin-top: 12px;
-}
-
-.date-control button {
-  padding: 6px 12px;
-  margin: 0 8px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
-  background: #1f2937;
-  color: white;
-  cursor: pointer;
-}
-
-.date-control input {
-  background: #1f2937;
-  border: none;
-  color: white;
-  padding: 6px;
-  border-radius: 8px;
-}
-
-/* =========================
-   遊戲卡片
-========================= */
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 15px;
-  padding: 15px;
-}
-
 .game-card {
   background: #1e293b;
   border-radius: 18px;
   padding: 18px;
+  margin-bottom: 15px;
   transition: 0.3s;
+  text-align: center;
 }
 
 .game-card:hover {
@@ -68,137 +15,75 @@ h1 {
   background: #334155;
 }
 
+/* game-row 調整為四欄 */
 .game-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
+/* 左右隊伍欄垂直排列 */
 .team-block {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  width: 50%;
+  gap: 6px;
+  width: 20%;
 }
 
 .team-block img {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   object-fit: contain;
 }
 
 .team-name {
-  font-size: 15px;
-}
-
-.score-big {
-  font-size: 34px;
-  font-weight: bold;
-}
-
-/* 狀態顏色兼容 */
-.status,
-.game-status {
-  text-align: center;
-  margin-top: 10px;
   font-size: 14px;
 }
 
-.live {
-  color: #22c55e;
-}
-
-.final {
-  color: #94a3b8;
-}
-
-.scheduled {
-  color: #facc15;
-}
-
-/* =========================
-   排名 standings
-========================= */
-.standings {
+/* 中間分數欄 */
+.score-block {
   display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 15px;
+  align-items: center;
+  justify-content: center;
+  width: 15%;
 }
 
-.team-row {
-  background: #1e293b;
-  padding: 6px;
-  border-radius: 6px;
-  margin: 4px 0;
+.score-big {
+  font-size: 32px;
+  font-weight: bold;
 }
 
-.playoff {
-  background: #065f46;
-}
-
-/* =========================
-   新聞模組 news
-========================= */
-#news {
-  padding: 15px;
-}
-
-.news-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
-}
-
-.news-card {
-  background: #111827;
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.news-card img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-}
-
-.news-content {
-  padding: 12px;
-}
-
-.news-content h3 {
-  font-size: 15px;
-  margin: 0 0 5px;
-}
-
-.news-content p {
-  font-size: 13px;
-  color: #cbd5e1;
-}
-
-/* =========================
-   Footer
-========================= */
-footer {
+/* 狀態欄位在下方正中 */
+.game-status {
   text-align: center;
-  padding: 20px;
-  font-size: 12px;
+  margin-top: 12px;
+  font-size: 14px;
   color: #9ca3af;
 }
 
+.live { color: #22c55e; }
+.final { color: #94a3b8; }
+.scheduled { color: #facc15; }
+
 /* =========================
-   手機優化
+   手機自適應
 ========================= */
 @media (max-width: 600px) {
-  .team-block {
-    width: 60%;
+  .team-block img {
+    width: 32px;
+    height: 32px;
   }
-
   .score-big {
     font-size: 28px;
   }
-
-  .news-card img {
-    height: 140px;
+  .team-name {
+    font-size: 12px;
+  }
+  .team-block {
+    width: 25%;
+  }
+  .score-block {
+    width: 12%;
   }
 }
