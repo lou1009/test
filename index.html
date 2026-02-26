@@ -1,21 +1,32 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NBA 比賽列表</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NBA 即時比分 | 660002.com</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h2>NBA 比賽列表</h2>
-<div class="controls">
-  <button onclick="changeDate(-1)">前一天</button>
-  <input type="date" id="gameDate">
-  <button onclick="changeDate(1)">後一天</button>
-</div>
+<header>
+  <h1>🏀 NBA 即時比分</h1>
+  <div class="date-control">
+    <button onclick="changeDate(-1)">‹</button>
+    <input type="date" id="gameDate">
+    <button onclick="changeDate(1)">›</button>
+  </div>
+</header>
 
-<div id="games">載入中...</div>
+<section id="games"></section>
+
+<section id="news">
+  <h2>📰 最新 NBA 新聞</h2>
+  <div id="news-container"></div>
+</section>
+
+<footer>
+  © 2026 660002.com
+</footer>
 
 <script src="script.js"></script>
 </body>
