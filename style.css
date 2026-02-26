@@ -1,61 +1,45 @@
-body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: #0f172a;
-  color: white;
-}
-
-header {
-  text-align: center;
-  padding: 20px;
-  background: #1e293b;
-}
-h1 { margin: 0; }
-#update-time { font-size: 14px; margin-top: 5px; }
-
-.games-grid {
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .game-card {
   background: #1e293b;
   border-radius: 18px;
-  padding: 18px;
-  transition: 0.3s;
+  padding: 12px;
   text-align: center;
-}
-
-.game-card:hover {
-  transform: translateY(-2px);
-  background: #334155;
-}
-
-/* 隊伍隊徽+分數+隊名 */
-.team {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  margin: 10px 0;
 }
-.team img {
+
+.game-card .team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 8px 0;
+}
+
+/* 隊徽+隊名 置於隊伍區塊 */
+.game-card .team span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+}
+
+/* 隊徽大小固定 */
+.game-card .team img {
   width: 30px;
   height: 30px;
   object-fit: contain;
 }
-.team strong {
+
+/* 分數置中 */
+.game-card .team strong {
   font-size: 24px;
 }
-.team span {
-  font-size: 14px;
-}
 
-/* 狀態欄 */
-.status {
-  margin-top: 10px;
+/* 狀態在下 */
+.game-card .status {
+  margin-top: 8px;
   font-size: 14px;
   text-align: center;
 }
@@ -68,26 +52,9 @@ h1 { margin: 0; }
   25%, 75% { opacity: 0.3; }
 }
 
-/* 分區戰績 */
-.standings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 15px;
-}
-.team-row {
-  background: #1e293b;
-  padding: 6px;
-  border-radius: 6px;
-  margin: 4px 0;
-}
-.playoff {
-  background: #065f46;
-}
-
 /* 手機自適應 */
 @media (max-width: 600px) {
-  .team img { width: 24px; height: 24px; }
-  .team strong { font-size: 20px; }
-  .team span { font-size: 12px; }
+  .game-card .team img { width: 24px; height: 24px; }
+  .game-card .team strong { font-size: 20px; }
+  .game-card .team span { font-size: 12px; }
 }
