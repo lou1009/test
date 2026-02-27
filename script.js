@@ -1,52 +1,28 @@
 const scheduleDiv = document.getElementById("schedule");
 const updateTime = document.getElementById("update-time");
 
-/* NBA 中文對照 */
-
 const teamMap = {
   "Atlanta Hawks": "亞特蘭大老鷹",
   "Boston Celtics": "波士頓塞爾提克",
   "Brooklyn Nets": "布魯克林籃網",
-  "Charlotte Hornets": "夏洛特黃蜂",
   "Chicago Bulls": "芝加哥公牛",
-  "Cleveland Cavaliers": "克里夫蘭騎士",
-  "Detroit Pistons": "底特律活塞",
-  "Indiana Pacers": "印第安納溜馬",
-  "Miami Heat": "邁阿密熱火",
-  "Milwaukee Bucks": "密爾瓦基公鹿",
   "New York Knicks": "紐約尼克",
-  "Orlando Magic": "奧蘭多魔術",
-  "Philadelphia 76ers": "費城七六人",
-  "Toronto Raptors": "多倫多暴龍",
-  "Washington Wizards": "華盛頓巫師",
-  "Dallas Mavericks": "達拉斯獨行俠",
-  "Denver Nuggets": "丹佛金塊",
-  "Golden State Warriors": "金州勇士",
-  "Houston Rockets": "休士頓火箭",
-  "LA Clippers": "洛杉磯快艇",
   "Los Angeles Lakers": "洛杉磯湖人",
-  "Memphis Grizzlies": "曼菲斯灰熊",
-  "Minnesota Timberwolves": "明尼蘇達灰狼",
-  "New Orleans Pelicans": "紐奧良鵜鶘",
-  "Oklahoma City Thunder": "奧克拉荷馬雷霆",
-  "Phoenix Suns": "鳳凰城太陽",
-  "Portland Trail Blazers": "波特蘭拓荒者",
-  "Sacramento Kings": "沙加緬度國王",
-  "San Antonio Spurs": "聖安東尼奧馬刺",
-  "Utah Jazz": "猶他爵士"
+  "Golden State Warriors": "金州勇士"
+  // 其餘你自己那份保留
 };
 
-function getTeamName(name) {
+function getTeamName(name){
   return teamMap[name] || name;
 }
 
-function getStatusClass(status) {
-  if (status.includes("Final")) return "final";
-  if (status.includes("Q") || status.includes("Half")) return "live";
+function getStatusClass(status){
+  if(status.includes("Final")) return "final";
+  if(status.includes("Q") || status.includes("Half")) return "live";
   return "scheduled";
 }
 
-async function fetchSchedule() {
+async function fetchSchedule(){
 
   const res = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard");
   const data = await res.json();
@@ -64,22 +40,22 @@ async function fetchSchedule() {
     scheduleDiv.innerHTML += `
       <div class="game-card">
 
-        <div class="main-row">
+        <div class="score-row">
+          <div class="score">${away.score || 0}</div>
+          <div class="score">${home.score || 0}</div>
+        </div>
 
-          <div class="team-block">
-            <img src="${away.team.logo}" class="logo">
+        <div class="team-row">
+
+          <div class="team">
+            <img src="${away.team.logo}">
             <div class="team-name">
               ${getTeamName(away.team.displayName)}
             </div>
           </div>
 
-          <div class="score-block">
-            <div class="score">${away.score || 0}</div>
-            <div class="score">${home.score || 0}</div>
-          </div>
-
-          <div class="team-block">
-            <img src="${home.team.logo}" class="logo">
+          <div class="team reverse">
+            <img src="${home.team.logo}">
             <div class="team-name">
               ${getTeamName(home.team.displayName)}
             </div>
