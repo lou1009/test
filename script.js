@@ -2,15 +2,39 @@ const scheduleDiv = document.getElementById("schedule");
 const updateTime = document.getElementById("update-time");
 
 const teamMap = {
-  "Atlanta Hawks": "亞特蘭大老鷹",
-  "Boston Celtics": "波士頓塞爾提克",
-  "Brooklyn Nets": "布魯克林籃網",
-  "Chicago Bulls": "芝加哥公牛",
-  "New York Knicks": "紐約尼克",
-  "Los Angeles Lakers": "洛杉磯湖人",
-  "Golden State Warriors": "金州勇士"
-  // 其餘你自己那份保留
+   "Atlanta Hawks": "老鷹",
+  "Boston Celtics": "塞爾提克",
+  "Brooklyn Nets": "籃網",
+  "Charlotte Hornets": "黃蜂",
+  "Chicago Bulls": "公牛",
+  "Cleveland Cavaliers": "騎士",
+  "Detroit Pistons": "活塞",
+  "Indiana Pacers": "溜馬",
+  "Miami Heat": "熱火",
+  "Milwaukee Bucks": "公鹿",
+  "New York Knicks": "尼克",
+  "Orlando Magic": "魔術",
+  "Philadelphia 76ers": "七六人",
+  "Toronto Raptors": "暴龍",
+  "Washington Wizards": "巫師",
+  "Dallas Mavericks": "獨行俠",
+  "Denver Nuggets": "金塊",
+  "Golden State Warriors": "勇士",
+  "Houston Rockets": "火箭",
+  "LA Clippers": "快艇",
+  "Los Angeles Lakers": "湖人",
+  "Memphis Grizzlies": "灰熊",
+  "Minnesota Timberwolves": "灰狼",
+  "New Orleans Pelicans": "鵜鶘",
+  "Oklahoma City Thunder": "雷霆",
+  "Phoenix Suns": "太陽",
+  "Portland Trail Blazers": "拓荒者",
+  "Sacramento Kings": "國王",
+  "San Antonio Spurs": "馬刺",
+  "Utah Jazz": "爵士"
 };
+
+function getTeamName(name
 
 function getTeamName(name){
   return teamMap[name] || name;
