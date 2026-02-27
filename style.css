@@ -1,11 +1,9 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
   background: #0f0f12;
   color: white;
 }
-
-/* Header */
 
 header {
   text-align: center;
@@ -13,111 +11,85 @@ header {
   background: #18181b;
 }
 
-h1 {
-  margin: 0;
-  font-weight: 500;
-}
-
-#update-time {
-  font-size: 14px;
-  color: #9ca3af;
-  margin-top: 6px;
-}
-
-/* Game Card */
-
 .game-card {
   background: #1c1c1e;
-  border-radius: 20px;
-  padding: 30px 20px;
+  border-radius: 24px;
+  padding: 40px 20px;
   margin: 20px;
 }
 
-/* 主橫排 */
+/* ===== 分數橫排 ===== */
 
-.main-row {
+.score-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-}
-
-/* 左右隊伍 */
-
-.team-block {
-  width: 30%;
-  text-align: center;
-}
-
-.logo {
-  height: 48px;
-  width: 48px;
-  object-fit: contain;
-  display: block;
-  margin: 0 auto 10px auto;
-}
-
-.team-name {
-  font-size: 20px;
-  font-weight: 500;
-  color: #ddd;
-  word-break: break-word;
-}
-
-/* 中間比分 */
-
-.score-block {
-  width: 40%;
-  text-align: center;
+  align-items: center;
 }
 
 .score {
-  font-size: 80px;
+  font-size: 96px;
   font-weight: 200;
-  line-height: 1;
-  color: #ffffff;
+  letter-spacing: -2px;
 }
 
-/* 狀態 */
+/* ===== 隊伍橫排 ===== */
+
+.team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 25px;
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.team.reverse {
+  flex-direction: row-reverse;
+}
+
+.team img {
+  height: 50px;
+  width: 50px;
+  object-fit: contain;
+}
+
+.team-name {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+/* ===== 狀態 ===== */
 
 .status {
   text-align: center;
-  margin-top: 15px;
-  font-size: 15px;
+  margin-top: 25px;
+  font-size: 16px;
   color: #aaa;
 }
 
-.live {
-  color: #22c55e;
-}
+.live { color: #22c55e; }
+.final { color: #9ca3af; }
+.scheduled { color: #3b82f6; }
 
-.final {
-  color: #9ca3af;
-}
+/* ===== 手機 ===== */
 
-.scheduled {
-  color: #3b82f6;
-}
-
-/* 手機優化 */
-
-@media (max-width: 600px) {
-
-  .game-card {
-    padding: 20px 15px;
-    margin: 15px;
-  }
+@media (max-width:600px){
 
   .score {
-    font-size: 56px;
+    font-size: 64px;
   }
 
-  .logo {
+  .team img {
     height: 36px;
     width: 36px;
   }
 
   .team-name {
-    font-size: 16px;
+    font-size: 18px;
   }
 
 }
