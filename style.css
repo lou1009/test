@@ -1,9 +1,11 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #111;
   color: white;
 }
+
+/* Header */
 
 header {
   text-align: center;
@@ -11,19 +13,35 @@ header {
   background: linear-gradient(180deg,#1c1c1e,#111);
 }
 
+h1 {
+  margin: 0;
+  font-weight: 500;
+}
+
+#update-time {
+  font-size: 14px;
+  color: #9ca3af;
+  margin-top: 6px;
+}
+
+/* Game Card */
+
 .game-card {
   background: linear-gradient(180deg,#1c1c1e,#111);
   border-radius: 24px;
-  padding: 35px 20px;
+  padding: 40px 20px;
   margin: 25px 15px;
 }
 
-/* 上半部 */
+/* Score Row */
+
 .score-row {
   display: grid;
   grid-template-columns: 90px 1fr 140px 1fr 90px;
   align-items: center;
 }
+
+/* Team Logo */
 
 .team-logo {
   display: flex;
@@ -31,33 +49,54 @@ header {
 }
 
 .team-logo img {
-  height: 60px;
-  width: 60px;
+  height: 54px;
+  width: 54px;
   object-fit: contain;
 }
 
+/* Score Numbers */
+
 .score {
-  font-size: 82px;
-  font-weight: 300;
+  font-size: 96px;
+  font-weight: 200;
+  letter-spacing: -2px;
   text-align: center;
-  color: #ddd;
+  color: #e5e5e5;
 }
 
 .score.winner {
   color: #ffffff;
-  font-weight: 600;
+  font-weight: 300;
 }
+
+/* Center Status */
 
 .center-status {
   text-align: center;
-  font-size: 22px;
-  color: #aaa;
+  font-size: 18px;
+  font-weight: 400;
+  color: #9ca3af;
+  line-height: 1.4;
 }
+
+.live {
+  color: #22c55e;
+}
+
+.final {
+  color: #9ca3af;
+}
+
+.scheduled {
+  color: #3b82f6;
+}
+
+/* Team Info Row */
 
 .team-info-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  margin-top: 25px;
+  margin-top: 30px;
 }
 
 .team-info {
@@ -65,16 +104,39 @@ header {
 }
 
 .team-name {
-  font-size: 30px;
-  font-weight: 400;
-  color: #bbb;
+  font-size: 24px;
+  font-weight: 500;
+  color: #bfc4cc;
 }
 
 .winner-name .team-name {
-  color: #fff;
+  color: #ffffff;
   font-weight: 600;
 }
 
-.live { color: #22c55e; }
-.final { color: #aaa; }
-.scheduled { color: #3b82f6; }
+/* Mobile Optimization */
+
+@media (max-width: 600px) {
+
+  .score-row {
+    grid-template-columns: 60px 1fr 90px 1fr 60px;
+  }
+
+  .team-logo img {
+    height: 36px;
+    width: 36px;
+  }
+
+  .score {
+    font-size: 64px;
+  }
+
+  .team-name {
+    font-size: 18px;
+  }
+
+  .center-status {
+    font-size: 14px;
+  }
+
+}
