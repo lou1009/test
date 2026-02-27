@@ -1,37 +1,39 @@
 const scheduleDiv = document.getElementById("schedule");
 const updateTime = document.getElementById("update-time");
 
+/* NBA 中文對照 */
+
 const teamMap = {
-  "Atlanta Hawks": "老鷹",
-  "Boston Celtics": "塞爾提克",
-  "Brooklyn Nets": "籃網",
-  "Charlotte Hornets": "黃蜂",
-  "Chicago Bulls": "公牛",
-  "Cleveland Cavaliers": "騎士",
-  "Detroit Pistons": "活塞",
-  "Indiana Pacers": "溜馬",
-  "Miami Heat": "熱火",
-  "Milwaukee Bucks": "公鹿",
-  "New York Knicks": "尼克",
-  "Orlando Magic": "魔術",
-  "Philadelphia 76ers": "七六人",
-  "Toronto Raptors": "暴龍",
-  "Washington Wizards": "巫師",
-  "Dallas Mavericks": "獨行俠",
-  "Denver Nuggets": "金塊",
-  "Golden State Warriors": "勇士",
-  "Houston Rockets": "火箭",
-  "LA Clippers": "快艇",
-  "Los Angeles Lakers": "湖人",
-  "Memphis Grizzlies": "灰熊",
-  "Minnesota Timberwolves": "灰狼",
-  "New Orleans Pelicans": "鵜鶘",
-  "Oklahoma City Thunder": "雷霆",
-  "Phoenix Suns": "太陽",
-  "Portland Trail Blazers": "拓荒者",
-  "Sacramento Kings": "國王",
-  "San Antonio Spurs": "馬刺",
-  "Utah Jazz": "爵士"
+  "Atlanta Hawks": "亞特蘭大老鷹",
+  "Boston Celtics": "波士頓塞爾提克",
+  "Brooklyn Nets": "布魯克林籃網",
+  "Charlotte Hornets": "夏洛特黃蜂",
+  "Chicago Bulls": "芝加哥公牛",
+  "Cleveland Cavaliers": "克里夫蘭騎士",
+  "Detroit Pistons": "底特律活塞",
+  "Indiana Pacers": "印第安納溜馬",
+  "Miami Heat": "邁阿密熱火",
+  "Milwaukee Bucks": "密爾瓦基公鹿",
+  "New York Knicks": "紐約尼克",
+  "Orlando Magic": "奧蘭多魔術",
+  "Philadelphia 76ers": "費城七六人",
+  "Toronto Raptors": "多倫多暴龍",
+  "Washington Wizards": "華盛頓巫師",
+  "Dallas Mavericks": "達拉斯獨行俠",
+  "Denver Nuggets": "丹佛金塊",
+  "Golden State Warriors": "金州勇士",
+  "Houston Rockets": "休士頓火箭",
+  "LA Clippers": "洛杉磯快艇",
+  "Los Angeles Lakers": "洛杉磯湖人",
+  "Memphis Grizzlies": "曼菲斯灰熊",
+  "Minnesota Timberwolves": "明尼蘇達灰狼",
+  "New Orleans Pelicans": "紐奧良鵜鶘",
+  "Oklahoma City Thunder": "奧克拉荷馬雷霆",
+  "Phoenix Suns": "鳳凰城太陽",
+  "Portland Trail Blazers": "波特蘭拓荒者",
+  "Sacramento Kings": "沙加緬度國王",
+  "San Antonio Spurs": "聖安東尼奧馬刺",
+  "Utah Jazz": "猶他爵士"
 };
 
 function getTeamName(name) {
@@ -45,14 +47,14 @@ function getStatusClass(status) {
 }
 
 async function fetchSchedule() {
-  const res = await fetch(
-    `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard`
-  );
+
+  const res = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard");
   const data = await res.json();
 
   scheduleDiv.innerHTML = "";
 
   data.events.forEach(game => {
+
     const home = game.competitions[0].competitors.find(t => t.homeAway === "home");
     const away = game.competitions[0].competitors.find(t => t.homeAway === "away");
 
@@ -62,40 +64,31 @@ async function fetchSchedule() {
     scheduleDiv.innerHTML += `
       <div class="game-card">
 
-        <div class="score-row">
-          <div class="team-logo">
-            <img src="${away.team.logo}">
-          </div>
+        <div class="main-row">
 
-          <div class="score ${away.score > home.score ? 'winner' : ''}">
-            ${away.score || 0}
-          </div>
-
-          <div class="center-status ${statusClass}">
-            ${status}
-          </div>
-
-          <div class="score ${home.score > away.score ? 'winner' : ''}">
-            ${home.score || 0}
-          </div>
-
-          <div class="team-logo">
-            <img src="${home.team.logo}">
-          </div>
-        </div>
-
-        <div class="team-info-row">
-          <div class="team-info ${away.score > home.score ? 'winner-name' : ''}">
+          <div class="team-block">
+            <img src="${away.team.logo}" class="logo">
             <div class="team-name">
               ${getTeamName(away.team.displayName)}
             </div>
           </div>
 
-          <div class="team-info ${home.score > away.score ? 'winner-name' : ''}">
+          <div class="score-block">
+            <div class="score">${away.score || 0}</div>
+            <div class="score">${home.score || 0}</div>
+          </div>
+
+          <div class="team-block">
+            <img src="${home.team.logo}" class="logo">
             <div class="team-name">
               ${getTeamName(home.team.displayName)}
             </div>
           </div>
+
+        </div>
+
+        <div class="status ${statusClass}">
+          ${status}
         </div>
 
       </div>
