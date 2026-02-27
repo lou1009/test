@@ -52,8 +52,8 @@ header {
 }
 
 .team img {
-  height: 25px;
-  width: 25px;
+  height: 30px;
+  width: 30px;
   object-fit: contain;
 }
 
@@ -84,8 +84,8 @@ header {
   }
 
   .team img {
-    height: 12px;
-    width: 12px;
+    height: 20px;
+    width: 20px;
   }
 
   .team-name {
