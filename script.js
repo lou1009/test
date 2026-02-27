@@ -34,8 +34,6 @@ const teamMap = {
   "Utah Jazz": "爵士"
 };
 
-function getTeamName(name
-
 function getTeamName(name){
   return teamMap[name] || name;
 }
