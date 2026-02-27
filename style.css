@@ -1,110 +1,80 @@
 body {
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #111;
   color: white;
 }
 
 header {
   text-align: center;
   padding: 20px;
-  background: #1e293b;
+  background: linear-gradient(180deg,#1c1c1e,#111);
 }
-h1 { margin: 0; }
-#update-time { font-size: 14px; margin-top: 5px; }
 
-/* 比賽卡片 */
 .game-card {
-  background: #1e293b;
-  border-radius: 18px;
-  padding: 12px;
-  margin: 10px 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  background: linear-gradient(180deg,#1c1c1e,#111);
+  border-radius: 24px;
+  padding: 35px 20px;
+  margin: 25px 15px;
 }
 
-/* 四欄排列 */
-.teams-row {
+/* 上半部 */
+.score-row {
   display: grid;
-  grid-template-columns: 1fr 60px 60px 1fr;
+  grid-template-columns: 90px 1fr 140px 1fr 90px;
   align-items: center;
-  width: 100%;
-  gap: 10px;
 }
 
-/* 隊伍區塊 */
-.team-block {
+.team-logo {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.team-block img {
-  height: 30px; /* 桌面隊徽大小 */
-  width: auto;
-}
-.team-block .team-name {
-  font-size: 14px;
-  text-align: center;
-}
-
-/* 分數區塊 */
-.score-block {
-  display: flex;
-  align-items: center;
   justify-content: center;
-  font-size: 40px; /* 桌面分數 */
-  font-weight: bold;
 }
 
-/* 狀態文字在卡片底部 */
-.status {
-  margin-top: 8px;
-  font-size: 14px;
+.team-logo img {
+  height: 60px;
+  width: 60px;
+  object-fit: contain;
+}
+
+.score {
+  font-size: 82px;
+  font-weight: 300;
+  text-align: center;
+  color: #ddd;
+}
+
+.score.winner {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.center-status {
+  text-align: center;
+  font-size: 22px;
+  color: #aaa;
+}
+
+.team-info-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 25px;
+}
+
+.team-info {
   text-align: center;
 }
-.live { color: #22c55e; animation: blink 1s infinite; }
-.final { color: #94a3b8; }
-.scheduled { color: #facc15; }
 
-@keyframes blink {
-  0%, 50%, 100% { opacity: 1; }
-  25%, 75% { opacity: 0.3; }
+.team-name {
+  font-size: 30px;
+  font-weight: 400;
+  color: #bbb;
 }
 
-/* 分區戰績 */
-.standings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 15px;
+.winner-name .team-name {
+  color: #fff;
+  font-weight: 600;
 }
-.team-row {
-  background: #1e293b;
-  padding: 6px;
-  border-radius: 6px;
-  margin: 4px 0;
-}
-.playoff { background: #065f46; }
 
-/* 手機自適應 */
-@media (max-width: 600px) {
-  .team-block img { height: 24px; }
-  .team-block .team-name { font-size: 12px; }
-  .score-block { font-size: 28px; }
-
-  /* 手機改兩列排列 */
-  .teams-row { 
-    display: grid;
-    grid-template-columns: 1fr 1fr; 
-    gap: 10px;
-    margin-bottom: 5px;
-  }
-
-  /* 分數下排跨兩欄置中 */
-  .score-block { 
-    grid-column: span 2;
-    justify-self: center; 
-  }
-}
+.live { color: #22c55e; }
+.final { color: #aaa; }
+.scheduled { color: #3b82f6; }
