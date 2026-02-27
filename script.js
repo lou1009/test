@@ -2,7 +2,7 @@ const scheduleDiv = document.getElementById("schedule");
 const updateTime = document.getElementById("update-time");
 
 const teamMap = {
-   "Atlanta Hawks": "老鷹",
+  "Atlanta Hawks": "老鷹",
   "Boston Celtics": "塞爾提克",
   "Brooklyn Nets": "籃網",
   "Charlotte Hornets": "黃蜂",
