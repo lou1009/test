@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>LIVE Sports Player</title>
+<title>Live Player</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -16,7 +15,6 @@ body {
   font-family: Arial;
 }
 
-/* 播放器 */
 .video-box {
   position: relative;
   width: 100%;
@@ -29,7 +27,6 @@ video {
   height: 100%;
 }
 
-/* LIVE */
 .live {
   position: absolute;
   top: 10px;
@@ -45,7 +42,6 @@ video {
   50% {opacity: 0.4;}
 }
 
-/* 按鈕 */
 .list {
   display: flex;
   overflow-x: auto;
@@ -62,24 +58,8 @@ video {
   flex-shrink: 0;
 }
 
-/* 比分 */
 .score {
   padding: 10px;
-}
-
-.game {
-  border-bottom: 1px solid #1f2937;
-  padding: 8px 0;
-}
-
-.team {
-  display: flex;
-  justify-content: space-between;
-}
-
-.live-score {
-  color: red;
-  animation: blink 1s infinite;
 }
 </style>
 </head>
@@ -92,62 +72,78 @@ video {
   <video id="video" controls autoplay muted playsinline></video>
 </div>
 
-<!-- 🔘 7個來源 -->
+<!-- 🔘 動態來源 -->
 <div class="list" id="list"></div>
 
 <!-- 📊 比分 -->
 <div class="score" id="score"></div>
 
 <script>
+let hls;
 const video = document.getElementById("video");
 
-const sources = [
-  "https://play1nm.hnyongshun.cn/live/bdf3e5442ed29ff31b23b47491760b27.m3u8",
+/* =========================
+   🎯 初始來源
+========================= */
+let sources = [
+  "https://play1nm.hnyongshun.cn/live/bdf3e5442ef28ff31b23b47491760b27.m3u8",
   "https://play1nm.hnyongshun.cn/live/5ac950a0f8301ff31b23b47491760b27.m3u8",
-  "https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8",
-  "https://play.88player.top/m3u8.html?url=https://play1nm.hnyongshun.cn/live/5ac950a0f8301ff31b23b47491760b27.m3u8",
-  "https://play.88player.top/m3u8.html?url=https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8",
-  "http://play.sportsteam368.com/play/kbs.html?id=vl&id2=?assdd",
-  "https://iptv345.com/?act=play&token=44811894c1344b5e905e18f9c10398b1&tid=ty&id=24"
+  "https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8"
 ];
 
-let hls;
-
-// 🎥 播放
+/* =========================
+   🎥 播放
+========================= */
 function play(url) {
-
   if (hls) hls.destroy();
 
-  // iframe 類直接開（無法 HLS）
-  if (url.includes("iptv345") || url.includes("sportsteam") || url.includes("88player")) {
-    window.open(url, "_blank");
-    return;
-  }
-
-  if (Hls.isSupported()) {
-    hls = new Hls();
-    hls.loadSource(url);
-    hls.attachMedia(video);
-  } else {
-    video.src = url;
-  }
+  hls = new Hls();
+  hls.loadSource(url);
+  hls.attachMedia(video);
 }
 
-// 🔘 按鈕
-const list = document.getElementById("list");
+/* =========================
+   🔘 生成按鈕
+========================= */
+function renderList() {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
 
-sources.forEach((s, i) => {
-  const btn = document.createElement("button");
-  btn.className = "btn";
-  btn.innerText = "源 " + (i+1);
-  btn.onclick = () => play(s);
-  list.appendChild(btn);
-});
+  sources.forEach((s, i) => {
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.innerText = "源 " + (i + 1);
+    btn.onclick = () => play(s);
+    list.appendChild(btn);
+  });
+}
 
-// 預設第一個
-play(sources[0]);
+/* =========================
+   🔄 更新來源（核心）
+   每30分鐘跑一次
+========================= */
+function updateSources() {
+  console.log("🔄 更新直播源清單");
 
-// 📊 ESPN比分
+  // 👉 這裡模擬「新增或更新」
+  const newSources = [
+    "https://play1nm.hnyongshun.cn/live/bdf3e5442ef28ff31b23b47491760b27.m3u8",
+    "https://play1nm.hnyongshun.cn/live/5ac950a0f8301ff31b23b47491760b27.m3u8",
+    "https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8",
+
+    // 👉 假設新增來源（未來你可以替換成 API）
+    "https://play1nm.hnyongshun.cn/live/c22ac2f2fbae329be1dd675554c39717.m3u8"
+  ];
+
+  // 🔥 去重（避免重複）
+  sources = [...new Set(newSources)];
+
+  renderList();
+}
+
+/* =========================
+   📊 ESPN比分
+========================= */
 async function loadScore() {
   try {
     const res = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard");
@@ -159,21 +155,13 @@ async function loadScore() {
       const c = g.competitions[0];
       const home = c.competitors.find(t => t.homeAway === "home");
       const away = c.competitors.find(t => t.homeAway === "away");
-      const live = g.status.type.state === "in";
 
       html += `
-        <div class="game">
-          <div class="team">
-            <div>${away.team.displayName}</div>
-            <div class="${live ? "live-score" : ""}">${away.score}</div>
-          </div>
-
-          <div class="team">
-            <div>${home.team.displayName}</div>
-            <div class="${live ? "live-score" : ""}">${home.score}</div>
-          </div>
-
-          <div>${g.status.type.shortDetail}</div>
+        <div>
+          ${away.team.displayName} ${away.score}
+          <br>
+          ${home.team.displayName} ${home.score}
+          <hr>
         </div>
       `;
     });
@@ -185,8 +173,23 @@ async function loadScore() {
   }
 }
 
+/* =========================
+   🚀 初始化
+========================= */
+renderList();
+play(sources[0]);
 loadScore();
+
+/* =========================
+   ⏱ 每30分鐘更新來源
+========================= */
+setInterval(updateSources, 30 * 60 * 1000);
+
+/* =========================
+   ⏱ 比分更新
+========================= */
 setInterval(loadScore, 10000);
+
 </script>
 
 </body>
