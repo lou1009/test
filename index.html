@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Live Player + History + Scores</title>
+<title>Clean Player + History + Scores</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -41,7 +41,6 @@ button {
 
 /* 播放器 */
 .video-box {
-  position: relative;
   width: 100%;
   height: 220px;
   background: black;
@@ -50,21 +49,6 @@ button {
 video {
   width: 100%;
   height: 100%;
-}
-
-.live {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: red;
-  padding: 5px 10px;
-  font-size: 12px;
-  border-radius: 6px;
-  animation: blink 1s infinite;
-}
-
-@keyframes blink {
-  50% {opacity: 0.4;}
 }
 
 /* 歷史按鈕 */
@@ -113,7 +97,6 @@ video {
 
 <!-- 🎥 播放器 -->
 <div class="video-box">
-  <div class="live">LIVE</div>
   <video id="video" controls autoplay muted playsinline></video>
 </div>
 
@@ -132,7 +115,6 @@ const HISTORY_KEY = "stream_history";
 function playStream(url) {
   if (!url) return;
 
-  // 存歷史
   saveHistory(url);
   renderHistory();
 
@@ -169,13 +151,9 @@ function getHistory() {
 function saveHistory(url) {
   let list = getHistory();
 
-  // 去重
   list = list.filter(u => u !== url);
-
-  // 最新放前面
   list.unshift(url);
 
-  // 只保留5個
   if (list.length > 5) list = list.slice(0, 5);
 
   localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
@@ -190,7 +168,7 @@ function renderHistory() {
   list.forEach(url => {
     const btn = document.createElement("button");
     btn.className = "h-btn";
-    btn.innerText = "播放1";
+    btn.innerText = "播放";
     btn.onclick = () => playStream(url);
     box.appendChild(btn);
   });
