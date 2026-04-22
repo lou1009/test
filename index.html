@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>比分</title>
+<title>LIVE Sports Player</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -17,69 +17,59 @@ body {
 }
 
 /* 播放器 */
-.video-container {
+.video-box {
   position: relative;
   width: 100%;
   height: 220px;
   background: black;
 }
 
-video, iframe {
+video {
   width: 100%;
   height: 100%;
 }
 
 /* LIVE */
-.live-badge {
+.live {
   position: absolute;
   top: 10px;
   left: 10px;
   background: red;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 5px 10px;
   font-size: 12px;
-}
-
-.live-dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background: white;
-  border-radius: 50%;
-  margin-right: 5px;
+  border-radius: 6px;
   animation: blink 1s infinite;
 }
 
 @keyframes blink {
-  50% {opacity:0;}
+  50% {opacity: 0.4;}
 }
 
-/* 切換 */
-.source-list {
+/* 按鈕 */
+.list {
   display: flex;
   overflow-x: auto;
-  background: #020617;
+  background: #111827;
 }
 
-.source-btn {
+.btn {
   padding: 10px;
-  border: none;
-  background: #1e293b;
-  color: white;
   margin: 5px;
+  background: #1f2937;
+  border: none;
+  color: white;
   border-radius: 6px;
   flex-shrink: 0;
-  font-size: 12px;
 }
 
 /* 比分 */
-.score-board {
+.score {
   padding: 10px;
 }
 
 .game {
-  border-bottom: 1px solid #1e293b;
-  padding: 10px 0;
+  border-bottom: 1px solid #1f2937;
+  padding: 8px 0;
 }
 
 .team {
@@ -87,13 +77,9 @@ video, iframe {
   justify-content: space-between;
 }
 
-.score.live {
+.live-score {
   color: red;
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  50% {opacity:0.5;}
+  animation: blink 1s infinite;
 }
 </style>
 </head>
@@ -101,67 +87,65 @@ video, iframe {
 <body>
 
 <!-- 🎥 播放器 -->
-<div class="video-container">
-  <div class="live-badge"><span class="live-dot"></span>LIVE</div>
-
-  <video id="video" controls autoplay muted playsinline webkit-playsinline></video>
-  <iframe id="iframePlayer" style="display:none;" allowfullscreen></iframe>
+<div class="video-box">
+  <div class="live">LIVE</div>
+  <video id="video" controls autoplay muted playsinline></video>
 </div>
 
-<!-- 🔘 來源切換 -->
-<div class="source-list">
-  <button class="source-btn" onclick="playM3U8()">主源</button>
-
-  <button class="source-btn" onclick="playIframe(1)">備1</button>
-  <button class="source-btn" onclick="playIframe(2)">備2</button>
-  <button class="source-btn" onclick="playIframe(3)">備3</button>
-  <button class="source-btn" onclick="playIframe(4)">備4</button>
-  <button class="source-btn" onclick="playIframe(5)">備5</button>
-  <button class="source-btn" onclick="playIframe(6)">備6</button>
-</div>
+<!-- 🔘 7個來源 -->
+<div class="list" id="list"></div>
 
 <!-- 📊 比分 -->
-<div class="score-board" id="scoreBoard"></div>
+<div class="score" id="score"></div>
 
 <script>
 const video = document.getElementById("video");
-const iframe = document.getElementById("iframePlayer");
 
-const mainSrc = "https://play1nm.hnyongshun.cn/live/bdf3e5442ed29fc2e9c9cc05b4947dc2.m3u8";
-
-// 🔥 全部 iframe 源（已加 88player）
-const iframeSources = [
-  "http://play.sportsteam368.com/play/kbs.html?id=vl&id2=?assdd",
-  "https://iptv345.com/?act=play&token=44811894c1344b5e905e18f9c10398b1&tid=ty&id=24",
-  "https://iptv345.com/?act=play&token=532cc9f38272b7657e1f287fead8f866&tid=ty&id=28",
-  "https://iptv345.com/?act=play&token=2a634bece865eab6757000e27a794be7&tid=ty&id=23",
+const sources = [
+  "https://play1nm.hnyongshun.cn/live/bdf3e5442ed29ff31b23b47491760b27.m3u8",
+  "https://play1nm.hnyongshun.cn/live/5ac950a0f8301ff31b23b47491760b27.m3u8",
+  "https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8",
   "https://play.88player.top/m3u8.html?url=https://play1nm.hnyongshun.cn/live/5ac950a0f8301ff31b23b47491760b27.m3u8",
-  "https://play.88player.top/m3u8.html?url=https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8"
+  "https://play.88player.top/m3u8.html?url=https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8",
+  "http://play.sportsteam368.com/play/kbs.html?id=vl&id2=?assdd",
+  "https://iptv345.com/?act=play&token=44811894c1344b5e905e18f9c10398b1&tid=ty&id=24"
 ];
 
-// 🎥 主源
-function playM3U8() {
-  iframe.style.display = "none";
-  video.style.display = "block";
+let hls;
+
+// 🎥 播放
+function play(url) {
+
+  if (hls) hls.destroy();
+
+  // iframe 類直接開（無法 HLS）
+  if (url.includes("iptv345") || url.includes("sportsteam") || url.includes("88player")) {
+    window.open(url, "_blank");
+    return;
+  }
 
   if (Hls.isSupported()) {
-    const hls = new Hls();
-    hls.loadSource(mainSrc);
+    hls = new Hls();
+    hls.loadSource(url);
     hls.attachMedia(video);
   } else {
-    video.src = mainSrc;
+    video.src = url;
   }
 }
 
-// 🎥 iframe
-function playIframe(i) {
-  video.style.display = "none";
-  iframe.style.display = "block";
-  iframe.src = iframeSources[i-1];
-}
+// 🔘 按鈕
+const list = document.getElementById("list");
 
-// 預設
-playM3U8();
+sources.forEach((s, i) => {
+  const btn = document.createElement("button");
+  btn.className = "btn";
+  btn.innerText = "源 " + (i+1);
+  btn.onclick = () => play(s);
+  list.appendChild(btn);
+});
+
+// 預設第一個
+play(sources[0]);
 
 // 📊 ESPN比分
 async function loadScore() {
@@ -171,33 +155,33 @@ async function loadScore() {
 
     let html = "";
 
-    data.events.forEach(game => {
-      const comp = game.competitions[0];
-      const home = comp.competitors.find(t => t.homeAway === "home");
-      const away = comp.competitors.find(t => t.homeAway === "away");
-      const isLive = game.status.type.state === "in";
+    data.events.forEach(g => {
+      const c = g.competitions[0];
+      const home = c.competitors.find(t => t.homeAway === "home");
+      const away = c.competitors.find(t => t.homeAway === "away");
+      const live = g.status.type.state === "in";
 
       html += `
         <div class="game">
           <div class="team">
             <div>${away.team.displayName}</div>
-            <div class="score ${isLive ? "live" : ""}">${away.score}</div>
+            <div class="${live ? "live-score" : ""}">${away.score}</div>
           </div>
 
           <div class="team">
             <div>${home.team.displayName}</div>
-            <div class="score ${isLive ? "live" : ""}">${home.score}</div>
+            <div class="${live ? "live-score" : ""}">${home.score}</div>
           </div>
 
-          <div>${game.status.type.shortDetail}</div>
+          <div>${g.status.type.shortDetail}</div>
         </div>
       `;
     });
 
-    document.getElementById("scoreBoard").innerHTML = html;
+    document.getElementById("score").innerHTML = html;
 
   } catch {
-    document.getElementById("scoreBoard").innerHTML = "比分讀取失敗";
+    document.getElementById("score").innerHTML = "比分載入失敗";
   }
 }
 
