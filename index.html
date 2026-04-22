@@ -1,22 +1,188 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NBA 即時比分</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>NBA 直播 + 即時比分</title>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+
+<style>
+body {
+  margin: 0;
+  background: #0f172a;
+  color: white;
+  font-family: Arial;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  background: black;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+}
+
+.live-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: red;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: white;
+  border-radius: 50%;
+  margin-right: 5px;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  50% {opacity:0;}
+}
+
+.score-board {
+  padding: 15px;
+}
+
+.game {
+  border-bottom: 1px solid #1e293b;
+  padding: 10px 0;
+}
+
+.team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.team-left {
+  display: flex;
+  align-items: center;
+}
+
+.team img {
+  width: 28px;
+  margin-right: 8px;
+}
+
+.score {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.live-score {
+  color: #ff3b3b;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  50% {opacity:0.5;}
+}
+
+.status {
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 5px;
+}
+</style>
 </head>
+
 <body>
 
-  <header>
-    <h1>一定贏 NBA 即時比分</h1>
-    <p id="update-time"></p>
-  </header>
+<!-- 🎥 直播 -->
+<div class="video-container">
+  <div class="live-badge">
+    <div class="live-dot"></div> LIVE
+  </div>
+  <video id="video" controls autoplay muted playsinline></video>
+</div>
 
-  <section>
-    <div id="schedule"></div>
-  </section>
+<!-- 📊 比分 -->
+<div class="score-board" id="scoreBoard"></div>
 
-  <script src="script.js"></script>
+<script>
+const videoSrc = "https://play1nm.hnyongshun.cn/live/bdf3e5442ed29fc2e9c9cc05b4947dc2.m3u8";
+const video = document.getElementById("video");
+
+// HLS 播放
+if (Hls.isSupported()) {
+  const hls = new Hls();
+  hls.loadSource(videoSrc);
+  hls.attachMedia(video);
+} else {
+  video.src = videoSrc;
+}
+
+// 🔥 真實 NBA 即時比分
+async function loadScore() {
+  try {
+    const res = await fetch("https://cdn.nba.com/static/json/liveData/scoreboard/todaysScoreboard_00.json");
+    const data = await res.json();
+
+    let html = "";
+
+    data.scoreboard.games.forEach(game => {
+
+      const home = game.homeTeam;
+      const away = game.awayTeam;
+
+      const isLive = game.gameStatus === 2;
+
+      html += `
+        <div class="game">
+          <div class="team">
+            <div class="team-left">
+              <img src="https://cdn.nba.com/logos/nba/${away.teamId}/global/L/logo.svg">
+              ${away.teamName}
+            </div>
+            <div class="score ${isLive ? "live-score" : ""}">
+              ${away.score}
+            </div>
+          </div>
+
+          <div class="team">
+            <div class="team-left">
+              <img src="https://cdn.nba.com/logos/nba/${home.teamId}/global/L/logo.svg">
+              ${home.teamName}
+            </div>
+            <div class="score ${isLive ? "live-score" : ""}">
+              ${home.score}
+            </div>
+          </div>
+
+          <div class="status">
+            ${game.gameStatusText}
+          </div>
+        </div>
+      `;
+    });
+
+    document.getElementById("scoreBoard").innerHTML = html;
+
+  } catch (e) {
+    document.getElementById("scoreBoard").innerHTML = "讀取比分失敗";
+  }
+}
+
+// 每10秒更新（真正即時）
+loadScore();
+setInterval(loadScore, 10000);
+
+</script>
+
 </body>
 </html>
