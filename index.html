@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>直播 + ESPN 即時比分</title>
+<title>直播 + 多源切換 + ESPN比分</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -16,7 +16,7 @@ body {
   font-family: Arial;
 }
 
-/* 🎥 播放器 */
+/* 播放器 */
 .video-container {
   position: relative;
   width: 100%;
@@ -24,7 +24,7 @@ body {
   background: black;
 }
 
-video {
+video, iframe {
   width: 100%;
   height: 100%;
 }
@@ -38,13 +38,12 @@ video {
   padding: 6px 10px;
   border-radius: 6px;
   font-size: 12px;
-  display: flex;
-  align-items: center;
 }
 
 .live-dot {
-  width: 8px;
-  height: 8px;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
   background: white;
   border-radius: 50%;
   margin-right: 5px;
@@ -55,16 +54,23 @@ video {
   50% {opacity:0;}
 }
 
-/* 點擊提示 */
-.tap-hint {
-  position: absolute;
-  bottom: 10px;
-  width: 100%;
-  text-align: center;
-  font-size: 12px;
+/* 切換按鈕 */
+.source-list {
+  display: flex;
+  overflow-x: auto;
+  background: #020617;
 }
 
-/* 📊 比分 */
+.source-btn {
+  padding: 10px;
+  border: none;
+  background: #1e293b;
+  color: white;
+  margin: 5px;
+  border-radius: 6px;
+}
+
+/* 比分 */
 .score-board {
   padding: 10px;
 }
@@ -77,85 +83,82 @@ video {
 .team {
   display: flex;
   justify-content: space-between;
-  margin: 5px 0;
 }
 
-.score {
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.live-score {
-  color: #ff3b3b;
+.score.live {
+  color: red;
   animation: pulse 1s infinite;
 }
 
 @keyframes pulse {
   50% {opacity:0.5;}
 }
-
-.status {
-  text-align: center;
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-/* 🔥 全螢幕 */
-video:-webkit-full-screen {
-  width: 100%;
-  height: 100%;
-}
 </style>
 </head>
 
 <body>
 
-<!-- 🎥 直播 -->
+<!-- 🎥 播放器 -->
 <div class="video-container" id="playerBox">
-  <div class="live-badge">
-    <div class="live-dot"></div> LIVE
-  </div>
+  <div class="live-badge"><span class="live-dot"></span>LIVE</div>
 
-  <video 
-    id="video"
-    controls
-    autoplay
-    muted
-    playsinline
-    webkit-playsinline
-  ></video>
+  <!-- 主播放器 -->
+  <video id="video" controls autoplay muted playsinline webkit-playsinline></video>
 
-  <div class="tap-hint">點擊進入全螢幕</div>
+  <!-- iframe播放器 -->
+  <iframe id="iframePlayer" style="display:none;" allowfullscreen></iframe>
 </div>
 
-<!-- 📊 ESPN 比分 -->
+<!-- 🔘 切換源 -->
+<div class="source-list">
+  <button class="source-btn" onclick="playM3U8()">主源</button>
+  <button class="source-btn" onclick="playIframe(1)">備源1</button>
+  <button class="source-btn" onclick="playIframe(2)">備源2</button>
+  <button class="source-btn" onclick="playIframe(3)">備源3</button>
+</div>
+
+<!-- 📊 比分 -->
 <div class="score-board" id="scoreBoard"></div>
 
 <script>
-// 🎥 m3u8
-const videoSrc = "https://play1nm.hnyongshun.cn/live/bdf3e5442ed29fc2e9c9cc05b4947dc2.m3u8";
 const video = document.getElementById("video");
-const playerBox = document.getElementById("playerBox");
+const iframe = document.getElementById("iframePlayer");
 
-// HLS
-if (Hls.isSupported()) {
-  const hls = new Hls();
-  hls.loadSource(videoSrc);
-  hls.attachMedia(video);
-} else {
-  video.src = videoSrc;
+// 🎥 主 m3u8
+const mainSrc = "https://play1nm.hnyongshun.cn/live/bdf3e5442ed29fc2e9c9cc05b4947dc2.m3u8";
+
+// 🎥 iframe 源
+const iframeSources = [
+  "http://play.sportsteam368.com/play/kbs.html?id=vl&id2=?assdd",
+  "https://iptv345.com/?act=play&token=44811894c1344b5e905e18f9c10398b1&tid=ty&id=24",
+  "https://iptv345.com/?act=play&token=532cc9f38272b7657e1f287fead8f866&tid=ty&id=28"
+];
+
+// 🔥 播放 m3u8
+function playM3U8() {
+  iframe.style.display = "none";
+  video.style.display = "block";
+
+  if (Hls.isSupported()) {
+    const hls = new Hls();
+    hls.loadSource(mainSrc);
+    hls.attachMedia(video);
+  } else {
+    video.src = mainSrc;
+  }
 }
 
-// 🔥 點擊 → 全螢幕（iPhone 必備）
-playerBox.addEventListener("click", () => {
-  if (video.webkitEnterFullscreen) {
-    video.webkitEnterFullscreen();
-  } else if (playerBox.requestFullscreen) {
-    playerBox.requestFullscreen();
-  }
-});
+// 🔥 播放 iframe
+function playIframe(i) {
+  video.style.display = "none";
+  iframe.style.display = "block";
+  iframe.src = iframeSources[i-1];
+}
 
-// 📊 ESPN 即時比分
+// 預設主源
+playM3U8();
+
+// 📊 ESPN比分
 async function loadScore() {
   try {
     const res = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard");
@@ -164,47 +167,37 @@ async function loadScore() {
     let html = "";
 
     data.events.forEach(game => {
-
       const comp = game.competitions[0];
       const home = comp.competitors.find(t => t.homeAway === "home");
       const away = comp.competitors.find(t => t.homeAway === "away");
-
       const isLive = game.status.type.state === "in";
 
       html += `
         <div class="game">
           <div class="team">
             <div>${away.team.displayName}</div>
-            <div class="score ${isLive ? "live-score" : ""}">
-              ${away.score}
-            </div>
+            <div class="score ${isLive ? "live" : ""}">${away.score}</div>
           </div>
 
           <div class="team">
             <div>${home.team.displayName}</div>
-            <div class="score ${isLive ? "live-score" : ""}">
-              ${home.score}
-            </div>
+            <div class="score ${isLive ? "live" : ""}">${home.score}</div>
           </div>
 
-          <div class="status">
-            ${game.status.type.shortDetail}
-          </div>
+          <div>${game.status.type.shortDetail}</div>
         </div>
       `;
     });
 
     document.getElementById("scoreBoard").innerHTML = html;
 
-  } catch (e) {
-    document.getElementById("scoreBoard").innerHTML = "ESPN 讀取失敗";
+  } catch {
+    document.getElementById("scoreBoard").innerHTML = "比分讀取失敗";
   }
 }
 
-// 🔄 每10秒更新
 loadScore();
 setInterval(loadScore, 10000);
-
 </script>
 
 </body>
