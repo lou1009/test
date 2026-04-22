@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Player</title>
+
+<title>Live Player + History + Scores</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -15,6 +16,30 @@ body {
   font-family: Arial;
 }
 
+/* 輸入 */
+.input-box {
+  display: flex;
+  padding: 10px;
+  background: #111827;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+}
+
+button {
+  margin-left: 10px;
+  padding: 10px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+/* 播放器 */
 .video-box {
   position: relative;
   width: 100%;
@@ -42,29 +67,49 @@ video {
   50% {opacity: 0.4;}
 }
 
-.list {
+/* 歷史按鈕 */
+.history {
   display: flex;
   overflow-x: auto;
-  background: #111827;
-}
-
-.btn {
-  padding: 10px;
-  margin: 5px;
   background: #1f2937;
-  border: none;
-  color: white;
-  border-radius: 6px;
-  flex-shrink: 0;
+  padding: 8px;
 }
 
-.score {
+.h-btn {
+  flex-shrink: 0;
+  margin-right: 8px;
+  padding: 8px 10px;
+  background: #374151;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+}
+
+/* 比分 */
+.score-box {
   padding: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.match {
+  padding: 8px 0;
+  border-bottom: 1px solid #1f2937;
 }
 </style>
 </head>
 
 <body>
+
+<!-- 🔗 輸入 -->
+<div class="input-box">
+  <input id="url" placeholder="輸入 m3u8 URL">
+  <button onclick="playInput()">播放</button>
+</div>
+
+<!-- 🕘 歷史 -->
+<div class="history" id="history"></div>
 
 <!-- 🎥 播放器 -->
 <div class="video-box">
@@ -72,124 +117,125 @@ video {
   <video id="video" controls autoplay muted playsinline></video>
 </div>
 
-<!-- 🔘 動態來源 -->
-<div class="list" id="list"></div>
-
 <!-- 📊 比分 -->
-<div class="score" id="score"></div>
+<div class="score-box" id="scores">載入比分中...</div>
 
 <script>
 let hls;
 const video = document.getElementById("video");
 
-/* =========================
-   🎯 初始來源
-========================= */
-let sources = [
-  "https://play1nm.hnyongshun.cn/live/bdf3e5442ef28ff31b23b47491760b27.m3u8",
-  "https://play1nm.hnyongshun.cn/live/5ac950a0f8301ff31b23b47491760b27.m3u8",
-  "https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8"
-];
+const HISTORY_KEY = "stream_history";
 
 /* =========================
    🎥 播放
 ========================= */
-function play(url) {
-  if (hls) hls.destroy();
+function playStream(url) {
+  if (!url) return;
 
-  hls = new Hls();
-  hls.loadSource(url);
-  hls.attachMedia(video);
+  // 存歷史
+  saveHistory(url);
+  renderHistory();
+
+  if (hls) {
+    hls.destroy();
+    hls = null;
+  }
+
+  if (url.includes(".m3u8")) {
+    if (Hls.isSupported()) {
+      hls = new Hls();
+      hls.loadSource(url);
+      hls.attachMedia(video);
+    } else {
+      video.src = url;
+    }
+  } else {
+    video.src = url;
+  }
+}
+
+function playInput() {
+  const url = document.getElementById("url").value.trim();
+  playStream(url);
 }
 
 /* =========================
-   🔘 生成按鈕
+   🕘 歷史記錄（最多5個）
 ========================= */
-function renderList() {
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+function getHistory() {
+  return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+}
 
-  sources.forEach((s, i) => {
+function saveHistory(url) {
+  let list = getHistory();
+
+  // 去重
+  list = list.filter(u => u !== url);
+
+  // 最新放前面
+  list.unshift(url);
+
+  // 只保留5個
+  if (list.length > 5) list = list.slice(0, 5);
+
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+}
+
+function renderHistory() {
+  const box = document.getElementById("history");
+  const list = getHistory();
+
+  box.innerHTML = "";
+
+  list.forEach(url => {
     const btn = document.createElement("button");
-    btn.className = "btn";
-    btn.innerText = "源 " + (i + 1);
-    btn.onclick = () => play(s);
-    list.appendChild(btn);
+    btn.className = "h-btn";
+    btn.innerText = "播放1";
+    btn.onclick = () => playStream(url);
+    box.appendChild(btn);
   });
 }
 
 /* =========================
-   🔄 更新來源（核心）
-   每30分鐘跑一次
+   📊 ESPN 比分
 ========================= */
-function updateSources() {
-  console.log("🔄 更新直播源清單");
-
-  // 👉 這裡模擬「新增或更新」
-  const newSources = [
-    "https://play1nm.hnyongshun.cn/live/bdf3e5442ef28ff31b23b47491760b27.m3u8",
-    "https://play1nm.hnyongshun.cn/live/5ac950a0f8301ff31b23b47491760b27.m3u8",
-    "https://play1nm.hnyongshun.cn/live/044738dfef28c9ae1ccbc6e3562961c0.m3u8",
-
-    // 👉 假設新增來源（未來你可以替換成 API）
-    "https://play1nm.hnyongshun.cn/live/c22ac2f2fbae329be1dd675554c39717.m3u8"
-  ];
-
-  // 🔥 去重（避免重複）
-  sources = [...new Set(newSources)];
-
-  renderList();
-}
-
-/* =========================
-   📊 ESPN比分
-========================= */
-async function loadScore() {
+async function loadScores() {
   try {
-    const res = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard");
+    const res = await fetch(
+      "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
+    );
+
     const data = await res.json();
 
     let html = "";
 
-    data.events.forEach(g => {
-      const c = g.competitions[0];
+    data.events.forEach(game => {
+      const c = game.competitions[0];
       const home = c.competitors.find(t => t.homeAway === "home");
       const away = c.competitors.find(t => t.homeAway === "away");
 
       html += `
-        <div>
-          ${away.team.displayName} ${away.score}
+        <div class="match">
+          🏀 ${away.team.displayName} ${away.score}
           <br>
-          ${home.team.displayName} ${home.score}
-          <hr>
+          🏠 ${home.team.displayName} ${home.score}
         </div>
       `;
     });
 
-    document.getElementById("score").innerHTML = html;
+    document.getElementById("scores").innerHTML = html;
 
   } catch {
-    document.getElementById("score").innerHTML = "比分載入失敗";
+    document.getElementById("scores").innerHTML = "比分載入失敗";
   }
 }
 
 /* =========================
    🚀 初始化
 ========================= */
-renderList();
-play(sources[0]);
-loadScore();
-
-/* =========================
-   ⏱ 每30分鐘更新來源
-========================= */
-setInterval(updateSources, 30 * 60 * 1000);
-
-/* =========================
-   ⏱ 比分更新
-========================= */
-setInterval(loadScore, 10000);
-
+renderHistory();
+loadScores();
+setInterval(loadScores, 10000);
 </script>
 
 </body>
