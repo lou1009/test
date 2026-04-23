@@ -51,7 +51,7 @@ video {
   height: 100%;
 }
 
-/* 歷史按鈕 */
+/* 歷史 */
 .history {
   display: flex;
   overflow-x: auto;
@@ -62,12 +62,12 @@ video {
 .h-btn {
   flex-shrink: 0;
   margin-right: 8px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   background: #374151;
   border: none;
   border-radius: 6px;
   color: white;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 /* 比分 */
@@ -110,7 +110,7 @@ const video = document.getElementById("video");
 const HISTORY_KEY = "stream_history";
 
 /* =========================
-   🎥 播放
+   🎥 播放（純淨版）
 ========================= */
 function playStream(url) {
   if (!url) return;
@@ -136,13 +136,21 @@ function playStream(url) {
   }
 }
 
+/* =========================
+   📥 輸入播放
+========================= */
 function playInput() {
-  const url = document.getElementById("url").value.trim();
+  const input = document.getElementById("url");
+  const url = input.value.trim();
+
   playStream(url);
+
+  // ✅ 清空輸入框
+  input.value = "";
 }
 
 /* =========================
-   🕘 歷史記錄（最多5個）
+   🕘 歷史（5個）
 ========================= */
 function getHistory() {
   return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
@@ -165,11 +173,15 @@ function renderHistory() {
 
   box.innerHTML = "";
 
-  list.forEach(url => {
+  list.forEach((url, index) => {
     const btn = document.createElement("button");
     btn.className = "h-btn";
-    btn.innerText = "播放";
+
+    // ✅ 改成 1~5
+    btn.innerText = index + 1;
+
     btn.onclick = () => playStream(url);
+
     box.appendChild(btn);
   });
 }
@@ -194,9 +206,9 @@ async function loadScores() {
 
       html += `
         <div class="match">
-          🏀 ${away.team.displayName} ${away.score}
+          客 ${away.team.displayName} ${away.score}
           <br>
-          🏠 ${home.team.displayName} ${home.score}
+          主 ${home.team.displayName} ${home.score}
         </div>
       `;
     });
