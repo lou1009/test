@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>播放器 + 全源解析</title>
+<title>全能播放器 + ESPN比分</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
-body { margin:0; background:#0f172a; color:white; font-family:Arial;}
+body { margin:0; background:#0f172a; color:white; font-family:Arial; }
 
 /* 輸入 */
 .input-box {
@@ -55,11 +55,10 @@ button {
   color:white;
 }
 
-/* 解析區 */
+/* 解析 */
 .parse-box {
   padding:10px;
   background:#020617;
-  border-top:1px solid #1f2937;
 }
 .result-item {
   background:#111827;
@@ -76,13 +75,18 @@ button {
   border:none;
   border-radius:4px;
   color:white;
-  font-size:12px;
 }
 
 /* 比分 */
 .score-box {
   padding:10px;
-  font-size:14px;
+  font-size:13px;
+}
+.league {
+  margin-top:10px;
+  padding-top:5px;
+  border-top:1px solid #374151;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -96,7 +100,6 @@ button {
 </div>
 
 <div class="history" id="history"></div>
-
 <div class="video-box" id="playerBox"></div>
 
 <!-- 🔍 解析 -->
@@ -105,11 +108,10 @@ button {
     <input id="parseUrl" placeholder="貼網址 → 列出全部源">
     <button onclick="handleParse()">解析</button>
   </div>
-
   <div id="resultList"></div>
 </div>
 
-<!-- 📊 ESPN 比分 -->
+<!-- 📊 ESPN -->
 <div class="score-box" id="scores">載入比分...</div>
 
 <script>
@@ -117,13 +119,12 @@ let hls;
 const HISTORY_KEY = "stream_history";
 
 /* =========================
-   🎥 播放
+   🎥 播放（40秒穩定版）
 ========================= */
 function playInput() {
   const input = document.getElementById("url");
   const url = input.value.trim();
   if (!url) return;
-
   play(url);
   input.value = "";
 }
@@ -135,26 +136,59 @@ function play(url) {
   const box = document.getElementById("playerBox");
 
   if (url.includes(".m3u8")) {
+
     box.innerHTML = `<video id="video" controls autoplay muted playsinline style="width:100%;height:100%;"></video>`;
     const video = document.getElementById("video");
 
-    if (hls) {
-      hls.destroy();
-      hls = null;
-    }
+    if (hls) { hls.destroy(); }
 
     if (Hls.isSupported()) {
-      hls = new Hls();
+
+      hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: false,
+        maxBufferLength: 60,
+        maxMaxBufferLength: 120,
+        liveSyncDuration: 30,
+        liveMaxLatencyDuration: 50
+      });
+
       hls.loadSource(url);
       hls.attachMedia(video);
+
+      hls.on(Hls.Events.LEVEL_LOADED, function(event, data) {
+        if (data.details.live) {
+          video.currentTime = data.details.edge - 40;
+        }
+      });
+
+      setInterval(() => {
+        if (!video.duration) return;
+
+        let delay = video.duration - video.currentTime;
+
+        if (delay < 30) {
+          video.currentTime = video.duration - 40;
+        }
+
+        if (delay > 55) {
+          video.playbackRate = 1.05;
+        } else {
+          video.playbackRate = 1;
+        }
+
+      }, 5000);
+
+      video.addEventListener("waiting", () => {
+        video.currentTime = video.duration - 35;
+      });
+
     } else {
       video.src = url;
     }
 
   } else {
-    box.innerHTML = `
-      <iframe src="${url}" frameborder="0" allowfullscreen style="width:100%;height:100%;"></iframe>
-    `;
+    box.innerHTML = `<iframe src="${url}" style="width:100%;height:100%;" frameborder="0"></iframe>`;
   }
 }
 
@@ -164,24 +198,19 @@ function play(url) {
 function getHistory() {
   return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
 }
-
 function saveHistory(url) {
-  let list = getHistory();
-  list = list.filter(u => u !== url);
+  let list = getHistory().filter(u => u !== url);
   list.unshift(url);
   if (list.length > 5) list = list.slice(0,5);
   localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
 }
-
 function renderHistory() {
   const box = document.getElementById("history");
-  const list = getHistory();
   box.innerHTML = "";
-
-  list.forEach((url, i) => {
-    const btn = document.createElement("button");
+  getHistory().forEach((url, i) => {
+    let btn = document.createElement("button");
     btn.className = "h-btn";
-    btn.innerText = i + 1;
+    btn.innerText = i+1;
     btn.onclick = () => play(url);
     box.appendChild(btn);
   });
@@ -197,112 +226,83 @@ async function handleParse() {
   let results = new Set();
 
   try {
-    if (url.match(/\.(m3u8|flv|mp4)/)) {
-      results.add(url);
-    }
+    if (url.match(/\.(m3u8|flv|mp4)/)) results.add(url);
 
     const res = await fetch(url);
     const text = await res.text();
 
-    // m3u8
-    let m3u8s = text.match(/https?:\/\/[^"' ]+\.m3u8[^"' ]*/g);
-    if (m3u8s) m3u8s.forEach(u => results.add(u));
+    (text.match(/https?:\/\/[^"' ]+\.m3u8[^"' ]*/g)||[]).forEach(u=>results.add(u));
+    (text.match(/https?:\/\/[^"' ]+\.(flv|mp4)[^"' ]*/g)||[]).forEach(u=>results.add(u));
 
-    // flv mp4
-    let videos = text.match(/https?:\/\/[^"' ]+\.(flv|mp4)[^"' ]*/g);
-    if (videos) videos.forEach(u => results.add(u));
+    (text.match(/<iframe[^>]+src=["']([^"']+)["']/gi)||[]).forEach(tag=>{
+      let s=tag.match(/src=["']([^"']+)["']/i);
+      if(s) results.add(s[1]);
+    });
 
-    // iframe
-    let iframes = text.match(/<iframe[^>]+src=["']([^"']+)["']/gi);
-    if (iframes) {
-      iframes.forEach(tag => {
-        let src = tag.match(/src=["']([^"']+)["']/i);
-        if (src) results.add(src[1]);
-      });
-    }
-
-    // JSON/script
-    let jsonUrls = text.match(/"(https?:\/\/[^"]+)"/g);
-    if (jsonUrls) {
-      jsonUrls.forEach(str => {
-        let clean = str.replace(/"/g, "");
-        results.add(clean);
-      });
-    }
-
-  } catch (e) {
-    console.log(e);
-  }
+  } catch(e){}
 
   renderResults([...results]);
 }
 
-/* =========================
-   📋 顯示結果
-========================= */
 function renderResults(list) {
   const box = document.getElementById("resultList");
+  if (!list.length) return box.innerHTML="❌ 沒抓到";
 
-  if (!list.length) {
-    box.innerHTML = "❌ 沒抓到（可能被防護）";
-    return;
-  }
-
-  box.innerHTML = "";
-
-  list.forEach(url => {
-    const div = document.createElement("div");
-    div.className = "result-item";
-
-    div.innerHTML = `
+  box.innerHTML="";
+  list.forEach(url=>{
+    let div=document.createElement("div");
+    div.className="result-item";
+    div.innerHTML=`
       ${url}
       <br>
       <button class="copy-btn" onclick="copyText('${url}')">複製</button>
     `;
-
     box.appendChild(div);
   });
 }
 
-/* =========================
-   📋 複製
-========================= */
-function copyText(text) {
-  navigator.clipboard.writeText(text);
-  alert("已複製");
-}
+function copyText(t){navigator.clipboard.writeText(t);alert("已複製");}
 
 /* =========================
-   📊 ESPN 比分
+   📊 ESPN 全運動比分
 ========================= */
+const sports = [
+  {name:"🏀 NBA", url:"basketball/nba"},
+  {name:"🏈 NFL", url:"football/nfl"},
+  {name:"⚾ MLB", url:"baseball/mlb"},
+  {name:"⚽ 足球", url:"soccer/eng.1"}
+];
+
 async function loadScores() {
-  try {
-    const res = await fetch("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard");
-    const data = await res.json();
+  let html="";
 
-    let html = "";
+  for (let s of sports) {
+    try {
+      let res = await fetch(`https://site.api.espn.com/apis/site/v2/sports/${s.url}/scoreboard`);
+      let data = await res.json();
 
-    data.events.forEach(g => {
-      const c = g.competitions[0];
-      const home = c.competitors.find(t => t.homeAway === "home");
-      const away = c.competitors.find(t => t.homeAway === "away");
+      html += `<div class="league">${s.name}</div>`;
 
-      html += `
-        🏀 ${away.team.displayName} ${away.score}<br>
-        🏠 ${home.team.displayName} ${home.score}<br><br>
-      `;
-    });
+      data.events.forEach(g=>{
+        let c=g.competitions[0];
+        let home=c.competitors.find(t=>t.homeAway==="home");
+        let away=c.competitors.find(t=>t.homeAway==="away");
 
-    document.getElementById("scores").innerHTML = html;
+        html += `
+          ${away.team.displayName} ${away.score}<br>
+          ${home.team.displayName} ${home.score}<br><br>
+        `;
+      });
 
-  } catch {
-    document.getElementById("scores").innerHTML = "比分失敗";
+    } catch(e){}
   }
+
+  document.getElementById("scores").innerHTML = html || "無比賽";
 }
 
 renderHistory();
 loadScores();
-setInterval(loadScores, 10000);
+setInterval(loadScores,10000);
 </script>
 
 </body>
