@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>強化解析播放器</title>
+<title>純播放播放器</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -14,7 +14,6 @@ body { margin:0; background:#0f172a; color:white; font-family:Arial;}
 input { flex:1; padding:10px; border:none; border-radius:6px;}
 button { margin-left:10px; padding:10px; background:red; color:white; border:none; border-radius:6px;}
 .video-box { width:100%; height:220px; background:black;}
-video { width:100%; height:100%;}
 .history { display:flex; overflow-x:auto; background:#1f2937; padding:8px;}
 .h-btn { margin-right:8px; padding:8px 12px; background:#374151; border:none; border-radius:6px; color:white;}
 .score-box { padding:10px; font-size:14px;}
@@ -23,123 +22,71 @@ video { width:100%; height:100%;}
 
 <body>
 
+<!-- 輸入 -->
 <div class="input-box">
-  <input id="url" placeholder="貼入播放頁或網址">
-  <button onclick="handleParse()">一鍵解析</button>
+  <input id="url" placeholder="貼上 m3u8 或播放頁網址">
+  <button onclick="playInput()">播放</button>
 </div>
 
+<!-- 歷史 -->
 <div class="history" id="history"></div>
 
-<div class="video-box">
-  <video id="video" controls autoplay muted playsinline></video>
-</div>
+<!-- 播放區 -->
+<div class="video-box" id="playerBox"></div>
 
+<!-- 比分 -->
 <div class="score-box" id="scores">載入比分...</div>
 
 <script>
 let hls;
-const video = document.getElementById("video");
 const HISTORY_KEY = "stream_history";
 
 /* =========================
-   🎯 主入口
+   🎯 主播放
 ========================= */
-async function handleParse() {
+function playInput() {
   const input = document.getElementById("url");
-  let url = input.value.trim();
+  const url = input.value.trim();
   if (!url) return;
 
-  let m3u8 = null;
-
-  if (url.includes(".m3u8")) {
-    m3u8 = url;
-  } else {
-    m3u8 = await deepParse(url, 0);
-  }
-
-  if (m3u8) {
-    playStream(m3u8);
-  } else {
-    alert("抓不到 m3u8");
-  }
-
+  play(url);
   input.value = "";
 }
 
-/* =========================
-   🔥 強化解析核心
-========================= */
-async function deepParse(url, depth) {
-  if (depth > 3) return null;
-
-  try {
-    // 1️⃣ URL 參數
-    let u = new URL(url);
-    for (let key of ["url","play","source"]) {
-      let val = u.searchParams.get(key);
-      if (val && val.includes(".m3u8")) {
-        return decodeURIComponent(val);
-      }
-    }
-
-    // 2️⃣ 抓 HTML
-    const res = await fetch(url);
-    const text = await res.text();
-
-    // 3️⃣ iframe（遞迴）
-    let iframeMatch = text.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-    if (iframeMatch) {
-      let next = iframeMatch[1];
-      if (!next.startsWith("http")) {
-        let base = new URL(url).origin;
-        next = base + next;
-      }
-      return await deepParse(next, depth + 1);
-    }
-
-    // 4️⃣ m3u8 正則（強化）
-    let m3u8Match = text.match(/https?:\/\/[^"'\\ ]+\.m3u8[^"'\\ ]*/);
-    if (m3u8Match) return m3u8Match[0];
-
-    // 5️⃣ script JSON 抓
-    let jsonMatch = text.match(/"(https?:\/\/[^"]+\.m3u8[^"]*)"/);
-    if (jsonMatch) return jsonMatch[1];
-
-    // 6️⃣ base64 解碼嘗試
-    let base64Match = text.match(/[A-Za-z0-9+/=]{100,}/);
-    if (base64Match) {
-      try {
-        let decoded = atob(base64Match[0]);
-        let m3u8 = decoded.match(/https?:\/\/[^"' ]+\.m3u8/);
-        if (m3u8) return m3u8[0];
-      } catch {}
-    }
-
-  } catch (e) {
-    console.log("解析失敗", e);
-  }
-
-  return null;
-}
-
-/* =========================
-   🎥 播放
-========================= */
-function playStream(url) {
+function play(url) {
   saveHistory(url);
   renderHistory();
 
-  if (hls) {
-    hls.destroy();
-    hls = null;
-  }
+  const box = document.getElementById("playerBox");
 
-  if (Hls.isSupported()) {
-    hls = new Hls();
-    hls.loadSource(url);
-    hls.attachMedia(video);
+  // 🎥 m3u8
+  if (url.includes(".m3u8")) {
+    box.innerHTML = `<video id="video" controls autoplay muted playsinline style="width:100%;height:100%;"></video>`;
+    const video = document.getElementById("video");
+
+    if (hls) {
+      hls.destroy();
+      hls = null;
+    }
+
+    if (Hls.isSupported()) {
+      hls = new Hls();
+      hls.loadSource(url);
+      hls.attachMedia(video);
+    } else {
+      video.src = url;
+    }
+
   } else {
-    video.src = url;
+    // 🌐 直接嵌入頁面
+    box.innerHTML = `
+      <iframe 
+        src="${url}" 
+        frameborder="0" 
+        allowfullscreen 
+        style="width:100%;height:100%;">
+      </iframe>
+    `;
   }
 }
 
@@ -167,7 +114,7 @@ function renderHistory() {
     const btn = document.createElement("button");
     btn.className = "h-btn";
     btn.innerText = i + 1;
-    btn.onclick = () => playStream(url);
+    btn.onclick = () => play(url);
     box.appendChild(btn);
   });
 }
