@@ -4,37 +4,112 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>純播放播放器</title>
+<title>播放器 + 全源解析</title>
 
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <style>
 body { margin:0; background:#0f172a; color:white; font-family:Arial;}
-.input-box { display:flex; padding:10px; background:#111827;}
-input { flex:1; padding:10px; border:none; border-radius:6px;}
-button { margin-left:10px; padding:10px; background:red; color:white; border:none; border-radius:6px;}
-.video-box { width:100%; height:220px; background:black;}
-.history { display:flex; overflow-x:auto; background:#1f2937; padding:8px;}
-.h-btn { margin-right:8px; padding:8px 12px; background:#374151; border:none; border-radius:6px; color:white;}
-.score-box { padding:10px; font-size:14px;}
+
+/* 輸入 */
+.input-box {
+  display:flex;
+  padding:10px;
+  background:#111827;
+}
+input {
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:6px;
+}
+button {
+  margin-left:10px;
+  padding:10px;
+  background:red;
+  color:white;
+  border:none;
+  border-radius:6px;
+}
+
+/* 播放 */
+.video-box {
+  width:100%;
+  height:220px;
+  background:black;
+}
+
+/* 歷史 */
+.history {
+  display:flex;
+  overflow-x:auto;
+  background:#1f2937;
+  padding:8px;
+}
+.h-btn {
+  margin-right:8px;
+  padding:8px 12px;
+  background:#374151;
+  border:none;
+  border-radius:6px;
+  color:white;
+}
+
+/* 解析區 */
+.parse-box {
+  padding:10px;
+  background:#020617;
+  border-top:1px solid #1f2937;
+}
+.result-item {
+  background:#111827;
+  margin-top:10px;
+  padding:10px;
+  border-radius:6px;
+  font-size:12px;
+  word-break:break-all;
+}
+.copy-btn {
+  margin-top:6px;
+  padding:4px 8px;
+  background:#10b981;
+  border:none;
+  border-radius:4px;
+  color:white;
+  font-size:12px;
+}
+
+/* 比分 */
+.score-box {
+  padding:10px;
+  font-size:14px;
+}
 </style>
 </head>
 
 <body>
 
-<!-- 輸入 -->
+<!-- 🎥 播放 -->
 <div class="input-box">
-  <input id="url" placeholder="貼上 m3u8 或播放頁網址">
+  <input id="url" placeholder="貼 m3u8 或播放頁">
   <button onclick="playInput()">播放</button>
 </div>
 
-<!-- 歷史 -->
 <div class="history" id="history"></div>
 
-<!-- 播放區 -->
 <div class="video-box" id="playerBox"></div>
 
-<!-- 比分 -->
+<!-- 🔍 解析 -->
+<div class="parse-box">
+  <div class="input-box" style="padding:0;">
+    <input id="parseUrl" placeholder="貼網址 → 列出全部源">
+    <button onclick="handleParse()">解析</button>
+  </div>
+
+  <div id="resultList"></div>
+</div>
+
+<!-- 📊 ESPN 比分 -->
 <div class="score-box" id="scores">載入比分...</div>
 
 <script>
@@ -42,7 +117,7 @@ let hls;
 const HISTORY_KEY = "stream_history";
 
 /* =========================
-   🎯 主播放
+   🎥 播放
 ========================= */
 function playInput() {
   const input = document.getElementById("url");
@@ -59,7 +134,6 @@ function play(url) {
 
   const box = document.getElementById("playerBox");
 
-  // 🎥 m3u8
   if (url.includes(".m3u8")) {
     box.innerHTML = `<video id="video" controls autoplay muted playsinline style="width:100%;height:100%;"></video>`;
     const video = document.getElementById("video");
@@ -78,14 +152,8 @@ function play(url) {
     }
 
   } else {
-    // 🌐 直接嵌入頁面
     box.innerHTML = `
-      <iframe 
-        src="${url}" 
-        frameborder="0" 
-        allowfullscreen 
-        style="width:100%;height:100%;">
-      </iframe>
+      <iframe src="${url}" frameborder="0" allowfullscreen style="width:100%;height:100%;"></iframe>
     `;
   }
 }
@@ -117,6 +185,91 @@ function renderHistory() {
     btn.onclick = () => play(url);
     box.appendChild(btn);
   });
+}
+
+/* =========================
+   🔍 全源解析
+========================= */
+async function handleParse() {
+  const url = document.getElementById("parseUrl").value.trim();
+  if (!url) return;
+
+  let results = new Set();
+
+  try {
+    if (url.match(/\.(m3u8|flv|mp4)/)) {
+      results.add(url);
+    }
+
+    const res = await fetch(url);
+    const text = await res.text();
+
+    // m3u8
+    let m3u8s = text.match(/https?:\/\/[^"' ]+\.m3u8[^"' ]*/g);
+    if (m3u8s) m3u8s.forEach(u => results.add(u));
+
+    // flv mp4
+    let videos = text.match(/https?:\/\/[^"' ]+\.(flv|mp4)[^"' ]*/g);
+    if (videos) videos.forEach(u => results.add(u));
+
+    // iframe
+    let iframes = text.match(/<iframe[^>]+src=["']([^"']+)["']/gi);
+    if (iframes) {
+      iframes.forEach(tag => {
+        let src = tag.match(/src=["']([^"']+)["']/i);
+        if (src) results.add(src[1]);
+      });
+    }
+
+    // JSON/script
+    let jsonUrls = text.match(/"(https?:\/\/[^"]+)"/g);
+    if (jsonUrls) {
+      jsonUrls.forEach(str => {
+        let clean = str.replace(/"/g, "");
+        results.add(clean);
+      });
+    }
+
+  } catch (e) {
+    console.log(e);
+  }
+
+  renderResults([...results]);
+}
+
+/* =========================
+   📋 顯示結果
+========================= */
+function renderResults(list) {
+  const box = document.getElementById("resultList");
+
+  if (!list.length) {
+    box.innerHTML = "❌ 沒抓到（可能被防護）";
+    return;
+  }
+
+  box.innerHTML = "";
+
+  list.forEach(url => {
+    const div = document.createElement("div");
+    div.className = "result-item";
+
+    div.innerHTML = `
+      ${url}
+      <br>
+      <button class="copy-btn" onclick="copyText('${url}')">複製</button>
+    `;
+
+    box.appendChild(div);
+  });
+}
+
+/* =========================
+   📋 複製
+========================= */
+function copyText(text) {
+  navigator.clipboard.writeText(text);
+  alert("已複製");
 }
 
 /* =========================
