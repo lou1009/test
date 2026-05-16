@@ -2,160 +2,205 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>World Cup 2026 即時比分</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup 2026 Live Hub</title>
 
 <style>
-:root {
-  --dark: #0f172a;
-  --card: #1e293b;
-  --accent: #22c55e;
-  --text: #e2e8f0;
+:root{
+  --bg:#0b0f1a;
+  --card:#151c2b;
+  --accent:#00cfff;
+  --text:#fff;
+  --muted:#9aa4b2;
+  --live:#ff3b3b;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  background: var(--dark);
-  color: var(--text);
-  font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-  padding: 20px;
+body{
+  margin:0;
+  font-family:system-ui;
+  background:var(--bg);
+  color:var(--text);
 }
 
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+/* Tabs */
+.tabs{
+  display:flex;
+  position:sticky;
+  top:0;
+  background:#0f1522;
 }
 
-.tab {
-  padding: 10px 20px;
-  background: var(--card);
-  cursor: pointer;
-  border-radius: 8px;
+.tab{
+  flex:1;
+  padding:12px;
+  background:none;
+  border:none;
+  color:var(--muted);
+  cursor:pointer;
 }
 
-.tab.active {
-  background: var(--accent);
-  color: black;
+.tab.active{
+  color:#fff;
+  border-bottom:2px solid var(--accent);
 }
 
-.section { display: none; }
-.section.active { display: block; }
-
-.match {
-  background: var(--card);
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 10px;
+/* Sections */
+.section{
+  display:none;
+  padding:14px;
 }
 
-.teams {
-  font-size: 18px;
-  margin-bottom: 5px;
+.section.active{
+  display:block;
 }
 
-.score {
-  font-size: 28px;
-  font-weight: bold;
+/* Card */
+.card{
+  background:var(--card);
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:10px;
 }
 
-.status {
-  font-size: 14px;
-  margin-top: 5px;
+/* LIVE */
+.live-badge{
+  color:var(--live);
+  font-weight:700;
+  font-size:12px;
 }
 
-.status.live {
-  color: red;
-  font-weight: bold;
-  animation: blink 1s infinite;
+.score{
+  font-size:26px;
+  font-weight:700;
+  margin:8px 0;
 }
 
-@keyframes blink {
-  50% { opacity: 0.3; }
+/* Grid */
+.grid{
+  display:grid;
+  gap:10px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>⚽ 世界盃 2026 即時比分</h1>
-
+<!-- TABS -->
 <div class="tabs">
-  <div class="tab active" onclick="showTab(event,'live')">即時比分</div>
-  <div class="tab" onclick="showTab(event,'schedule')">賽程</div>
+  <button class="tab active" onclick="showTab('groups')">分組</button>
+  <button class="tab" onclick="showTab('schedule')">賽程</button>
+  <button class="tab" onclick="showTab('live')">即時比分</button>
+  <button class="tab" onclick="showTab('knockout')">淘汰賽</button>
 </div>
 
-<!-- 即時比分 -->
-<div id="tab-live" class="section active">
-  <div id="liveMatches">載入中...</div>
-</div>
+<!-- GROUPS -->
+<div id="groups" class="section active"></div>
 
-<!-- 假賽程（你原本的） -->
-<div id="tab-schedule" class="section">
-  <div class="match">
-    <div class="teams">🇲🇽 墨西哥 vs 🇿🇦 南非</div>
-    <div class="status">06/11 03:00</div>
-  </div>
-</div>
+<!-- SCHEDULE -->
+<div id="schedule" class="section"></div>
+
+<!-- LIVE -->
+<div id="live" class="section"></div>
+
+<!-- KNOCKOUT -->
+<div id="knockout" class="section"></div>
 
 <script>
-// 🔁 分頁切換
-function showTab(e, name) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
 
-  document.getElementById('tab-' + name).classList.add('active');
-  e.target.classList.add('active');
+const API_BASE = "https://YOUR_API_DOMAIN"; 
+// 👉 改這裡 = 真實比分來源
+
+/* ================= TAB ================= */
+function showTab(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
 }
 
-// 🌐 API
-const API_URL = 'https://www.thesportsdb.com/api/v1/json/3/eventsday.php?s=Soccer';
+/* ================= GROUPS (本地) ================= */
+function loadGroups(){
+  const data = {
+    A:["墨西哥","南韓","捷克","南非"],
+    B:["加拿大","瑞士","卡達","波斯尼亞"],
+    C:["巴西","摩洛哥","蘇格蘭","海地"]
+  };
 
-// 📡 抓即時比分
-async function fetchLiveScores() {
-  try {
-    const res = await fetch(API_URL);
+  document.getElementById("groups").innerHTML =
+    Object.entries(data).map(([g,t])=>`
+      <div class="card">
+        <h3>Group ${g}</h3>
+        <div>${t.join(" / ")}</div>
+      </div>
+    `).join('');
+}
+
+/* ================= SCHEDULE (API) ================= */
+async function loadSchedule(){
+  const el = document.getElementById("schedule");
+
+  try{
+    const res = await fetch(API_BASE + "/schedule");
     const data = await res.json();
 
-    if (!data.events) {
-      document.getElementById('liveMatches').innerHTML = '今天沒有比賽';
-      return;
-    }
+    el.innerHTML = data.matches.map(m=>`
+      <div class="card">
+        <div>${m.date} ${m.time}</div>
+        <b>${m.home} vs ${m.away}</b>
+        <div style="color:#9aa4b2">${m.venue}</div>
+      </div>
+    `).join('');
 
-    const matches = data.events.map(e => ({
-      home: e.strHomeTeam,
-      away: e.strAwayTeam,
-      homeScore: e.intHomeScore ?? '-',
-      awayScore: e.intAwayScore ?? '-',
-      status: e.strStatus || 'NS'
-    }));
-
-    renderMatches(matches);
-
-  } catch (err) {
-    document.getElementById('liveMatches').innerHTML = '載入失敗';
-    console.error(err);
+  }catch(e){
+    el.innerHTML = `<div class="card">⚠️ 賽程 API 未連線</div>`;
   }
 }
 
-// 🎨 渲染
-function renderMatches(matches) {
-  const el = document.getElementById('liveMatches');
+/* ================= LIVE SCORE ================= */
+async function loadLive(){
+  const el = document.getElementById("live");
 
-  el.innerHTML = matches.map(m => `
-    <div class="match">
-      <div class="teams">${m.home} vs ${m.away}</div>
-      <div class="score">${m.homeScore} - ${m.awayScore}</div>
-      <div class="status ${m.status === 'Live' ? 'live' : ''}">
-        ${m.status}
+  try{
+    const res = await fetch(API_BASE + "/live");
+    const data = await res.json();
+
+    el.innerHTML = data.matches.map(m=>`
+      <div class="card">
+        <div class="live-badge">${m.status} ${m.minute || ""}</div>
+        <div class="score">${m.homeScore} - ${m.awayScore}</div>
+        <div>${m.home} vs ${m.away}</div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+
+  }catch(e){
+    el.innerHTML = `<div class="card">⚠️ 即時比分未連線</div>`;
+  }
 }
 
-// ⏱️ 自動更新
-fetchLiveScores();
-setInterval(fetchLiveScores, 10000);
+/* ================= KNOCKOUT ================= */
+function loadKnockout(){
+  const rounds = [
+    "32強","16強","8強","4強","季軍賽","決賽"
+  ];
+
+  document.getElementById("knockout").innerHTML =
+    rounds.map(r=>`
+      <div class="card">
+        <h3>${r}</h3>
+        <div style="color:#9aa4b2">待 API 對戰樹</div>
+      </div>
+    `).join('');
+}
+
+/* ================= INIT ================= */
+loadGroups();
+loadSchedule();
+loadKnockout();
+loadLive();
+
+/* auto refresh live */
+setInterval(loadLive, 10000);
 
 </script>
 
