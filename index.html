@@ -1,201 +1,928 @@
 <!DOCTYPE html>
+
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>2026 FIFA 世界盃</title>
-
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+<script type="text/javascript" src="https://www.footballwidgets.com/js/major_cup_widgets.js" async="async"></script>
 <style>
-body{
-  background:#0b0f1a;
-  color:#fff;
-  font-family:Arial;
+  :root {
+    --gold: #C9A84C;
+    --gold-light: #F0D080;
+    --dark: #080C14;
+    --dark2: #0D1420;
+    --dark3: #111B2A;
+    --accent: #1A6FD8;
+    --accent2: #00CFFF;
+    --red: #E03030;
+    --green: #00C878;
+    --text: #D4DFF0;
+    --muted: #6A7E99;
+  }
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+font-family: ‘Barlow Condensed’, ‘Noto Sans TC’, sans-serif;
+background: var(–dark);
+color: var(–text);
+min-height: 100vh;
+overflow-x: hidden;
 }
 
-.match-card{
-  background:#141b2d;
-  margin:10px;
-  padding:10px;
-  border-radius:8px;
+/* Background */
+body::before {
+content: ‘’;
+position: fixed;
+top: 0; left: 0; right: 0; bottom: 0;
+background:
+radial-gradient(ellipse at 20% 20%, rgba(26,111,216,0.12) 0%, transparent 60%),
+radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.08) 0%, transparent 60%);
+pointer-events: none;
+z-index: 0;
 }
 
-.live{
-  border:1px solid red;
+.content { position: relative; z-index: 1; }
+
+/* Header */
+header {
+padding: 32px 24px 20px;
+text-align: center;
+border-bottom: 1px solid rgba(201,168,76,0.2);
+background: linear-gradient(180deg, rgba(201,168,76,0.05) 0%, transparent 100%);
 }
 
-.score{
-  font-size:22px;
-  font-weight:bold;
-  color:#ffd700;
+.tournament-logo {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 16px;
+margin-bottom: 4px;
 }
 
-.live-badge{
-  color:red;
-  font-weight:bold;
-  animation:blink 1s infinite;
+.ball-icon {
+width: 44px; height: 44px;
+background: radial-gradient(circle at 35% 35%, #fff 0%, #ccc 60%, #888 100%);
+border-radius: 50%;
+position: relative;
+flex-shrink: 0;
+box-shadow: 0 0 20px rgba(201,168,76,0.4);
+animation: spin 8s linear infinite;
 }
 
-@keyframes blink{
-  50%{opacity:0.3;}
+@keyframes spin {
+from { transform: rotate(0deg); }
+to { transform: rotate(360deg); }
+}
+
+.ball-icon::before {
+content: ‘’;
+position: absolute;
+top: 12px; left: 6px;
+width: 14px; height: 14px;
+background: #333;
+clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+border-radius: 2px;
+}
+
+h1 {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: clamp(2.2rem, 6vw, 4rem);
+letter-spacing: 0.08em;
+line-height: 1;
+background: linear-gradient(135deg, var(–gold-light), var(–gold));
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+}
+
+.subtitle {
+font-size: 0.85rem;
+color: var(–muted);
+letter-spacing: 0.3em;
+text-transform: uppercase;
+margin-top: 6px;
+}
+
+.host-flags {
+display: flex;
+justify-content: center;
+gap: 8px;
+margin-top: 14px;
+font-size: 1.6rem;
+}
+
+.host-label {
+font-size: 0.7rem;
+color: var(–muted);
+letter-spacing: 0.2em;
+text-align: center;
+margin-top: 4px;
+}
+
+/* Status bar */
+.status-bar {
+display: flex;
+justify-content: center;
+gap: 32px;
+padding: 14px 24px;
+background: rgba(13,20,32,0.8);
+border-bottom: 1px solid rgba(255,255,255,0.05);
+flex-wrap: wrap;
+font-size: 0.8rem;
+color: var(–muted);
+letter-spacing: 0.05em;
+}
+
+.status-item {
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.status-dot {
+width: 7px; height: 7px;
+border-radius: 50%;
+background: var(–green);
+animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+0%, 100% { opacity: 1; transform: scale(1); }
+50% { opacity: 0.5; transform: scale(0.7); }
+}
+
+/* Countdown */
+.countdown-section {
+padding: 28px 24px;
+text-align: center;
+border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.countdown-label {
+font-size: 0.7rem;
+letter-spacing: 0.3em;
+color: var(–muted);
+text-transform: uppercase;
+margin-bottom: 14px;
+}
+
+.countdown-grid {
+display: flex;
+justify-content: center;
+gap: 16px;
+flex-wrap: wrap;
+}
+
+.countdown-unit {
+background: var(–dark3);
+border: 1px solid rgba(201,168,76,0.2);
+border-radius: 8px;
+padding: 14px 20px;
+min-width: 80px;
+}
+
+.countdown-num {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 2.4rem;
+color: var(–gold);
+line-height: 1;
+display: block;
+}
+
+.countdown-unit-label {
+font-size: 0.65rem;
+color: var(–muted);
+letter-spacing: 0.2em;
+text-transform: uppercase;
+margin-top: 4px;
+}
+
+/* Tabs */
+.tabs {
+display: flex;
+overflow-x: auto;
+padding: 0 16px;
+gap: 4px;
+border-bottom: 1px solid rgba(255,255,255,0.07);
+background: var(–dark2);
+scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+padding: 14px 20px;
+font-size: 0.8rem;
+letter-spacing: 0.15em;
+text-transform: uppercase;
+font-weight: 600;
+color: var(–muted);
+border: none;
+background: none;
+cursor: pointer;
+white-space: nowrap;
+border-bottom: 2px solid transparent;
+transition: all 0.2s;
+}
+
+.tab:hover { color: var(–text); }
+
+.tab.active {
+color: var(–gold);
+border-bottom-color: var(–gold);
+}
+
+/* Sections */
+.section {
+display: none;
+padding: 20px 16px;
+max-width: 860px;
+margin: 0 auto;
+}
+.section.active { display: block; }
+
+/* Groups grid */
+.groups-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+gap: 14px;
+}
+
+.group-card {
+background: var(–dark3);
+border: 1px solid rgba(255,255,255,0.07);
+border-radius: 10px;
+overflow: hidden;
+animation: fadeUp 0.4s ease forwards;
+}
+
+@keyframes fadeUp {
+from { opacity: 0; transform: translateY(16px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+.group-header {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 12px 16px;
+background: linear-gradient(90deg, rgba(26,111,216,0.15), transparent);
+border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.group-letter {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1.6rem;
+color: var(–gold);
+line-height: 1;
+}
+
+.group-title {
+font-size: 0.7rem;
+letter-spacing: 0.2em;
+color: var(–muted);
+text-transform: uppercase;
+}
+
+.team-row {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 9px 16px;
+border-bottom: 1px solid rgba(255,255,255,0.04);
+transition: background 0.15s;
+}
+
+.team-row:last-child { border-bottom: none; }
+.team-row:hover { background: rgba(255,255,255,0.03); }
+
+.team-flag { font-size: 1.2rem; flex-shrink: 0; }
+
+.team-name {
+flex: 1;
+font-size: 0.9rem;
+font-weight: 400;
+}
+
+.host-badge {
+font-size: 0.6rem;
+padding: 2px 6px;
+background: rgba(201,168,76,0.15);
+color: var(–gold);
+border: 1px solid rgba(201,168,76,0.3);
+border-radius: 10px;
+letter-spacing: 0.1em;
+}
+
+/* Schedule */
+.schedule-day {
+margin-bottom: 24px;
+}
+
+.day-header {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 10px;
+}
+
+.day-label {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1.1rem;
+color: var(–gold);
+letter-spacing: 0.1em;
+}
+
+.day-line {
+flex: 1;
+height: 1px;
+background: rgba(255,255,255,0.08);
+}
+
+.match-card {
+background: var(–dark3);
+border: 1px solid rgba(255,255,255,0.06);
+border-radius: 8px;
+padding: 12px 16px;
+margin-bottom: 8px;
+display: grid;
+grid-template-columns: 1fr auto 1fr;
+align-items: center;
+gap: 10px;
+transition: border-color 0.2s, background 0.2s;
+cursor: default;
+}
+
+.match-card:hover {
+border-color: rgba(201,168,76,0.2);
+background: rgba(13,20,32,0.9);
+}
+
+.match-team {
+display: flex;
+align-items: center;
+gap: 8px;
+font-size: 0.95rem;
+font-weight: 600;
+}
+
+.match-team.right {
+flex-direction: row-reverse;
+text-align: right;
+}
+
+.match-flag { font-size: 1.3rem; }
+
+.match-center {
+text-align: center;
+min-width: 90px;
+}
+
+.match-score {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1.6rem;
+color: var(–gold-light);
+line-height: 1;
+}
+
+.match-time {
+font-size: 0.72rem;
+color: var(–muted);
+margin-top: 2px;
+}
+
+.match-venue {
+font-size: 0.65rem;
+color: var(–muted);
+margin-top: 4px;
+letter-spacing: 0.05em;
+}
+
+.match-group-tag {
+font-size: 0.6rem;
+color: var(–accent2);
+letter-spacing: 0.15em;
+text-transform: uppercase;
+}
+
+.live-badge {
+display: inline-flex;
+align-items: center;
+gap: 4px;
+background: rgba(224,48,48,0.15);
+border: 1px solid rgba(224,48,48,0.4);
+color: var(–red);
+font-size: 0.65rem;
+letter-spacing: 0.1em;
+padding: 2px 7px;
+border-radius: 10px;
+font-weight: 700;
+margin-bottom: 4px;
+}
+
+.live-dot {
+width: 5px; height: 5px;
+background: var(–red);
+border-radius: 50%;
+animation: pulse 1s ease-in-out infinite;
+}
+
+/* Knockout bracket */
+.knockout-section { margin-bottom: 28px; }
+
+.ko-round-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1rem;
+letter-spacing: 0.2em;
+color: var(–accent2);
+text-transform: uppercase;
+margin-bottom: 10px;
+padding-bottom: 6px;
+border-bottom: 1px solid rgba(0,207,255,0.15);
+}
+
+.ko-dates {
+font-size: 0.75rem;
+color: var(–muted);
+margin-bottom: 12px;
+}
+
+.ko-info {
+background: var(–dark3);
+border: 1px solid rgba(255,255,255,0.06);
+border-radius: 8px;
+padding: 14px 16px;
+font-size: 0.85rem;
+color: var(–muted);
+line-height: 1.6;
+}
+
+/* Venues */
+.venues-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+gap: 12px;
+}
+
+.venue-card {
+background: var(–dark3);
+border: 1px solid rgba(255,255,255,0.07);
+border-radius: 10px;
+padding: 16px;
+animation: fadeUp 0.3s ease forwards;
+}
+
+.venue-flag { font-size: 1.4rem; margin-bottom: 8px; }
+
+.venue-city {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1.1rem;
+letter-spacing: 0.08em;
+color: var(–gold);
+}
+
+.venue-stadium {
+font-size: 0.8rem;
+color: var(–text);
+margin-top: 4px;
+}
+
+.venue-country {
+font-size: 0.7rem;
+color: var(–muted);
+letter-spacing: 0.1em;
+margin-top: 4px;
+}
+
+.venue-capacity {
+font-size: 0.75rem;
+color: var(–accent2);
+margin-top: 8px;
+}
+
+/* Loading */
+.loading {
+text-align: center;
+padding: 48px;
+color: var(–muted);
+}
+
+.spinner {
+width: 36px; height: 36px;
+border: 3px solid rgba(201,168,76,0.2);
+border-top-color: var(–gold);
+border-radius: 50%;
+animation: spin 0.8s linear infinite;
+margin: 0 auto 12px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+.match-team-name { display: none; }
+.match-card { grid-template-columns: auto auto auto; }
+.groups-grid { grid-template-columns: 1fr; }
+.venues-grid { grid-template-columns: 1fr; }
+}
+
+.section-title {
+font-family: ‘Bebas Neue’, sans-serif;
+font-size: 1.4rem;
+letter-spacing: 0.15em;
+color: var(–gold);
+margin-bottom: 16px;
+text-transform: uppercase;
+}
+
+footer {
+text-align: center;
+padding: 24px;
+color: var(–muted);
+font-size: 0.72rem;
+letter-spacing: 0.1em;
+border-top: 1px solid rgba(255,255,255,0.05);
+margin-top: 40px;
 }
 </style>
+
 </head>
-
 <body>
+<div class="content">
 
-<h2>2026 世界盃 賽程 + 即時比分</h2>
+<header>
+  <div class="tournament-logo">
+    <div class="ball-icon"></div>
+    <h1>FIFA 世界盃 2026™</h1>
+    <div class="ball-icon"></div>
+  </div>
+  <div class="subtitle">FIFA World Cup 2026 · 美國 · 加拿大 · 墨西哥</div>
+  <div class="host-flags">🇺🇸 🇨🇦 🇲🇽</div>
+  <div class="host-label">2026年6月11日 — 7月19日</div>
+</header>
 
-<div id="container"></div>
+<div class="status-bar">
+  <div class="status-item">
+    <div class="status-dot"></div>
+    <span>即時資料同步中</span>
+  </div>
+  <div class="status-item" id="lastUpdate">最後更新：載入中...</div>
+  <div class="status-item" id="localTime">本地時間：--:--</div>
+</div>
+
+<div class="countdown-section">
+  <div class="countdown-label">距離開幕倒數</div>
+  <div class="countdown-grid">
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cdDays">--</span>
+      <div class="countdown-unit-label">天</div>
+    </div>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cdHours">--</span>
+      <div class="countdown-unit-label">時</div>
+    </div>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cdMins">--</span>
+      <div class="countdown-unit-label">分</div>
+    </div>
+    <div class="countdown-unit">
+      <span class="countdown-num" id="cdSecs">--</span>
+      <div class="countdown-unit-label">秒</div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('live')">🔴 即時比分</button>
+  <button class="tab" onclick="showTab('groups')">小組分組</button>
+  <button class="tab" onclick="showTab('schedule')">賽程表</button>
+  <button class="tab" onclick="showTab('knockout')">淘汰賽</button>
+  <button class="tab" onclick="showTab('venues')">比賽場地</button>
+</div>
+
+<!-- GROUPS TAB -->
+
+<div class="section active" id="tab-groups">
+  <div class="section-title">🏆 12小組 · 48支球隊</div>
+  <div class="groups-grid" id="groupsGrid">
+    <div class="loading"><div class="spinner"></div>載入中...</div>
+  </div>
+</div>
+
+<!-- SCHEDULE TAB -->
+
+<div class="section" id="tab-schedule">
+  <div class="section-title">📅 完整賽程</div>
+  <div id="scheduleContainer">
+    <div class="loading"><div class="spinner"></div>載入中...</div>
+  </div>
+</div>
+
+<!-- KNOCKOUT TAB -->
+
+<div class="section" id="tab-knockout">
+  <div class="section-title">⚡ 淘汰賽階段</div>
+  <div id="knockoutContainer"></div>
+</div>
+
+<!-- VENUES TAB -->
+
+<div class="section" id="tab-venues">
+  <div class="section-title">🏟️ 16座比賽場地</div>
+  <div class="venues-grid" id="venuesGrid"></div>
+</div>
+
+<footer>
+  2026 FIFA World Cup™ · 資料來源：FIFA · 本頁每30秒自動更新
+</footer>
+
+</div>
 
 <script>
-
-/* =========================
-   ① 你的原始賽程（不動）
-========================= */
+const GROUPS = {
+  A: { teams: [
+    { name: '墨西哥', en: 'Mexico', flag: '🇲🇽', host: true },
+    { name: '南非', en: 'South Africa', flag: '🇿🇦' },
+    { name: '南韓', en: 'Korea Republic', flag: '🇰🇷' },
+    { name: '捷克', en: 'Czechia', flag: '🇨🇿' },
+  ]},
+  B: { teams: [
+    { name: '加拿大', en: 'Canada', flag: '🇨🇦', host: true },
+    { name: '波斯尼亞', en: 'Bosnia and Herzegovina', flag: '🇧🇦' },
+    { name: '卡達', en: 'Qatar', flag: '🇶🇦' },
+    { name: '瑞士', en: 'Switzerland', flag: '🇨🇭' },
+  ]},
+  C: { teams: [
+    { name: '巴西', en: 'Brazil', flag: '🇧🇷' },
+    { name: '摩洛哥', en: 'Morocco', flag: '🇲🇦' },
+    { name: '海地', en: 'Haiti', flag: '🇭🇹' },
+    { name: '蘇格蘭', en: 'Scotland', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
+  ]},
+  D: { teams: [
+    { name: '美國', en: 'United States', flag: '🇺🇸', host: true },
+    { name: '巴拉圭', en: 'Paraguay', flag: '🇵🇾' },
+    { name: '澳洲', en: 'Australia', flag: '🇦🇺' },
+    { name: '土耳其', en: 'Türkiye', flag: '🇹🇷' },
+  ]},
+  E: { teams: [
+    { name: '德國', en: 'Germany', flag: '🇩🇪' },
+    { name: '庫拉索', en: 'Curacao', flag: '🇨🇼' },
+    { name: '象牙海岸', en: 'Ivory Coast', flag: '🇨🇮' },
+    { name: '厄瓜多', en: 'Ecuador', flag: '🇪🇨' },
+  ]},
+  F: { teams: [
+    { name: '荷蘭', en: 'Netherlands', flag: '🇳🇱' },
+    { name: '日本', en: 'Japan', flag: '🇯🇵' },
+    { name: '瑞典', en: 'Sweden', flag: '🇸🇪' },
+    { name: '突尼西亞', en: 'Tunisia', flag: '🇹🇳' },
+  ]},
+  G: { teams: [
+    { name: '比利時', en: 'Belgium', flag: '🇧🇪' },
+    { name: '埃及', en: 'Egypt', flag: '🇪🇬' },
+    { name: '伊朗', en: 'Iran', flag: '🇮🇷' },
+    { name: '紐西蘭', en: 'New Zealand', flag: '🇳🇿' },
+  ]},
+  H: { teams: [
+    { name: '西班牙', en: 'Spain', flag: '🇪🇸' },
+    { name: '維德角', en: 'Cape Verde', flag: '🇨🇻' },
+    { name: '沙烏地阿拉伯', en: 'Saudi Arabia', flag: '🇸🇦' },
+    { name: '烏拉圭', en: 'Uruguay', flag: '🇺🇾' },
+  ]},
+  I: { teams: [
+    { name: '法國', en: 'France', flag: '🇫🇷' },
+    { name: '塞內加爾', en: 'Senegal', flag: '🇸🇳' },
+    { name: '伊拉克', en: 'Iraq', flag: '🇮🇶' },
+    { name: '挪威', en: 'Norway', flag: '🇳🇴' },
+  ]},
+  J: { teams: [
+    { name: '阿根廷', en: 'Argentina', flag: '🇦🇷' },
+    { name: '阿爾及利亞', en: 'Algeria', flag: '🇩🇿' },
+    { name: '奧地利', en: 'Austria', flag: '🇦🇹' },
+    { name: '約旦', en: 'Jordan', flag: '🇯🇴' },
+  ]},
+  K: { teams: [
+    { name: '葡萄牙', en: 'Portugal', flag: '🇵🇹' },
+    { name: '剛果民主共和國', en: 'DR Congo', flag: '🇨🇩' },
+    { name: '烏茲別克', en: 'Uzbekistan', flag: '🇺🇿' },
+    { name: '哥倫比亞', en: 'Colombia', flag: '🇨🇴' },
+  ]},
+  L: { teams: [
+    { name: '英格蘭', en: 'England', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
+    { name: '克羅埃西亞', en: 'Croatia', flag: '🇭🇷' },
+    { name: '迦納', en: 'Ghana', flag: '🇬🇭' },
+    { name: '巴拿馬', en: 'Panama', flag: '🇵🇦' },
+  ]},
+};
 
 const SCHEDULE = [
-{
-  id:"A1",
-  home:"Mexico",
-  away:"South Africa",
-  time:"03:00"
-},
-{
-  id:"A2",
-  home:"Korea Republic",
-  away:"Czechia",
-  time:"10:00"
-},
-{
-  id:"B1",
-  home:"Canada",
-  away:"Bosnia",
-  time:"03:00"
-}
+  { date: '6月11日（四）', matches: [
+    { time: '03:00 (台灣)', home: '🇲🇽 墨西哥', away: '🇿🇦 南非', venue: '墨西哥城體育場', group: 'A組' },
+    { time: '10:00 (台灣)', home: '🇰🇷 南韓', away: '🇨🇿 捷克', venue: '瓜達拉哈拉體育場', group: 'A組' },
+  ]},
+  { date: '6月12日（五）', matches: [
+    { time: '03:00 (台灣)', home: '🇨🇦 加拿大', away: '🇧🇦 波斯尼亞', venue: '多倫多體育場', group: 'B組' },
+    { time: '09:00 (台灣)', home: '🇺🇸 美國', away: '🇵🇾 巴拉圭', venue: '洛杉磯體育場', group: 'D組' },
+  ]},
+  { date: '6月13日（六）', matches: [
+    { time: '03:00 (台灣)', home: '🇶🇦 卡達', away: '🇨🇭 瑞士', venue: '舊金山灣區體育場', group: 'B組' },
+    { time: '06:00 (台灣)', home: '🇧🇷 巴西', away: '🇲🇦 摩洛哥', venue: '紐約紐澤西體育場', group: 'C組' },
+    { time: '09:00 (台灣)', home: '🇭🇹 海地', away: '🏴󠁧󠁢󠁳󠁣󠁴󠁿 蘇格蘭', venue: '波士頓體育場', group: 'C組' },
+    { time: '12:00 (台灣)', home: '🇦🇺 澳洲', away: '🇹🇷 土耳其', venue: '溫哥華BC Place', group: 'D組' },
+  ]},
+  { date: '6月14日（日）', matches: [
+    { time: '01:00 (台灣)', home: '🇩🇪 德國', away: '🇨🇼 庫拉索', venue: '休士頓體育場', group: 'E組' },
+    { time: '04:00 (台灣)', home: '🇳🇱 荷蘭', away: '🇯🇵 日本', venue: '達拉斯體育場', group: 'F組' },
+    { time: '04:00 (台灣)', home: '🇧🇪 比利時', away: '🇪🇬 埃及', venue: '堪薩斯城體育場', group: 'G組' },
+    { time: '07:00 (台灣)', home: '🇪🇸 西班牙', away: '🇨🇻 維德角', venue: '亞特蘭大體育場', group: 'H組' },
+  ]},
+  { date: '6月15日（一）', matches: [
+    { time: '04:00 (台灣)', home: '🇦🇹 奧地利', away: '🇯🇴 約旦', venue: '舊金山灣區體育場', group: 'J組' },
+    { time: '05:00 (台灣)', home: '🇵🇹 葡萄牙', away: '🇨🇩 剛果DRC', venue: '休士頓體育場', group: 'K組' },
+    { time: '08:00 (台灣)', home: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 英格蘭', away: '🇭🇷 克羅埃西亞', venue: '達拉斯體育場', group: 'L組' },
+  ]},
+  { date: '6月16日（二）', matches: [
+    { time: '04:00 (台灣)', home: '🇫🇷 法國', away: '🇸🇳 塞內加爾', venue: '西雅圖體育場', group: 'I組' },
+    { time: '04:00 (台灣)', home: '🇦🇷 阿根廷', away: '🇩🇿 阿爾及利亞', venue: '邁阿密體育場', group: 'J組' },
+    { time: '07:00 (台灣)', home: '🇨🇴 哥倫比亞', away: '🇺🇿 烏茲別克', venue: '費城體育場', group: 'K組' },
+    { time: '07:00 (台灣)', home: '🇬🇭 迦納', away: '🇵🇦 巴拿馬', venue: '波士頓體育場', group: 'L組' },
+  ]},
 ];
 
-/* =========================
-   ② API KEY（你要填）
-========================= */
+const KNOCKOUT_ROUNDS = [
+  { round: '32強', dates: '6月28日 — 7月3日', info: '12組第1、第2名共24隊，加上8支最佳第3名共32隊，進行單淘汰賽。' },
+  { round: '16強', dates: '7月4日 — 7月7日', info: '32強勝者晉級，進行16場單淘汰賽。' },
+  { round: '8強（準決賽）', dates: '7月9日 — 7月11日', info: '16強勝者中4場準決賽，決定4強名單。' },
+  { round: '4強（半準決賽）', dates: '7月14日 — 7月15日', info: '兩場半準決賽，勝者晉級決賽，敗者爭奪季軍。' },
+  { round: '季軍賽', dates: '7月18日', info: '兩支半準決賽落敗隊伍爭奪第三名。場地：紐約紐澤西體育場。' },
+  { round: '🏆 決賽', dates: '7月19日', info: '世界盃決賽！地點：紐約紐澤西體育場（MetLife Stadium）。開球時間：台灣時間凌晨3:00。' },
+];
 
-const API_KEY = "YOUR_API_KEY_HERE";
+const VENUES = [
+  { city: '墨西哥城', stadium: '墨西哥城體育場 (Estadio Azteca)', country: '🇲🇽 墨西哥', capacity: '87,500' },
+  { city: '瓜達拉哈拉', stadium: '瓜達拉哈拉體育場 (Estadio Akron)', country: '🇲🇽 墨西哥', capacity: '49,850' },
+  { city: '蒙特雷', stadium: '蒙特雷體育場 (Estadio BBVA)', country: '🇲🇽 墨西哥', capacity: '53,500' },
+  { city: '多倫多', stadium: '多倫多體育場 (BMO Field)', country: '🇨🇦 加拿大', capacity: '45,736' },
+  { city: '溫哥華', stadium: '溫哥華體育場 (BC Place)', country: '🇨🇦 加拿大', capacity: '54,500' },
+  { city: '洛杉磯', stadium: '洛杉磯體育場 (SoFi Stadium)', country: '🇺🇸 美國', capacity: '70,240' },
+  { city: '紐約/紐澤西', stadium: '紐約紐澤西體育場 (MetLife)', country: '🇺🇸 美國', capacity: '82,500' },
+  { city: '達拉斯', stadium: '達拉斯體育場 (AT&T Stadium)', country: '🇺🇸 美國', capacity: '80,000' },
+  { city: '休士頓', stadium: '休士頓體育場 (NRG Stadium)', country: '🇺🇸 美國', capacity: '72,220' },
+  { city: '舊金山灣區', stadium: '舊金山灣區體育場 (Levi\'s)', country: '🇺🇸 美國', capacity: '68,500' },
+  { city: '西雅圖', stadium: '西雅圖體育場 (Lumen Field)', country: '🇺🇸 美國', capacity: '72,000' },
+  { city: '邁阿密', stadium: '邁阿密體育場 (Hard Rock)', country: '🇺🇸 美國', capacity: '65,326' },
+  { city: '費城', stadium: '費城體育場 (Lincoln Financial Field)', country: '🇺🇸 美國', capacity: '69,176' },
+  { city: '亞特蘭大', stadium: '亞特蘭大體育場 (Mercedes-Benz)', country: '🇺🇸 美國', capacity: '71,000' },
+  { city: '波士頓', stadium: '波士頓體育場 (Gillette Stadium)', country: '🇺🇸 美國', capacity: '65,878' },
+  { city: '堪薩斯城', stadium: '堪薩斯城體育場 (Arrowhead)', country: '🇺🇸 美國', capacity: '76,416' },
+];
 
-/* =========================
-   ③ 比分快取
-========================= */
+// Tab switching
+function showTab(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
 
-let scoreMap = {};
+// Countdown
+function updateCountdown() {
+  const opening = new Date('2026-06-11T19:00:00Z');
+  const now = new Date();
+  const diff = opening - now;
 
-/* =========================
-   ④ 抓 API 真實比分
-========================= */
+  if (diff <= 0) {
+    document.getElementById('cdDays').textContent = '🎉';
+    document.getElementById('cdHours').textContent = 'WC';
+    document.getElementById('cdMins').textContent = '2026';
+    document.getElementById('cdSecs').textContent = '🏆';
+    return;
+  }
 
-async function fetchScores(){
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
 
-  try{
+  document.getElementById('cdDays').textContent = String(days).padStart(2, '0');
+  document.getElementById('cdHours').textContent = String(hours).padStart(2, '0');
+  document.getElementById('cdMins').textContent = String(mins).padStart(2, '0');
+  document.getElementById('cdSecs').textContent = String(secs).padStart(2, '0');
+}
 
-    const res = await fetch(
-      "https://v3.football.api-sports.io/fixtures?season=2026",
-      {
-        headers:{
-          "x-apisports-key": API_KEY
-        }
-      }
-    );
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('localTime').textContent = '本地時間：' + now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
 
-    const data = await res.json();
-
-    const list = data.response || [];
-
-    scoreMap = {};
-
-    list.forEach(m=>{
-
-      const home = m.teams.home.name;
-      const away = m.teams.away.name;
-
-      const key = home + "-" + away;
-
-      scoreMap[key] = {
-        homeScore: m.goals.home,
-        awayScore: m.goals.away,
-        status: m.fixture.status.short
-      };
-    });
-
-    render();
-
-  }catch(err){
-    console.log("API error", err);
+// Render groups
+function renderGroups() {
+  const grid = document.getElementById('groupsGrid');
+  grid.innerHTML = '';
+  let delay = 0;
+  for (const [letter, data] of Object.entries(GROUPS)) {
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    card.style.animationDelay = delay + 'ms';
+    delay += 50;
+    card.innerHTML = `
+      <div class="group-header">
+        <div class="group-letter">${letter}</div>
+        <div class="group-title">小組 ${letter}</div>
+      </div>
+      ${data.teams.map(t => `
+        <div class="team-row">
+          <span class="team-flag">${t.flag}</span>
+          <span class="team-name">${t.name}</span>
+          ${t.host ? '<span class="host-badge">主辦國</span>' : ''}
+        </div>
+      `).join('')}
+    `;
+    grid.appendChild(card);
   }
 }
 
-/* =========================
-   ⑤ 對應比分
-========================= */
-
-function getScore(m){
-
-  const key = m.home + "-" + m.away;
-
-  const d = scoreMap[key];
-
-  if(!d) return "VS";
-
-  return `${d.homeScore ?? 0} - ${d.awayScore ?? 0}`;
-}
-
-/* =========================
-   ⑥ 判斷 LIVE
-========================= */
-
-function isLive(m){
-
-  const key = m.home + "-" + m.away;
-
-  const d = scoreMap[key];
-
-  return d?.status === "LIVE" || d?.status === "1H" || d?.status === "2H";
-}
-
-/* =========================
-   ⑦ render（不改賽程）
-========================= */
-
-function render(){
-
-  const el = document.getElementById("container");
-
-  el.innerHTML = SCHEDULE.map(m=>`
-
-    <div class="match-card ${isLive(m)?'live':''}">
-
-      ${isLive(m) ? '<div class="live-badge">● LIVE</div>' : ''}
-
-      <div>${m.home} vs ${m.away}</div>
-
-      <div class="score">
-        ${getScore(m)}
+// Render schedule
+function renderSchedule() {
+  const container = document.getElementById('scheduleContainer');
+  container.innerHTML = SCHEDULE.map(day => `
+    <div class="schedule-day">
+      <div class="day-header">
+        <div class="day-label">${day.date}</div>
+        <div class="day-line"></div>
       </div>
-
-      <div style="opacity:0.7;font-size:12px">
-        ${m.time}
-      </div>
-
+      ${day.matches.map(m => `
+        <div class="match-card">
+          <div class="match-team">
+            <span class="match-flag">${m.home.split(' ')[0]}</span>
+            <span class="match-team-name">${m.home.split(' ').slice(1).join(' ')}</span>
+          </div>
+          <div class="match-center">
+            <div class="match-group-tag">${m.group}</div>
+            <div class="match-score">VS</div>
+            <div class="match-time">${m.time}</div>
+            <div class="match-venue">${m.venue}</div>
+          </div>
+          <div class="match-team right">
+            <span class="match-flag">${m.away.split(' ')[0]}</span>
+            <span class="match-team-name">${m.away.split(' ').slice(1).join(' ')}</span>
+          </div>
+        </div>
+      `).join('')}
     </div>
-
   `).join('');
 
+  const moreNote = document.createElement('div');
+  moreNote.style.cssText = 'text-align:center;padding:20px;color:var(--muted);font-size:0.8rem;';
+  moreNote.textContent = '顯示開幕週賽程 (6月11-16日) · 完整104場賽程至7月19日決賽';
+  container.appendChild(moreNote);
 }
 
-/* =========================
-   ⑧ 自動更新
-========================= */
+// Render knockout
+function renderKnockout() {
+  const container = document.getElementById('knockoutContainer');
+  container.innerHTML = KNOCKOUT_ROUNDS.map(r => `
+    <div class="knockout-section">
+      <div class="ko-round-title">${r.round}</div>
+      <div class="ko-dates">📅 ${r.dates}</div>
+      <div class="ko-info">${r.info}</div>
+    </div>
+  `).join('');
+}
 
-fetchScores();
+// Render venues
+function renderVenues() {
+  const grid = document.getElementById('venuesGrid');
+  const flags = ['🇲🇽','🇲🇽','🇲🇽','🇨🇦','🇨🇦','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸'];
+  grid.innerHTML = VENUES.map((v, i) => `
+    <div class="venue-card" style="animation-delay:${i * 40}ms">
+      <div class="venue-flag">${flags[i]}</div>
+      <div class="venue-city">${v.city}</div>
+      <div class="venue-stadium">${v.stadium}</div>
+      <div class="venue-country">${v.country}</div>
+      <div class="venue-capacity">容量：${v.capacity}</div>
+    </div>
+  `).join('');
+}
 
-setInterval(fetchScores, 30000);
+// Update timestamp
+function updateTimestamp() {
+  const now = new Date();
+  document.getElementById('lastUpdate').textContent = '最後更新：' + now.toLocaleTimeString('zh-TW');
+}
 
+// Init
+renderGroups();
+renderSchedule();
+renderKnockout();
+renderVenues();
+updateCountdown();
+updateClock();
+updateTimestamp();
+
+setInterval(updateCountdown, 1000);
+setInterval(updateClock, 1000);
+setInterval(updateTimestamp, 30000);
 </script>
 
 </body>
