@@ -603,28 +603,19 @@
 <div class="section active" id="tab-live">
   <div class="section-title">🔴 即時比分</div>
   <p style="font-size:0.8rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-    比賽開始後自動顯示即時比分，每30秒更新一次。開賽前顯示最近賽果與下一場賽程。
+    資料來自開源 API（worldcup26.ir），每60秒自動刷新。
   </p>
 
-  <div style="margin-bottom:28px;">
-    <div style="font-size:0.7rem;letter-spacing:0.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:12px;">⚡ 即時比分板</div>
-    <div style="background:var(--dark3);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;overflow:hidden;">
-      <div class="tlds_major_cup_widget" data-widget="scoreboard" data-comp="-6" data-utcoffset="8"></div>
-    </div>
+  <!-- 篩選列 -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;" id="live-filters">
+    <button onclick="setLiveFilter('all')" id="filter-all" style="font-size:0.72rem;padding:5px 14px;border-radius:20px;border:1px solid rgba(201,168,76,0.5);background:rgba(201,168,76,0.15);color:var(--gold);cursor:pointer;">全部</button>
+    <button onclick="setLiveFilter('live')" id="filter-live" style="font-size:0.72rem;padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted);cursor:pointer;">🔴 進行中</button>
+    <button onclick="setLiveFilter('finished')" id="filter-finished" style="font-size:0.72rem;padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted);cursor:pointer;">✅ 已結束</button>
+    <button onclick="setLiveFilter('upcoming')" id="filter-upcoming" style="font-size:0.72rem;padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted);cursor:pointer;">📅 即將開賽</button>
   </div>
 
-  <div style="margin-bottom:28px;">
-    <div style="font-size:0.7rem;letter-spacing:0.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:12px;">📊 小組積分榜</div>
-    <div style="background:var(--dark3);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;overflow:hidden;">
-      <div class="tlds_major_cup_widget" data-widget="group_table" data-comp="-6"></div>
-    </div>
-  </div>
-
-  <div>
-    <div style="font-size:0.7rem;letter-spacing:0.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:12px;">📅 本輪賽程與比分</div>
-    <div style="background:var(--dark3);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:16px;overflow:hidden;">
-      <div class="tlds_major_cup_widget" data-widget="round_games" data-comp="-6" data-utcoffset="8"></div>
-    </div>
+  <div id="live-scores-container">
+    <div class="loading"><div class="spinner"></div>載入比賽資料中...</div>
   </div>
 </div>
 
