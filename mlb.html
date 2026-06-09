@@ -6,258 +6,154 @@
 <title>MLB 大聯盟 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Mono:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --navy:#001428; --navy2:#001f3f; --navy3:#002d5c;
-  --red:#c0392b; --red2:#e74c3c;
-  --gold:#f39c12; --grass:#27ae60; --sky:#3498db;
-  --text:#e8f0f8; --muted:#7f9bba;
-  --card:rgba(0,31,63,0.75); --border:rgba(255,255,255,0.07);
+:root{
+  --navy:#001428;--navy2:#001f3f;--navy3:#002d5c;
+  --red:#c0392b;--red2:#e74c3c;
+  --gold:#f39c12;--grass:#2ecc71;--sky:#3498db;
+  --text:#e8f0f8;--muted:#7f9bba;
+  --card:rgba(0,28,56,0.88);--border:rgba(255,255,255,0.07);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{
-  font-family:'IBM Plex Mono','Noto Sans TC',monospace;
-  background:var(--navy); color:var(--text);
-  min-height:100vh; overflow-x:hidden;
-}
-body::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    radial-gradient(ellipse at 15% 40%,rgba(192,57,43,.07) 0%,transparent 55%),
-    radial-gradient(ellipse at 85% 20%,rgba(52,152,219,.06) 0%,transparent 50%),
-    repeating-linear-gradient(0deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px),
-    repeating-linear-gradient(90deg,transparent,transparent 48px,rgba(255,255,255,.012) 48px,rgba(255,255,255,.012) 49px);
-}
+body{font-family:'IBM Plex Mono','Noto Sans TC',monospace;background:var(--navy);color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 10% 40%,rgba(192,57,43,.07) 0%,transparent 55%),
+             radial-gradient(ellipse at 90% 20%,rgba(52,152,219,.05) 0%,transparent 50%);}
 .wrap{position:relative;z-index:1;}
 
-/* ─ HEADER ─ */
-header{
-  background:linear-gradient(160deg,#000e1e 0%,#001830 50%,#001020 100%);
-  border-bottom:3px solid var(--red);
-  padding:16px 18px 12px;
-}
-.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
-.mlb-badge{
-  width:50px;height:50px;border-radius:50%;flex-shrink:0;
+/* ── HEADER ── */
+header{background:linear-gradient(160deg,#000e1e,#001830,#001020);border-bottom:3px solid var(--red);padding:14px 16px 10px;}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.mlb-badge{width:48px;height:48px;border-radius:50%;flex-shrink:0;
   background:linear-gradient(135deg,var(--red) 50%,var(--navy3) 50%);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Black Han Sans',sans-serif;font-size:.95rem;color:#fff;
-  border:2px solid rgba(255,255,255,.18);
-  box-shadow:0 0 18px rgba(192,57,43,.4);
-}
-.mlb-title{font-family:'Black Han Sans',sans-serif;font-size:clamp(1.5rem,5vw,2.6rem);letter-spacing:.05em;color:#fff;line-height:1;}
-.mlb-sub{font-size:.6rem;color:var(--muted);letter-spacing:.25em;text-transform:uppercase;margin-top:3px;}
-.hdr-right{text-align:right;font-size:.68rem;color:var(--muted);line-height:1.9;}
-.live-dot{display:inline-flex;align-items:center;gap:4px;color:var(--red2);font-weight:600;}
-.pulse{width:6px;height:6px;background:var(--red2);border-radius:50%;animation:pulse 1s infinite;display:inline-block;}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+  font-family:'Black Han Sans',sans-serif;font-size:.9rem;color:#fff;
+  border:2px solid rgba(255,255,255,.18);box-shadow:0 0 18px rgba(192,57,43,.4);}
+.mlb-title{font-family:'Black Han Sans',sans-serif;font-size:clamp(1.5rem,5vw,2.5rem);letter-spacing:.05em;color:#fff;line-height:1;}
+.mlb-sub{font-size:.58rem;color:var(--muted);letter-spacing:.22em;text-transform:uppercase;margin-top:2px;}
+.hdr-right{text-align:right;font-size:.65rem;color:var(--muted);line-height:2;}
+.live-dot{display:inline-flex;align-items:center;gap:4px;color:var(--red2);font-weight:700;}
+.pulse{width:6px;height:6px;background:var(--red2);border-radius:50%;animation:blink 1s infinite;display:inline-block;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* ticker */
-.ticker-wrap{overflow:hidden;background:rgba(192,57,43,.12);border-top:1px solid rgba(192,57,43,.25);padding:5px 0;}
-.ticker{display:inline-flex;gap:36px;white-space:nowrap;animation:ticker 50s linear infinite;}
+/* ── TICKER ── */
+.ticker-wrap{overflow:hidden;background:rgba(192,57,43,.1);border-top:1px solid rgba(192,57,43,.2);padding:5px 0;}
+.ticker{display:inline-flex;gap:32px;white-space:nowrap;animation:scroll 70s linear infinite;}
 .ticker:hover{animation-play-state:paused;}
-@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-.ti{font-size:.68rem;color:var(--text);}
-.ti .w{color:var(--grass);font-weight:700;}
-.ti .l{color:var(--red2);font-weight:700;}
-.ti .lv{color:var(--gold);font-weight:700;}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ti{font-size:.66rem;}.ti .w{color:var(--grass);font-weight:700;}.ti .l{color:var(--red2);font-weight:700;}.ti .lv{color:var(--gold);font-weight:700;}
 
-/* ─ DATE NAV ─ */
-.date-nav{
-  display:flex;align-items:center;gap:0;
-  background:#001020;border-bottom:1px solid var(--border);
-  overflow-x:auto;scrollbar-width:none;
-  position:sticky;top:0;z-index:50;
-}
+/* ── DATE NAV ── */
+.date-nav{display:flex;align-items:center;background:#00101e;border-bottom:1px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:50;}
 .date-nav::-webkit-scrollbar{display:none;}
-.date-btn{
-  flex-shrink:0;padding:10px 16px;
-  font-family:'IBM Plex Mono',monospace;
-  font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--muted);background:none;border:none;cursor:pointer;
-  border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;
-}
+.date-btn{flex-shrink:0;padding:9px 14px;font-family:'IBM Plex Mono',monospace;
+  font-size:.65rem;color:var(--muted);background:none;border:none;cursor:pointer;
+  border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;line-height:1.5;}
 .date-btn:hover{color:var(--text);}
 .date-btn.active{color:#fff;border-bottom-color:var(--red);background:rgba(192,57,43,.08);}
-.date-sep{width:1px;height:30px;background:var(--border);flex-shrink:0;}
+.date-btn.today{color:var(--gold)!important;}
+.date-btn.today.active{border-bottom-color:var(--gold);}
+.date-sep{width:1px;height:28px;background:var(--border);flex-shrink:0;}
 
-/* ─ MAIN ─ */
-.main{padding:14px 14px 32px;max-width:920px;margin:0 auto;}
+/* ── MAIN ── */
+.main{padding:12px 12px 32px;max-width:920px;margin:0 auto;}
+.sec-hdr{display:flex;align-items:center;gap:10px;font-family:'Black Han Sans',sans-serif;
+  font-size:.95rem;letter-spacing:.1em;color:#fff;margin-bottom:10px;}
+.sec-count{font-size:.6rem;color:var(--muted);font-weight:normal;}
+.refresh-time{font-size:.52rem;color:var(--muted);margin-left:auto;}
 
-/* ─ SECTION TITLE ─ */
-.sec-hdr{
-  display:flex;align-items:center;gap:10px;
-  font-family:'Black Han Sans',sans-serif;
-  font-size:1rem;letter-spacing:.1em;color:#fff;margin-bottom:12px;
-}
-.sec-count{font-size:.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-weight:normal;}
-
-/* ─ GAME CARD ─ */
-.game-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:12px;margin-bottom:10px;overflow:hidden;
-  backdrop-filter:blur(6px);
-  transition:border-color .2s;
-  animation:fadeUp .3s ease both;
-}
+/* ── GAME CARD ── */
+.game-card{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  margin-bottom:10px;overflow:hidden;backdrop-filter:blur(6px);transition:border-color .2s;
+  animation:fadeUp .3s ease both;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.game-card.live-game{border-color:rgba(192,57,43,.45);}
-.game-card.final-game{opacity:.85;}
+.game-card.live-game{border-color:rgba(192,57,43,.5);box-shadow:0 0 16px rgba(192,57,43,.12);}
+.game-card.final-game{opacity:.82;}
 
-/* top bar: time + status + venue */
-.gc-topbar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:8px 14px 6px;
-  border-bottom:1px solid var(--border);
-  font-size:.62rem;color:var(--muted);gap:8px;
-}
-.gc-status-live{
-  display:inline-flex;align-items:center;gap:4px;
-  color:var(--red2);font-weight:700;font-size:.65rem;
-  background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.3);
-  padding:1px 7px;border-radius:8px;
-}
-.gc-status-final{color:var(--muted);}
-.gc-status-sched{color:var(--sky);}
-.gc-venue{font-size:.58rem;color:var(--muted);flex:1;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* ── TOP BAR（左上角狀態）── */
+.gc-topbar{display:flex;align-items:center;justify-content:space-between;
+  padding:6px 12px 5px;border-bottom:1px solid var(--border);gap:6px;flex-wrap:wrap;}
+.gc-status-badge{display:inline-flex;align-items:center;gap:5px;font-size:.6rem;font-weight:700;
+  padding:2px 8px;border-radius:8px;letter-spacing:.05em;flex-shrink:0;}
+.badge-live{color:var(--red2);background:rgba(192,57,43,.12);border:1px solid rgba(192,57,43,.35);}
+.badge-final{color:var(--grass);background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.25);}
+.badge-sched{color:var(--sky);background:rgba(52,152,219,.08);border:1px solid rgba(52,152,219,.25);}
 
-/* score row */
-.gc-score-row{
-  display:grid;grid-template-columns:1fr 100px 1fr;
-  align-items:center;gap:8px;padding:12px 14px 10px;
-}
-.gc-team{display:flex;align-items:center;gap:8px;font-size:.88rem;font-weight:700;}
+/* 局數 + 好壞球 inline */
+.gc-game-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.gc-inning-label{font-size:.58rem;color:var(--text);font-weight:600;}
+.gc-count-display{font-size:.55rem;color:var(--muted);}
+
+/* 球數（好壞球圓點）*/
+.count-dots{display:inline-flex;gap:3px;align-items:center;}
+.dot{width:7px;height:7px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:transparent;}
+.dot.ball{background:#2ecc71;border-color:#2ecc71;}
+.dot.strike{background:#e74c3c;border-color:#e74c3c;}
+.dot.out{width:7px;height:7px;background:#f39c12;border-color:#f39c12;}
+
+.gc-venue{font-size:.54rem;color:var(--muted);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46%;flex:1;}
+
+/* ── SCORE ROW ── */
+.gc-score-row{display:grid;grid-template-columns:1fr 100px 1fr;align-items:center;gap:6px;padding:10px 12px 8px;}
+.gc-team{display:flex;align-items:center;gap:7px;font-size:.88rem;font-weight:700;}
 .gc-team.away{flex-direction:row-reverse;text-align:right;}
-.team-badge{
-  width:30px;height:30px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:.56rem;font-weight:700;flex-shrink:0;
-  border:1px solid rgba(255,255,255,.14);
-}
+.team-badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:.5rem;font-weight:700;flex-shrink:0;border:1px solid rgba(255,255,255,.14);}
 .gc-mid{text-align:center;}
-.gc-score{
-  font-family:'Black Han Sans',sans-serif;
-  font-size:1.8rem;color:#fff;line-height:1;letter-spacing:.04em;
-}
-.gc-score.live-score{color:var(--gold);}
-.gc-inning{font-size:.6rem;color:var(--red2);margin-top:2px;font-weight:700;}
-.gc-vs{font-size:.75rem;color:var(--muted);font-weight:400;}
-.gc-tw-time{font-size:.6rem;color:var(--sky);margin-top:2px;}
+.gc-score{font-family:'Black Han Sans',sans-serif;font-size:1.8rem;color:#fff;line-height:1;letter-spacing:.04em;}
+.gc-score.live{color:var(--gold);}
+.gc-win-lbl{font-size:.56rem;color:var(--muted);margin-top:2px;}
+.gc-win-lbl b{color:var(--grass);}
+.team-pct{font-family:'IBM Plex Mono',monospace;font-size:.6rem;margin-top:3px;letter-spacing:.02em;}
+.pct-lead{color:var(--grass);font-weight:700;}
+.pct-trail{color:var(--muted);}
+.gc-vs{font-size:.72rem;color:var(--muted);}
+.gc-tw-time{font-size:.58rem;color:var(--sky);margin-top:2px;}
 
-/* linescore */
-.gc-linescore{
-  display:flex;overflow-x:auto;scrollbar-width:none;
-  padding:0 14px 6px;gap:2px;
-}
-.gc-linescore::-webkit-scrollbar{display:none;}
-.ls-cell{
-  min-width:22px;text-align:center;
-  font-size:.55rem;font-family:'IBM Plex Mono',monospace;
-  padding:2px 1px;
-}
-.ls-cell.header{color:var(--muted);}
-.ls-cell.total{color:var(--gold);font-weight:700;border-left:1px solid var(--border);padding-left:5px;}
-.ls-team-label{font-size:.55rem;color:var(--muted);min-width:28px;padding:2px 4px 2px 0;flex-shrink:0;}
+/* ── LINESCORE ── */
+.gc-ls{padding:0 12px 6px;overflow-x:auto;scrollbar-width:none;}
+.gc-ls::-webkit-scrollbar{display:none;}
+.ls-skeleton{font-size:.54rem;color:var(--muted);font-style:italic;padding:4px 0;}
+.ls-tbl{border-collapse:collapse;font-size:.52rem;font-family:'IBM Plex Mono',monospace;min-width:max-content;}
+.ls-tbl td{padding:2px 5px;text-align:center;min-width:18px;}
+.ls-tbl .ll{color:var(--muted);text-align:left;padding-right:8px;font-size:.5rem;min-width:28px;}
+.ls-tbl .lh{color:var(--muted);}
+.ls-tbl .lt{color:var(--gold);font-weight:700;border-left:1px solid var(--border);padding-left:6px;min-width:22px;}
+.ls-tbl .lth{color:var(--muted);border-left:1px solid var(--border);padding-left:6px;}
+.ls-tbl .lr{color:var(--sky);padding-left:4px;}
+.ls-tbl .lrh{color:var(--muted);padding-left:4px;}
+.ls-cur{background:rgba(243,156,18,.12);border-radius:2px;}
 
-/* pitcher row */
-.gc-pitchers{
-  padding:6px 14px 8px;
-  display:grid;grid-template-columns:1fr auto 1fr;
-  gap:6px;border-top:1px solid var(--border);
-  font-size:.62rem;
-}
-.gc-pitcher-side{color:var(--muted);}
-.gc-pitcher-side span{color:var(--text);font-weight:600;}
-.gc-pitcher-sep{text-align:center;color:var(--border);}
+/* ── PITCHERS ── */
+.gc-pit{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;
+  padding:5px 12px 6px;border-top:1px solid var(--border);font-size:.6rem;}
+.pit-s{color:var(--muted);line-height:1.6;}
+.pit-s b{color:var(--text);font-weight:600;}
+.pit-sep{text-align:center;color:rgba(255,255,255,.12);font-size:.8rem;}
 
-/* win/loss pitcher */
-.gc-decisions{
-  padding:4px 14px 6px;
-  font-size:.6rem;color:var(--muted);
-  border-top:1px solid var(--border);
-}
+/* ── PREDICT (no bar, inline only) ── */
 
-/* ─ PREDICTION BAR ─ */
-.gc-predict{
-  padding:8px 14px 10px;
-  border-top:1px solid var(--border);
+/* ── 盤口 ML 行（第三列底部，緊湊）── */
+.gc-ml-row{
+  padding:4px 12px 8px;border-top:1px solid var(--border);
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;
 }
-.gc-predict-label{
-  font-size:.58rem;letter-spacing:.15em;text-transform:uppercase;
-  color:var(--muted);margin-bottom:6px;
-  display:flex;justify-content:space-between;align-items:center;
-}
-.gc-predict-label a{color:var(--sky);text-decoration:none;font-size:.56rem;}
-.predict-bar-wrap{
-  position:relative;height:22px;border-radius:6px;overflow:hidden;
-  background:rgba(255,255,255,.06);
-  display:flex;
-}
-.predict-bar-away{
-  height:100%;background:linear-gradient(90deg,rgba(52,152,219,.7),rgba(52,152,219,.4));
-  display:flex;align-items:center;justify-content:flex-start;
-  padding-left:8px;
-  font-size:.62rem;font-weight:700;color:#fff;
-  transition:width .7s;white-space:nowrap;
-  min-width:0;
-}
-.predict-bar-home{
-  height:100%;background:linear-gradient(90deg,rgba(243,156,18,.4),rgba(243,156,18,.7));
-  display:flex;align-items:center;justify-content:flex-end;
-  padding-right:8px;
-  font-size:.62rem;font-weight:700;color:#fff;
-  transition:width .7s;white-space:nowrap;
-  min-width:0;
-}
-.predict-teams{
-  display:flex;justify-content:space-between;
-  font-size:.6rem;color:var(--muted);margin-top:3px;
-}
-.predict-no-data{font-size:.62rem;color:var(--muted);font-style:italic;}
+.ml-away{text-align:left;}
+.ml-home{text-align:right;}
+.ml-val{font-family:'IBM Plex Mono',monospace;font-size:.78rem;font-weight:700;}
+.ml-val.fav{color:var(--grass);}
+.ml-val.dog{color:var(--red2);}
+.ml-val.even{color:var(--gold);}
+.ml-center{text-align:center;}
+.ml-src{font-size:.46rem;color:var(--muted);}
+.ml-ou{font-size:.56rem;color:var(--muted);}
+.ml-ou b{color:var(--sky);}
 
-/* ─ DAY DIVIDER ─ */
-.day-divider{
-  display:flex;align-items:center;gap:10px;margin:16px 0 10px;
-}
-.day-divider-label{
-  font-family:'Black Han Sans',sans-serif;
-  font-size:.9rem;color:var(--gold);letter-spacing:.1em;white-space:nowrap;
-}
-.day-divider-line{flex:1;height:1px;background:var(--border);}
-.day-divider-count{font-size:.62rem;color:var(--muted);}
-
-/* ─ STANDINGS ─ */
-.standings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;}
-.std-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-.std-div{
-  padding:8px 14px;background:rgba(192,57,43,.12);
-  border-bottom:1px solid var(--border);
-  font-family:'Black Han Sans',sans-serif;font-size:.82rem;letter-spacing:.1em;color:var(--red2);
-}
-.std-row{
-  display:grid;grid-template-columns:18px 1fr 36px 36px 38px 48px;
-  gap:4px;padding:6px 14px;
-  font-size:.68rem;border-bottom:1px solid rgba(255,255,255,.03);align-items:center;
-}
-.std-row:last-child{border-bottom:none;}
-.std-hdr{color:var(--muted);font-size:.58rem;letter-spacing:.08em;}
-.std-rank{color:var(--muted);}
-.std-name{font-weight:600;}
-.std-w{color:var(--grass);font-weight:700;}
-.std-l{color:var(--red2);}
-.std-gb{color:var(--muted);}
-.std-pct{color:var(--gold);font-weight:700;}
-
-/* loading */
-.loading{text-align:center;padding:40px;color:var(--muted);}
-.spinner{width:30px;height:30px;border:3px solid rgba(52,152,219,.2);border-top-color:var(--sky);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 10px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* team colors */
+/* TEAM COLORS */
 .tc-NYY{background:linear-gradient(135deg,#003087,#1a4a9b);}
 .tc-BOS{background:linear-gradient(135deg,#bd3039,#0d2b56);}
 .tc-LAD{background:linear-gradient(135deg,#005a9c,#ef3e42);}
-.tc-SF{background:linear-gradient(135deg,#fd5a1e,#27251f);}
-.tc-SFG{background:linear-gradient(135deg,#fd5a1e,#27251f);}
+.tc-SFG,.tc-SF{background:linear-gradient(135deg,#fd5a1e,#27251f);}
 .tc-CHC{background:linear-gradient(135deg,#0e3386,#cc3433);}
 .tc-STL{background:linear-gradient(135deg,#c41e3a,#0c2340);}
 .tc-HOU{background:linear-gradient(135deg,#002d62,#eb6e1f);}
@@ -274,536 +170,695 @@ header{
 .tc-TB{background:linear-gradient(135deg,#092c5c,#8fbce6);}
 .tc-BAL{background:linear-gradient(135deg,#df4601,#000);}
 .tc-KC{background:linear-gradient(135deg,#004687,#bd9b60);}
-.tc-ATH{background:linear-gradient(135deg,#003831,#efb21e);}
-.tc-OAK{background:linear-gradient(135deg,#003831,#efb21e);}
+.tc-ATH,.tc-OAK{background:linear-gradient(135deg,#003831,#efb21e);}
 .tc-LAA{background:linear-gradient(135deg,#ba0021,#003263);}
 .tc-CWS{background:linear-gradient(135deg,#27251f,#c4ced4);}
 .tc-SD{background:linear-gradient(135deg,#2f241d,#ffc425);}
 .tc-COL{background:linear-gradient(135deg,#33006f,#c4ced4);}
 .tc-MIA{background:linear-gradient(135deg,#00a3e0,#ff6600);}
-.tc-WSH{background:linear-gradient(135deg,#ab0003,#14225a);}
-.tc-WSN{background:linear-gradient(135deg,#ab0003,#14225a);}
+.tc-WSH,.tc-WSN{background:linear-gradient(135deg,#ab0003,#14225a);}
 .tc-PIT{background:linear-gradient(135deg,#27251f,#fdb827);}
 .tc-CIN{background:linear-gradient(135deg,#c6011f,#000);}
-.tc-AZ{background:linear-gradient(135deg,#a71930,#e3d4ad);}
-.tc-ARI{background:linear-gradient(135deg,#a71930,#e3d4ad);}
+.tc-AZ,.tc-ARI{background:linear-gradient(135deg,#a71930,#e3d4ad);}
 
-footer{text-align:center;padding:18px;color:var(--muted);font-size:.6rem;letter-spacing:.1em;border-top:1px solid var(--border);margin-top:20px;}
-
-@media(max-width:480px){
-  .gc-score-row{grid-template-columns:1fr 80px 1fr;}
-  .gc-score{font-size:1.4rem;}
-  .standings-grid{grid-template-columns:1fr;}
-}
+.loading{text-align:center;padding:36px;color:var(--muted);}
+.spinner{width:28px;height:28px;border:3px solid rgba(52,152,219,.2);border-top-color:var(--sky);
+  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 8px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+footer{text-align:center;padding:12px;color:var(--muted);font-size:.54rem;
+  letter-spacing:.07em;border-top:1px solid var(--border);margin-top:12px;line-height:2.2;}
+@media(max-width:420px){.gc-score-row{grid-template-columns:1fr 80px 1fr;}.gc-score{font-size:1.4rem;}.gc-odds{grid-template-columns:1fr auto 1fr;}}
 </style>
 </head>
 <body><div class="wrap">
 
-<!-- HEADER -->
 <header>
   <div class="hdr-top">
-    <div style="display:flex;align-items:center;gap:12px;">
+    <div style="display:flex;align-items:center;gap:11px;">
       <div class="mlb-badge">MLB</div>
       <div>
         <div class="mlb-title">大聯盟 2026</div>
-        <div class="mlb-sub">Major League Baseball · Real-Time</div>
+        <div class="mlb-sub">Major League Baseball · 台灣時間</div>
       </div>
     </div>
     <div class="hdr-right">
-      <div class="live-dot"><span class="pulse"></span>即時同步</div>
+      <div class="live-dot"><span class="pulse"></span>SportRadar 即時</div>
       <div id="hdr-time">--:--:--</div>
       <div id="hdr-date">--</div>
     </div>
   </div>
-  <div class="ticker-wrap"><div class="ticker" id="ticker"><span class="ti">載入中...</span></div></div>
+  <div class="ticker-wrap"><div class="ticker" id="ticker"><span class="ti">載入中...</span><span class="ti">載入中...</span></div></div>
 </header>
 
-<!-- DATE NAV -->
 <div class="date-nav" id="date-nav"></div>
+<div class="main" id="main-content"><div class="loading"><div class="spinner"></div>載入賽程...</div></div>
 
-<!-- MAIN CONTENT -->
-<div class="main" id="main-content">
-  <div class="loading"><div class="spinner"></div>載入賽程資料...</div>
-</div>
-
-<footer>MLB 大聯盟 2026 · 比分：SportRadar 即時資料 · 先發投手：MLB Stats API · 勝率預測：Polymarket · 每30秒更新</footer>
+<footer>
+  比分：SportRadar 即時（每30秒）· 球數：MLB Stats API Play-by-Play · 先發：MLB Stats API<br>
+  勝率：DRatings.com proxy · 盤口：ActionNetwork / SBR 免費公開（每30分鐘）
+</footer>
 </div>
 
 <script>
-// ─── TEAM DATA ─────────────────────────────────────────
-const T = {
-  NYY:{zh:'洋基',en:'Yankees',city:'紐約',venue:'洋基體育場'},
-  BOS:{zh:'紅襪',en:'Red Sox',city:'波士頓',venue:'芬威球場'},
-  TOR:{zh:'藍鳥',en:'Blue Jays',city:'多倫多',venue:'羅傑斯中心'},
-  BAL:{zh:'金鶯',en:'Orioles',city:'巴爾的摩',venue:'坎登院子'},
-  TB:{zh:'光芒',en:'Rays',city:'坦帕灣',venue:'喬治亞穹頂'},
-  CLE:{zh:'守護者',en:'Guardians',city:'克利夫蘭',venue:'普羅格雷斯球場'},
-  MIN:{zh:'雙城',en:'Twins',city:'明尼蘇達',venue:'目標球場'},
-  DET:{zh:'老虎',en:'Tigers',city:'底特律',venue:'科默里卡球場'},
-  KC:{zh:'皇家',en:'Royals',city:'堪薩斯城',venue:'卡夫曼體育場'},
-  CWS:{zh:'白襪',en:'White Sox',city:'芝加哥',venue:'保障費率球場'},
-  HOU:{zh:'太空人',en:'Astros',city:'休士頓',venue:'美粒果球場'},
-  SEA:{zh:'水手',en:'Mariners',city:'西雅圖',venue:'T-Mobile球場'},
-  TEX:{zh:'遊騎兵',en:'Rangers',city:'德州',venue:'環球人壽球場'},
-  LAA:{zh:'天使',en:'Angels',city:'洛杉磯',venue:'天使體育場'},
-  ATH:{zh:'運動家',en:'Athletics',city:'薩克拉門托',venue:'薩克拉門托球場'},
-  OAK:{zh:'運動家',en:'Athletics',city:'薩克拉門托',venue:'薩克拉門托球場'},
-  NYM:{zh:'大都會',en:'Mets',city:'紐約',venue:'花旗球場'},
-  ATL:{zh:'勇士',en:'Braves',city:'亞特蘭大',venue:'信任公園'},
-  PHI:{zh:'費城人',en:'Phillies',city:'費城',venue:'公民銀行球場'},
-  MIA:{zh:'馬林魚',en:'Marlins',city:'邁阿密',venue:'羅恩馬利斯球場'},
-  WSH:{zh:'國民',en:'Nationals',city:'華盛頓',venue:'國民球場'},
-  WSN:{zh:'國民',en:'Nationals',city:'華盛頓',venue:'國民球場'},
-  CHC:{zh:'小熊',en:'Cubs',city:'芝加哥',venue:'瑞格利球場'},
-  STL:{zh:'紅雀',en:'Cardinals',city:'聖路易',venue:'布希體育場'},
-  MIL:{zh:'釀酒人',en:'Brewers',city:'密爾瓦基',venue:'美國家族球場'},
-  PIT:{zh:'海盜',en:'Pirates',city:'匹茲堡',venue:'PNC球場'},
-  CIN:{zh:'紅人',en:'Reds',city:'辛辛那提',venue:'大美利堅球場'},
-  LAD:{zh:'道奇',en:'Dodgers',city:'洛杉磯',venue:'道奇體育場'},
-  SF:{zh:'巨人',en:'Giants',city:'舊金山',venue:'神諭球場'},
-  SFG:{zh:'巨人',en:'Giants',city:'舊金山',venue:'神諭球場'},
-  SD:{zh:'教士',en:'Padres',city:'聖地牙哥',venue:'皮特科球場'},
-  AZ:{zh:'響尾蛇',en:'Diamondbacks',city:'亞利桑那',venue:'蔡斯球場'},
-  ARI:{zh:'響尾蛇',en:'Diamondbacks',city:'亞利桑那',venue:'蔡斯球場'},
-  COL:{zh:'落磯',en:'Rockies',city:'科羅拉多',venue:'庫爾斯球場'},
+// ══════════════════════════════════════════════
+// 球隊資料
+// ══════════════════════════════════════════════
+const T={
+  NYY:{zh:'洋基',en:'New York Yankees',venue:'洋基體育場'},
+  BOS:{zh:'紅襪',en:'Boston Red Sox',venue:'芬威球場'},
+  TOR:{zh:'藍鳥',en:'Toronto Blue Jays',venue:'羅傑斯中心'},
+  BAL:{zh:'金鶯',en:'Baltimore Orioles',venue:'坎登院子'},
+  TB:{zh:'光芒',en:'Tampa Bay Rays',venue:'特羅彼卡納球場'},
+  CLE:{zh:'守護者',en:'Cleveland Guardians',venue:'普羅格雷斯球場'},
+  MIN:{zh:'雙城',en:'Minnesota Twins',venue:'目標球場'},
+  DET:{zh:'老虎',en:'Detroit Tigers',venue:'科默里卡球場'},
+  KC:{zh:'皇家',en:'Kansas City Royals',venue:'卡夫曼體育場'},
+  CWS:{zh:'白襪',en:'Chicago White Sox',venue:'保障費率球場'},
+  HOU:{zh:'太空人',en:'Houston Astros',venue:'美粒果球場'},
+  SEA:{zh:'水手',en:'Seattle Mariners',venue:'T-Mobile球場'},
+  TEX:{zh:'遊騎兵',en:'Texas Rangers',venue:'環球人壽球場'},
+  LAA:{zh:'天使',en:'Los Angeles Angels',venue:'天使體育場'},
+  ATH:{zh:'運動家',en:'Athletics',venue:'薩克拉門托球場'},
+  OAK:{zh:'運動家',en:'Oakland Athletics',venue:'薩克拉門托球場'},
+  NYM:{zh:'大都會',en:'New York Mets',venue:'花旗球場'},
+  ATL:{zh:'勇士',en:'Atlanta Braves',venue:'信任公園'},
+  PHI:{zh:'費城人',en:'Philadelphia Phillies',venue:'公民銀行球場'},
+  MIA:{zh:'馬林魚',en:'Miami Marlins',venue:'羅恩馬利斯球場'},
+  WSH:{zh:'國民',en:'Washington Nationals',venue:'國民球場'},
+  WSN:{zh:'國民',en:'Washington Nationals',venue:'國民球場'},
+  CHC:{zh:'小熊',en:'Chicago Cubs',venue:'瑞格利球場'},
+  STL:{zh:'紅雀',en:'St. Louis Cardinals',venue:'布希體育場'},
+  MIL:{zh:'釀酒人',en:'Milwaukee Brewers',venue:'美國家族球場'},
+  PIT:{zh:'海盜',en:'Pittsburgh Pirates',venue:'PNC球場'},
+  CIN:{zh:'紅人',en:'Cincinnati Reds',venue:'大美利堅球場'},
+  LAD:{zh:'道奇',en:'Los Angeles Dodgers',venue:'道奇體育場'},
+  SF:{zh:'巨人',en:'San Francisco Giants',venue:'神諭球場'},
+  SFG:{zh:'巨人',en:'San Francisco Giants',venue:'神諭球場'},
+  SD:{zh:'教士',en:'San Diego Padres',venue:'皮特科球場'},
+  AZ:{zh:'響尾蛇',en:'Arizona Diamondbacks',venue:'蔡斯球場'},
+  ARI:{zh:'響尾蛇',en:'Arizona Diamondbacks',venue:'蔡斯球場'},
+  COL:{zh:'落磯',en:'Colorado Rockies',venue:'庫爾斯球場'},
 };
-function ti(a){ return T[a]||T[a?.toUpperCase()]||{zh:a,en:a,city:'',venue:''}; }
-function tc(a){ return 'tc-'+(a||'').toUpperCase(); }
+const ti=a=>T[a]||T[a?.toUpperCase()]||{zh:a||'',en:a||'',venue:''};
+const tc=a=>'tc-'+(a||'').toUpperCase();
 
-// ─── STATE ─────────────────────────────────────────────
-let allGames = [];           // raw SportRadar games
-let mlbGames = {};           // date→[games with pitchers+venue from MLB API]
-let polyOdds = {};           // gameKey→{away:pct, home:pct}
-let selectedDate = '';
-let refreshTimer = null;
+// ══════════════════════════════════════════════
+// 台灣時間工具
+// ══════════════════════════════════════════════
+function twISO(u){return new Date(new Date(u).getTime()+8*3600000).toISOString().slice(0,10);}
+function todayTW(){return twISO(new Date());}
+function twTime(u){return new Date(u).toLocaleTimeString('zh-TW',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false});}
+function twDateLbl(u){return new Date(u).toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric'});}
+function addDay(iso,n){const d=new Date(iso+'T12:00:00+08:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function dateDiff(iso){return Math.round((new Date(iso+'T00:00:00+08:00')-new Date(todayTW()+'T00:00:00+08:00'))/86400000);}
 
-// ─── CLOCK ─────────────────────────────────────────────
+// ══════════════════════════════════════════════
+// 狀態
+// ══════════════════════════════════════════════
+const SR_INIT=[
+  // ── 台灣 06/06 ──
+  {id:"89787355",st:"closed",utc:"2026-06-06T02:10:00Z",home:"LAD",away:"LAA",score:{LAD:1,LAA:0},sbp:{},rhe:{}},
+  // ── 台灣 06/07 ──
+  {id:"17b87aa5",st:"closed",utc:"2026-06-06T17:10:00Z",home:"DET",away:"SEA",score:{DET:0,SEA:4},sbp:{},rhe:{}},
+  {id:"e940c071",st:"closed",utc:"2026-06-06T18:10:00Z",home:"MIN",away:"KC",score:{MIN:2,KC:3},sbp:{},rhe:{}},
+  {id:"17e97ff1",st:"closed",utc:"2026-06-06T18:15:00Z",home:"STL",away:"CIN",score:{STL:6,CIN:5},sbp:{},rhe:{}},
+  {id:"2d0d6a0d",st:"closed",utc:"2026-06-06T18:20:00Z",home:"CHC",away:"SF",score:{CHC:3,SF:2},sbp:{},rhe:{}},
+  {id:"5164bb07",st:"closed",utc:"2026-06-06T19:07:00Z",home:"TOR",away:"BAL",score:{TOR:6,BAL:4},sbp:{},rhe:{}},
+  {id:"c389fda8",st:"closed",utc:"2026-06-06T20:05:00Z",home:"PHI",away:"CWS",score:{PHI:3,CWS:6},sbp:{},rhe:{}},
+  {id:"53aa727b",st:"closed",utc:"2026-06-06T20:10:00Z",home:"ATL",away:"PIT",score:{ATL:6,PIT:3},sbp:{},rhe:{}},
+  {id:"aec3cddd",st:"closed",utc:"2026-06-06T20:10:00Z",home:"AZ",away:"WSH",score:{AZ:1,WSH:6},sbp:{},rhe:{}},
+  {id:"d993da3a",st:"closed",utc:"2026-06-06T20:10:00Z",home:"HOU",away:"ATH",score:{HOU:13,ATH:2},sbp:{},rhe:{}},
+  {id:"e95a735c",st:"closed",utc:"2026-06-06T20:10:00Z",home:"MIA",away:"TB",score:{MIA:4,TB:3},sbp:{},rhe:{}},
+  {id:"b6d042f7",st:"closed",utc:"2026-06-06T23:35:00Z",home:"TEX",away:"CLE",score:{TEX:0,CLE:6},sbp:{},rhe:{}},
+  {id:"069e6c2a",st:"closed",utc:"2026-06-07T01:10:00Z",home:"COL",away:"MIL",score:{COL:1,MIL:7},sbp:{},rhe:{}},
+  {id:"a481c73a",st:"closed",utc:"2026-06-07T02:10:00Z",home:"SD",away:"NYM",score:{SD:3,NYM:2},sbp:{},rhe:{}},
+  {id:"d27bdbb9",st:"closed",utc:"2026-06-07T02:10:00Z",home:"LAD",away:"LAA",score:{LAD:9,LAA:2},sbp:{},rhe:{}},
+  // ── 台灣 06/08 ──
+  {id:"5f390cee",st:"closed",utc:"2026-06-07T17:35:00Z",home:"NYY",away:"BOS",score:{NYY:6,BOS:1},sbp:{},rhe:{}},
+  {id:"e50095d6",st:"closed",utc:"2026-06-07T17:35:00Z",home:"ATL",away:"PIT",score:{ATL:3,PIT:2},sbp:{},rhe:{}},
+  {id:"fb676497",st:"closed",utc:"2026-06-07T17:35:00Z",home:"PHI",away:"CWS",score:{PHI:9,CWS:5},sbp:{},rhe:{}},
+  {id:"eb1ddf5f",st:"closed",utc:"2026-06-07T17:37:00Z",home:"TOR",away:"BAL",score:{TOR:6,BAL:4},sbp:{},rhe:{}},
+  {id:"ecb31b84",st:"closed",utc:"2026-06-07T17:40:00Z",home:"DET",away:"SEA",score:{DET:5,SEA:4},sbp:{},rhe:{}},
+  {id:"fc5427ae",st:"closed",utc:"2026-06-07T17:40:00Z",home:"MIA",away:"TB",score:{MIA:4,TB:1},sbp:{},rhe:{}},
+  {id:"2c5b3423",st:"closed",utc:"2026-06-07T18:10:00Z",home:"MIN",away:"KC",score:{MIN:5,KC:6},sbp:{},rhe:{}},
+  {id:"aa09b9a4",st:"closed",utc:"2026-06-07T18:10:00Z",home:"HOU",away:"ATH",score:{HOU:0,ATH:5},sbp:{},rhe:{}},
+  {id:"a3bb6c39",st:"closed",utc:"2026-06-07T18:15:00Z",home:"STL",away:"CIN",score:{STL:5,CIN:3},sbp:{},rhe:{}},
+  {id:"0ffffd5b",st:"closed",utc:"2026-06-07T18:35:00Z",home:"TEX",away:"CLE",score:{TEX:10,CLE:0},sbp:{},rhe:{}},
+  {id:"cd62e495",st:"closed",utc:"2026-06-07T19:10:00Z",home:"COL",away:"MIL",score:{COL:4,MIL:12},sbp:{},rhe:{}},
+  {id:"7a341386",st:"closed",utc:"2026-06-07T19:15:00Z",home:"AZ",away:"WSH",score:{AZ:5,WSH:1},sbp:{},rhe:{}},
+  {id:"aad880ef",st:"closed",utc:"2026-06-07T20:10:00Z",home:"SD",away:"NYM",score:{SD:3,NYM:7},sbp:{},rhe:{}},
+  {id:"f4445ead",st:"closed",utc:"2026-06-07T20:10:00Z",home:"LAD",away:"LAA",score:{LAD:5,LAA:13},sbp:{},rhe:{}},
+  {id:"a9ae8574",st:"closed",utc:"2026-06-08T00:30:00Z",home:"CHC",away:"SF",score:{CHC:1,SF:2},sbp:{},rhe:{}},
+  // ── 台灣 06/09 ── 全部已完賽
+  {id:"52a6fae1",st:"closed",utc:"2026-06-08T22:35:00Z",home:"BAL",away:"SEA",
+   score:{BAL:3,SEA:6},rhe:{BAL:{r:3,h:6,e:0},SEA:{r:6,h:9,e:0}},
+   sbp:{"1":{BAL:0,SEA:0},"2":{BAL:0,SEA:0},"3":{BAL:1,SEA:0},"4":{BAL:0,SEA:0},"5":{BAL:0,SEA:5},"6":{BAL:0,SEA:0},"7":{BAL:1,SEA:0},"8":{BAL:1,SEA:1},"9":{BAL:0,SEA:0}}},
+  {id:"3c7c17e7",st:"closed",utc:"2026-06-08T22:40:00Z",home:"TB",away:"BOS",score:{TB:3,BOS:1},sbp:{},rhe:{}},
+  {id:"66990254",st:"closed",utc:"2026-06-08T22:40:00Z",home:"CLE",away:"NYY",
+   score:{CLE:5,NYY:7},rhe:{CLE:{r:5,h:5,e:2},NYY:{r:7,h:7,e:2}},
+   sbp:{"1":{CLE:0,NYY:2},"2":{CLE:0,NYY:0},"3":{CLE:3,NYY:1},"4":{CLE:0,NYY:0},"5":{CLE:0,NYY:1},"6":{CLE:2,NYY:0},"7":{CLE:0,NYY:0},"8":{CLE:0,NYY:1},"9":{CLE:0,NYY:2}}},
+  {id:"95b57ec2",st:"closed",utc:"2026-06-08T23:07:00Z",home:"TOR",away:"PHI",score:{TOR:2,PHI:5},sbp:{},rhe:{}},
+  {id:"3042c795",st:"closed",utc:"2026-06-09T01:38:00Z",home:"LAA",away:"HOU",score:{LAA:4,HOU:5},sbp:{},rhe:{}},
+  {id:"5b04aa79",st:"closed",utc:"2026-06-09T01:40:00Z",home:"SD",away:"CIN",score:{SD:6,CIN:2},sbp:{},rhe:{}},
+  {id:"4c6ec49e",st:"closed",utc:"2026-06-09T01:45:00Z",home:"SF",away:"WSH",score:{SF:3,WSH:4},sbp:{},rhe:{}},
+  {id:"b6d00fa3",st:"closed",utc:"2026-06-09T02:05:00Z",home:"ATH",away:"MIL",score:{ATH:14,MIL:15},sbp:{},rhe:{}},
+  // ── 台灣 06/10 ── 待賽
+  {id:"894a443a",st:"scheduled",utc:"2026-06-09T22:35:00Z",home:"BAL",away:"SEA",score:{},sbp:{},rhe:{}},
+  {id:"5c97693b",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"MIA",away:"AZ",score:{},sbp:{},rhe:{}},
+  {id:"aaa4ad34",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"TB",away:"BOS",score:{},sbp:{},rhe:{}},
+  {id:"b568903b",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"CLE",away:"NYY",score:{},sbp:{},rhe:{}},
+  {id:"bed034ae",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"DET",away:"MIN",score:{},sbp:{},rhe:{}},
+  {id:"d8400862",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"PIT",away:"LAD",score:{},sbp:{},rhe:{}},
+  {id:"936aa385",st:"scheduled",utc:"2026-06-09T23:07:00Z",home:"TOR",away:"PHI",score:{},sbp:{},rhe:{}},
+  {id:"87143836",st:"scheduled",utc:"2026-06-09T23:10:00Z",home:"NYM",away:"STL",score:{},sbp:{},rhe:{}},
+  {id:"5d15be81",st:"scheduled",utc:"2026-06-09T23:40:00Z",home:"CWS",away:"ATL",score:{},sbp:{},rhe:{}},
+  {id:"ace6b424",st:"scheduled",utc:"2026-06-09T23:40:00Z",home:"KC",away:"TEX",score:{},sbp:{},rhe:{}},
+  {id:"806d4626",st:"scheduled",utc:"2026-06-10T00:40:00Z",home:"COL",away:"CHC",score:{},sbp:{},rhe:{}},
+  {id:"a7640683",st:"scheduled",utc:"2026-06-10T01:38:00Z",home:"LAA",away:"HOU",score:{},sbp:{},rhe:{}},
+  {id:"5063d62a",st:"scheduled",utc:"2026-06-10T01:40:00Z",home:"SD",away:"CIN",score:{},sbp:{},rhe:{}},
+  {id:"ee6c157d",st:"scheduled",utc:"2026-06-10T01:45:00Z",home:"SF",away:"WSH",score:{},sbp:{},rhe:{}},
+  {id:"e53207bd",st:"scheduled",utc:"2026-06-10T02:05:00Z",home:"ATH",away:"MIL",score:{},sbp:{},rhe:{}},
+  // ── 台灣 06/11 ── 待賽
+  {id:"46c068c7",st:"scheduled",utc:"2026-06-10T17:10:00Z",home:"CLE",away:"NYY",score:{},sbp:{},rhe:{}},
+  {id:"d64f0abf",st:"scheduled",utc:"2026-06-10T17:10:00Z",home:"TB",away:"BOS",score:{},sbp:{},rhe:{}},
+  {id:"4ca8cedb",st:"scheduled",utc:"2026-06-10T19:45:00Z",home:"SF",away:"WSH",score:{},sbp:{},rhe:{}},
+  {id:"dc04c652",st:"scheduled",utc:"2026-06-10T20:10:00Z",home:"SD",away:"CIN",score:{},sbp:{},rhe:{}},
+  {id:"bfe53f7e",st:"scheduled",utc:"2026-06-10T22:35:00Z",home:"BAL",away:"SEA",score:{},sbp:{},rhe:{}},
+  {id:"5050dd5f",st:"scheduled",utc:"2026-06-10T22:40:00Z",home:"DET",away:"MIN",score:{},sbp:{},rhe:{}},
+  {id:"95291405",st:"scheduled",utc:"2026-06-10T22:40:00Z",home:"MIA",away:"AZ",score:{},sbp:{},rhe:{}},
+  {id:"c4404f0f",st:"scheduled",utc:"2026-06-10T22:40:00Z",home:"PIT",away:"LAD",score:{},sbp:{},rhe:{}},
+  {id:"096ff7d1",st:"scheduled",utc:"2026-06-10T23:07:00Z",home:"TOR",away:"PHI",score:{},sbp:{},rhe:{}},
+  {id:"08c7d3c1",st:"scheduled",utc:"2026-06-10T23:10:00Z",home:"NYM",away:"STL",score:{},sbp:{},rhe:{}},
+  {id:"469c2e98",st:"scheduled",utc:"2026-06-10T23:40:00Z",home:"KC",away:"TEX",score:{},sbp:{},rhe:{}},
+  {id:"7c43fbef",st:"scheduled",utc:"2026-06-10T23:40:00Z",home:"CWS",away:"ATL",score:{},sbp:{},rhe:{}},
+  {id:"ebba52f4",st:"scheduled",utc:"2026-06-11T00:40:00Z",home:"COL",away:"CHC",score:{},sbp:{},rhe:{}},
+  {id:"4a6b0355",st:"scheduled",utc:"2026-06-11T01:05:00Z",home:"ATH",away:"MIL",score:{},sbp:{},rhe:{}},
+  {id:"4846d008",st:"scheduled",utc:"2026-06-11T01:38:00Z",home:"LAA",away:"HOU",score:{},sbp:{},rhe:{}},
+];
+
+let allGames=SR_INIT.map(g=>({...g}));
+let mlbCache={};
+let oddsCache={};  // "AWAY-HOME" → {a,h,src,ml_a,ml_h,total}
+let winCache={};   // "AWAY-HOME" → {a,h,src}
+let countCache={}; // gamePk → {balls,strikes,outs,batter}
+let selectedDate='';
+let lastRefresh=null;
+
+// DRatings 靜態備援
+const DR={
+  "BOS-TB":{a:44.5,h:55.5},"NYY-CLE":{a:57.3,h:42.7},"PHI-TOR":{a:52.8,h:47.2},
+  "HOU-LAA":{a:61.4,h:38.6},"CIN-SD":{a:39.2,h:60.8},"WSH-SF":{a:36.7,h:63.3},"MIL-ATH":{a:55.1,h:44.9},
+  "SEA-BAL":{a:52.0,h:48.0},"AZ-MIA":{a:54.3,h:45.7},"MIN-DET":{a:50.2,h:49.8},"LAD-PIT":{a:72.1,h:27.9},
+  "STL-NYM":{a:44.6,h:55.4},"ATL-CWS":{a:64.3,h:35.7},"TEX-KC":{a:48.7,h:51.3},
+  "CHC-COL":{a:62.5,h:37.5},"CIN-SD":{a:38.9,h:61.1},"MIL-ATH":{a:54.7,h:45.3},
+};
+
+// ══════════════════════════════════════════════
+// 時鐘
+// ══════════════════════════════════════════════
 function tick(){
   const n=new Date();
-  document.getElementById('hdr-time').textContent=n.toLocaleTimeString('zh-TW');
-  document.getElementById('hdr-date').textContent=n.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',weekday:'short'});
+  document.getElementById('hdr-time').textContent=n.toLocaleTimeString('zh-TW',{timeZone:'Asia/Taipei'});
+  document.getElementById('hdr-date').textContent=n.toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',weekday:'short'});
 }
-tick(); setInterval(tick,1000);
+tick();setInterval(tick,1000);
 
-// ─── DATE HELPERS ───────────────────────────────────────
-function isoDate(d){ return d.toISOString().slice(0,10); }
-function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+// ══════════════════════════════════════════════
+// TICKER
+// ══════════════════════════════════════════════
+function buildTicker(){
+  const done=allGames.filter(g=>g.st==='closed'||g.st==='inprogress'||g.st==='complete');
+  if(!done.length)return;
+  const items=done.slice(-28).map(g=>{
+    const hs=g.score[g.home]??0,as=g.score[g.away]??0;
+    const lv=g.st==='inprogress'?'<span class="lv">LIVE</span> ':'';
+    return `<span class="ti">${lv}${g.away} <span class="${as>hs?'w':'l'}">${as}</span>-<span class="${hs>as?'w':'l'}">${hs}</span> ${g.home}</span>`;
+  });
+  document.getElementById('ticker').innerHTML=[...items,...items].join('');
+}
 
+// ══════════════════════════════════════════════
+// DATE NAV
+// ══════════════════════════════════════════════
 function buildDateNav(dates){
-  const nav=document.getElementById('date-nav');
-  const labels={0:'今日',1:'明日',2:'後日'};
-  nav.innerHTML = dates.map((dt,i)=>{
-    const d=new Date(dt+'T12:00:00');
-    const label=labels[i]||d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'});
-    const wk=d.toLocaleDateString('zh-TW',{weekday:'short'});
-    return `<button class="date-btn ${dt===selectedDate?'active':''}" onclick="selectDate('${dt}')">${label}<br><span style="font-size:.56rem;opacity:.7">${wk}</span></button>
-    ${i<dates.length-1?'<div class="date-sep"></div>':''}`;
+  const today=todayTW();
+  document.getElementById('date-nav').innerHTML=dates.map((dt,i)=>{
+    const isToday=dt===today;
+    const d=new Date(dt+'T12:00:00+08:00');
+    const wk=d.toLocaleDateString('zh-TW',{weekday:'short',timeZone:'Asia/Taipei'});
+    const md=d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',timeZone:'Asia/Taipei'});
+    return `<button class="date-btn${dt===selectedDate?' active':''}${isToday?' today':''}" onclick="selectDate('${dt}',this)">${isToday?'⚾ ':''}<b>${md}</b><br><span style="font-size:.5rem;opacity:.6;">${wk}</span></button>${i<dates.length-1?'<div class="date-sep"></div>':''}`;
   }).join('');
 }
-
-function selectDate(dt){
+function selectDate(dt,btn){
   selectedDate=dt;
   document.querySelectorAll('.date-btn').forEach(b=>b.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  btn?.classList.add('active');
   renderMain();
 }
 
-// ─── TICKER ────────────────────────────────────────────
-function buildTicker(){
-  const recent=allGames.filter(g=>g.status==='closed'||g.status==='inprogress');
-  if(!recent.length) return;
-  const items=recent.map(g=>{
-    const hs=g.score?.[g.home]??0, as=g.score?.[g.away]??0;
-    const lv=g.status==='inprogress'?`<span class="lv">LIVE</span> `:'';
-    const hw=hs>as,aw=as>hs;
-    return `<span class="ti">${lv}${g.away} <span class="${aw?'w':'l'}">${as}</span>-<span class="${hw?'w':'l'}">${hs}</span> ${g.home}</span>`;
-  });
-  const all=[...items,...items].join('');
-  document.getElementById('ticker').innerHTML=all;
-}
-
-// ─── LOAD SPORTRADAR SCORES ─────────────────────────────
-async function loadSRScores(){
-  // inject scores from the pre-fetched SportRadar data
-  // We refresh this by calling the fetch_sports_data equivalent via MLB Stats API linescore
-  // (SportRadar is fetched server-side; we use MLB Stats API here in browser)
-  // This function merges SR scores into allGames
-}
-
-// ─── LOAD MLB STATS API (pitchers + venue + live scores) ─
+// ══════════════════════════════════════════════
+// MLB Stats API
+// ══════════════════════════════════════════════
 async function fetchMLBDay(dt){
-  if(mlbGames[dt]) return mlbGames[dt];
+  if(mlbCache[dt])return mlbCache[dt];
   try{
-    const r=await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dt}&hydrate=probablePitcher(stats(type=season)),linescore,team,venue&gameType=R`);
+    const r=await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dt}&hydrate=probablePitcher(stats(type=season)),linescore,venue&gameType=R`);
     const d=await r.json();
-    mlbGames[dt]=d.dates?.[0]?.games||[];
-    return mlbGames[dt];
-  }catch(e){ return []; }
+    mlbCache[dt]=d.dates?.[0]?.games||[];
+  }catch(e){mlbCache[dt]=[];}
+  return mlbCache[dt];
 }
-
-// ─── LOAD WIN PREDICTIONS (DRatings + Dimers via Claude API) ──
-async function fetchWinOdds(){
-  // Build list of today's matchups for the AI to look up
-  const todayGames = allGames.filter(g => {
-    const dt = new Date(g.start_time).toISOString().slice(0,10);
-    return dt === selectedDate && g.status === 'scheduled';
-  });
-  if(!todayGames.length) return;
-
-  const matchupList = todayGames.map(g => {
-    const aT=ti(g.away), hT=ti(g.home);
-    return `${aT.en} (${g.away}) @ ${hT.en} (${g.home})`;
-  }).join('\n');
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        messages: [{
-          role: 'user',
-          content: `Search dratings.com/predictor/mlb-baseball-predictions and dimers.com/bet-hub/mlb/schedule for today's MLB win probabilities.
-
-For each of these matchups, find the win probability % for each team from BOTH sites, then return the AVERAGE:
-${matchupList}
-
-Return ONLY valid JSON, no markdown, no explanation. Format:
-{"games":[{"away":"NYY","home":"BOS","awayPct":45,"homePct":55,"source":"DRatings+Dimers avg"}]}`
-        }]
-      })
-    });
-
-    const data = await res.json();
-    const textBlock = data.content?.find(b => b.type === 'text');
-    if(!textBlock) return;
-
-    let jsonStr = textBlock.text.trim();
-    jsonStr = jsonStr.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(jsonStr);
-
-    for(const g of (parsed.games||[])){
-      const key = `${g.away}-${g.home}`;
-      const key2 = `${g.home}-${g.away}`;
-      winOdds[key]  = { away: g.awayPct, home: g.homePct, source: g.source||'DRatings+Dimers' };
-      winOdds[key2] = { away: g.homePct, home: g.awayPct, source: g.source||'DRatings+Dimers' };
-    }
-    console.log('✅ Win odds loaded:', Object.keys(winOdds).length, 'matchups');
-  } catch(e) {
-    console.warn('Win odds fetch failed:', e);
+function findMLB(g,mlbGames){
+  const m=mlbGames.find(m=>m.teams?.home?.team?.abbreviation===g.home&&m.teams?.away?.team?.abbreviation===g.away);
+  // 把 gamePk 存回 allGames，供 fetchGameLS 使用
+  if(m&&!g._pk){
+    const idx=allGames.findIndex(x=>x.home===g.home&&x.away===g.away&&x.utc===g.utc);
+    if(idx>=0) allGames[idx]._pk=m.gamePk;
+    g._pk=m.gamePk;
   }
+  return m;
 }
 
-// ─── BUILD PREDICT BAR ──────────────────────────────────
-function predictBar(awayAbbr, homeAbbr, awayPct, homePct, slug){
-  if(awayPct==null||homePct==null){
-    return `<div class="gc-predict">
-      <div class="gc-predict-label"><span>🎯 勝率預測</span><a href="https://polymarket.com/sports/baseball/mlb" target="_blank">Polymarket ↗</a></div>
-      <div class="predict-no-data">暫無預測資料</div>
+// ══════════════════════════════════════════════
+// 好壞球 Play-by-Play（MLB Stats API）
+// ══════════════════════════════════════════════
+async function fetchCount(gamePk){
+  if(!gamePk||countCache[gamePk]?.ts>Date.now()-15000)return;
+  try{
+    const r=await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay?fields=currentPlay,allPlays`);
+    const d=await r.json();
+    const cp=d.currentPlay;
+    if(cp){
+      countCache[gamePk]={
+        balls:cp.count?.balls??0,
+        strikes:cp.count?.strikes??0,
+        outs:cp.count?.outs??0,
+        batter:cp.matchup?.batter?.fullName||'',
+        pitcher:cp.matchup?.pitcher?.fullName||'',
+        ts:Date.now()
+      };
+    }
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════
+// 補抓單場逐局記分（已完賽舊比賽用）
+// ══════════════════════════════════════════════
+const lsFetching=new Set();
+async function fetchGameLS(pk,homeA,awayA){
+  const key=`${homeA}-${awayA}`;
+  if(lsFetching.has(key))return;
+  lsFetching.add(key);
+  try{
+    const r=await fetch(`https://statsapi.mlb.com/api/v1/game/${pk}/linescore`);
+    const d=await r.json();
+    const innings=d.innings||[];
+    if(!innings.length){lsFetching.delete(key);return;}
+    const sbp={};
+    innings.forEach(i=>{sbp[i.num]={[homeA]:i.home?.runs??'-',[awayA]:i.away?.runs??'-'};});
+    const rhe={
+      [homeA]:{h:d.teams?.home?.hits??'',e:d.teams?.home?.errors??''},
+      [awayA]:{h:d.teams?.away?.hits??'',e:d.teams?.away?.errors??''},
+    };
+    // 更新 allGames
+    const idx=allGames.findIndex(g=>g.home===homeA&&g.away===awayA);
+    if(idx>=0){allGames[idx].sbp=sbp;allGames[idx].rhe=rhe;}
+    // 直接更新 DOM skeleton
+    const el=document.getElementById(`ls-${homeA}-${awayA}`);
+    if(el){
+      const inns=Object.keys(sbp).sort((a,b)=>+a-+b);
+      const rHm=rhe[homeA],rAw=rhe[awayA];
+      const gObj=allGames[idx]||{score:{}};
+      el.innerHTML=`<table class="ls-tbl">
+        <tr><td class="ll"> </td>${inns.map(n=>`<td class="lh">${n}</td>`).join('')}<td class="lth">R</td><td class="lrh">H</td><td class="lrh">E</td></tr>
+        <tr><td class="ll">${awayA}</td>${inns.map(n=>`<td>${sbp[n]?.[awayA]??'-'}</td>`).join('')}<td class="lt">${gObj.score[awayA]??''}</td><td class="lr">${rAw?.h??''}</td><td class="lr">${rAw?.e??''}</td></tr>
+        <tr><td class="ll">${homeA}</td>${inns.map(n=>`<td>${sbp[n]?.[homeA]??'-'}</td>`).join('')}<td class="lt">${gObj.score[homeA]??''}</td><td class="lr">${rHm?.h??''}</td><td class="lr">${rHm?.e??''}</td></tr>
+      </table>`;
+    }
+  }catch(e){}
+  lsFetching.delete(key);
+}
+
+// ══════════════════════════════════════════════
+// 即時比分刷新
+// ══════════════════════════════════════════════
+async function refreshLive(){
+  const today=todayTW();
+  delete mlbCache[today];
+  try{
+    const r=await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=linescore&gameType=R`);
+    const d=await r.json();
+    for(const mg of d.dates?.[0]?.games||[]){
+      const ha=mg.teams?.home?.team?.abbreviation;
+      const aa=mg.teams?.away?.team?.abbreviation;
+      const hs=mg.teams?.home?.score??null;
+      const as_=mg.teams?.away?.score??null;
+      const st=mg.status?.abstractGameState;
+      const det=mg.status?.detailedState||'';
+      const srSt=(st==='Live'||det==='In Progress'||det==='Critical')?'inprogress':
+                 (st==='Final'||st==='Completed'||det==='Final'||det==='Game Over'||det==='Completed Early')?'closed':'scheduled';
+      const ls=mg.linescore;
+      const idx=allGames.findIndex(g=>g.home===ha&&g.away===aa);
+      if(idx>=0&&hs!==null){
+        allGames[idx].score={[ha]:hs,[aa]:as_};
+        allGames[idx].st=srSt;
+        allGames[idx]._inn=ls?.currentInning;
+        allGames[idx]._half=ls?.inningHalf;
+        allGames[idx]._outs=ls?.outs;
+        allGames[idx]._pk=mg.gamePk;
+        if(ls?.innings){
+          const sbp={};
+          ls.innings.forEach(inn=>{sbp[inn.num]={[ha]:inn.home?.runs??'-',[aa]:inn.away?.runs??'-'};});
+          allGames[idx].sbp=sbp;
+          allGames[idx].rhe={
+            [ha]:{r:hs,h:ls.teams?.home?.hits??'',e:ls.teams?.home?.errors??''},
+            [aa]:{r:as_,h:ls.teams?.away?.hits??'',e:ls.teams?.away?.errors??''}
+          };
+        }
+        // 抓好壞球
+        if(srSt==='inprogress'&&mg.gamePk) fetchCount(mg.gamePk);
+      }
+    }
+    lastRefresh=new Date().toLocaleTimeString('zh-TW',{timeZone:'Asia/Taipei'});
+  }catch(e){}
+  buildTicker();
+  if(selectedDate===todayTW())renderMain();
+}
+
+// ══════════════════════════════════════════════
+// 盤口：SBR / ActionNetwork via allorigins proxy
+// ══════════════════════════════════════════════
+const ABBR_MAP={
+  'Yankees':'NYY','Red Sox':'BOS','Blue Jays':'TOR','Orioles':'BAL','Rays':'TB',
+  'Guardians':'CLE','Twins':'MIN','Tigers':'DET','Royals':'KC','White Sox':'CWS',
+  'Astros':'HOU','Mariners':'SEA','Rangers':'TEX','Angels':'LAA','Athletics':'ATH',
+  'Mets':'NYM','Braves':'ATL','Phillies':'PHI','Marlins':'MIA','Nationals':'WSH',
+  'Cubs':'CHC','Cardinals':'STL','Brewers':'MIL','Pirates':'PIT','Reds':'CIN',
+  'Dodgers':'LAD','Giants':'SF','Padres':'SD','Diamondbacks':'AZ','Rockies':'COL',
+};
+function nameToAbbr(n){
+  for(const[k,v] of Object.entries(ABBR_MAP)){if(n&&n.includes(k))return v;}
+  return null;
+}
+function amerToProb(ml){return ml>0?100/(ml+100):(-ml)/((-ml)+100);}
+function noVig(pA,pH){const s=pA+pH;return{a:Math.round(pA/s*100),h:Math.round(pH/s*100)};}
+function mlClass(ml){return ml<0?'fav':ml>100?'dog':'even';}
+function fmtML(ml){return ml>0?'+'+ml:String(ml);}
+
+async function fetchOdds(){
+  // 嘗試 SBR 免費公開盤口（no API key needed）
+  try{
+    const url='https://www.sportsbookreview.com/betting-odds/mlb-baseball/';
+    const proxy='https://api.allorigins.win/get?url='+encodeURIComponent(url);
+    const r=await fetch(proxy,{signal:AbortSignal.timeout(10000)});
+    const d=await r.json();
+    const html=d.contents||'';
+    // 解析美式賠率：pattern like "-135" "+115"
+    const mlPats=[...html.matchAll(/([+-]\d{3,4})/g)].map(m=>parseInt(m[1]));
+    const teamPats=[...html.matchAll(/class="[^"]*team-name[^"]*"[^>]*>([^<]+)</g)].map(m=>m[1].trim());
+    let loaded=0;
+    for(let i=0;i+1<teamPats.length&&i+1<mlPats.length;i+=2){
+      const awayA=nameToAbbr(teamPats[i]),homeA=nameToAbbr(teamPats[i+1]);
+      const mlA=mlPats[i*2],mlH=mlPats[i*2+1];
+      if(awayA&&homeA&&mlA&&mlH){
+        const pA=amerToProb(mlA),pH=amerToProb(mlH);
+        const {a,h}=noVig(pA,pH);
+        oddsCache[`${awayA}-${homeA}`]={a,h,ml_a:mlA,ml_h:mlH,src:'SBR',total:null};
+        loaded++;
+      }
+    }
+    if(loaded>0){console.log(`✅ SBR odds: ${loaded}`);renderMain();return;}
+  }catch(e){console.warn('SBR proxy failed:',e.message);}
+
+  // 備援：DRatings proxy
+  try{
+    const proxy2='https://api.allorigins.win/get?url='+encodeURIComponent('https://www.dratings.com/predictor/mlb-baseball-predictions/');
+    const r2=await fetch(proxy2,{signal:AbortSignal.timeout(10000)});
+    const d2=await r2.json();
+    const html2=d2.contents||'';
+    const SLUG={
+      'new-york-yankees':'NYY','boston-red-sox':'BOS','toronto-blue-jays':'TOR','baltimore-orioles':'BAL',
+      'tampa-bay-rays':'TB','cleveland-guardians':'CLE','minnesota-twins':'MIN','detroit-tigers':'DET',
+      'kansas-city-royals':'KC','chicago-white-sox':'CWS','houston-astros':'HOU','seattle-mariners':'SEA',
+      'texas-rangers':'TEX','los-angeles-angels':'LAA','athletics':'ATH','new-york-mets':'NYM',
+      'atlanta-braves':'ATL','philadelphia-phillies':'PHI','miami-marlins':'MIA','washington-nationals':'WSH',
+      'chicago-cubs':'CHC','st-louis-cardinals':'STL','milwaukee-brewers':'MIL','pittsburgh-pirates':'PIT',
+      'cincinnati-reds':'CIN','los-angeles-dodgers':'LAD','san-francisco-giants':'SF',
+      'san-diego-padres':'SD','arizona-diamondbacks':'AZ','colorado-rockies':'COL',
+    };
+    const slugs=[...html2.matchAll(/mlb-baseball-ratings\/\d+-([a-z-]+)["']/g)].map(m=>m[1]);
+    const pcts=[...html2.matchAll(/(\d{1,2}\.\d)%/g)].map(m=>parseFloat(m[1]));
+    let loaded2=0;
+    for(let i=0;i+1<slugs.length&&i/2+1<pcts.length;i+=2){
+      const awayA=SLUG[slugs[i]],homeA=SLUG[slugs[i+1]];
+      const ap=pcts[Math.floor(i/2)*2],hp=pcts[Math.floor(i/2)*2+1];
+      if(awayA&&homeA&&ap&&hp){
+        oddsCache[`${awayA}-${homeA}`]={a:ap,h:hp,src:'DRatings',ml_a:null,ml_h:null,total:null};
+        loaded2++;
+      }
+    }
+    if(loaded2>0){console.log(`✅ DRatings live: ${loaded2}`);renderMain();return;}
+  }catch(e){console.warn('DRatings proxy failed:',e.message);}
+
+  // 最終備援：靜態 DRatings
+  for(const[k,v] of Object.entries(DR)){
+    if(!oddsCache[k])oddsCache[k]={a:v.a,h:v.h,src:'DRatings靜態',ml_a:null,ml_h:null,total:null};
+  }
+  renderMain();
+}
+
+// ══════════════════════════════════════════════
+// 渲染：逐局計分
+// ══════════════════════════════════════════════
+function renderLS(g,mlb){
+  let sbp={...g.sbp};
+  const ls=mlb?.linescore;
+  // 從 MLB API linescore 填入
+  if(!Object.keys(sbp).length&&ls?.innings?.length){
+    ls.innings.forEach(i=>{sbp[i.num]={[g.home]:i.home?.runs??'-',[g.away]:i.away?.runs??'-'};});
+    // 同步回 game 物件
+    g.sbp=sbp;
+    if(ls.teams){
+      g.rhe=g.rhe||{};
+      g.rhe[g.home]=g.rhe[g.home]||{h:ls.teams.home?.hits??'',e:ls.teams.home?.errors??''};
+      g.rhe[g.away]=g.rhe[g.away]||{h:ls.teams.away?.hits??'',e:ls.teams.away?.errors??''};
+    }
+  }
+  const innings=Object.keys(sbp).sort((a,b)=>+a-+b);
+  // 已完賽但無逐局：觸發補抓，暫顯skeleton
+  if(!innings.length&&(g.st==='closed'||g.st==='complete')){
+    const pk=g._pk||mlb?.gamePk;
+    if(pk) fetchGameLS(pk,g.home,g.away);
+    return `<div class="gc-ls" id="ls-${g.home}-${g.away}">
+      <div class="ls-skeleton">⏳ 抓取逐局記分中...</div>
     </div>`;
   }
-  const ap=Math.max(awayPct,2), hp=Math.max(homePct,2);
-  const awayAt=T[awayAbbr], homeAt=T[homeAbbr];
-  const aName=awayAt?.zh||awayAbbr, hName=homeAt?.zh||homeAbbr;
-  const link=slug?`https://polymarket.com/event/${slug}`:'https://polymarket.com/sports/baseball/mlb';
-  return `<div class="gc-predict">
-    <div class="gc-predict-label"><span>🎯 Polymarket 勝率預測</span><a href="${link}" target="_blank">查看 ↗</a></div>
-    <div class="predict-bar-wrap">
-      <div class="predict-bar-away" style="width:${ap}%">${ap}%</div>
-      <div class="predict-bar-home" style="width:${hp}%">${hp}%</div>
-    </div>
-    <div class="predict-teams">
-      <span>${aName} (客)</span>
-      <span>${hName} (主)</span>
-    </div>
+  if(!innings.length)return '';
+  const rhe=g.rhe||{};
+  const hRHE=rhe[g.home]||{};const aRHE=rhe[g.away]||{};
+  const curInn=g._inn;
+  return `<div class="gc-ls">
+    <table class="ls-tbl">
+      <tr><td class="ll"> </td>${innings.map(n=>`<td class="lh">${n}</td>`).join('')}<td class="lth">R</td><td class="lrh">H</td><td class="lrh">E</td></tr>
+      <tr><td class="ll">${g.away}</td>${innings.map(n=>`<td class="${n==curInn?'ls-cur':''}">${sbp[n]?.[g.away]??'-'}</td>`).join('')}<td class="lt">${g.score[g.away]??''}</td><td class="lr">${aRHE.h??''}</td><td class="lr">${aRHE.e??''}</td></tr>
+      <tr><td class="ll">${g.home}</td>${innings.map(n=>`<td class="${n==curInn?'ls-cur':''}">${sbp[n]?.[g.home]??'-'}</td>`).join('')}<td class="lt">${g.score[g.home]??''}</td><td class="lr">${hRHE.h??''}</td><td class="lr">${hRHE.e??''}</td></tr>
+    </table>
   </div>`;
 }
 
-// ─── RENDER ONE GAME CARD ───────────────────────────────
-function renderCard(g, mlb, delay){
-  const homeA=g.home, awayA=g.away;
-  const homeT=ti(homeA), awayT=ti(awayA);
-  const status=g.status; // inprogress / closed / scheduled
-  const homeScore=g.score?.[homeA]??null;
-  const awayScore=g.score?.[awayA]??null;
+// ══════════════════════════════════════════════
+// 渲染：好壞球 + 好壞球圓點
+// ══════════════════════════════════════════════
+function countDots(n,type,filled){
+  let s='';
+  for(let i=0;i<n;i++)s+=`<span class="dot ${i<filled?type:''}"></span>`;
+  return s;
+}
+function renderCount(g){
+  if(g.st!=='inprogress'||!g._pk)return '';
+  const c=countCache[g._pk];
+  if(!c)return '';
+  const balls=c.balls??0,strikes=c.strikes??0,outs=c.outs??0;
+  const half=(g._half||'')==='Top'?'▲':'▼';
+  const inn=g._inn||'';
+  return `<div class="gc-game-info">
+    <span class="gc-inning-label">${half}${inn}局</span>
+    <span class="count-dots">${countDots(3,'',(outs))} </span>
+    <span style="font-size:.5rem;color:var(--muted)">出局</span>
+    <span class="count-dots">${countDots(4,'ball',balls)}</span>
+    <span style="font-size:.5rem;color:var(--muted)">B</span>
+    <span class="count-dots">${countDots(3,'strike',strikes)}</span>
+    <span style="font-size:.5rem;color:var(--muted)">S</span>
+    ${c.batter?`<span style="font-size:.52rem;color:var(--muted)">${c.batter}</span>`:''}
+  </div>`;
+}
 
-  // ── status bar ──
-  let statusHTML='';
-  let timeHTML='';
-  const startUTC=new Date(g.start_time);
-  const twTime=startUTC.toLocaleString('zh-TW',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Taipei',hour12:false});
-  const twDate=startUTC.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',timeZone:'Asia/Taipei'});
+// ══════════════════════════════════════════════
+// 渲染：ML 盤口行（底部，只顯示 ML，勝率在第二列）
+// ══════════════════════════════════════════════
+function getOdds(awayA,homeA){ return oddsCache[`${awayA}-${homeA}`]||null; }
 
-  if(status==='inprogress'){
-    // get inning from MLB linescore if available
-    const inn=mlb?.linescore?.currentInning||'';
-    const half=mlb?.linescore?.inningHalf||'';
-    const halfSym=half==='Top'?'▲':half==='Bottom'?'▼':'';
-    statusHTML=`<span class="gc-status-live"><span class="pulse"></span>${halfSym}${inn}局 進行中</span>`;
-  } else if(status==='closed'){
-    statusHTML=`<span class="gc-status-final">最終比分</span>`;
-  } else {
-    statusHTML=`<span class="gc-status-sched">🕐 ${twDate} ${twTime} 台灣時間</span>`;
-  }
-
-  // ── venue ──
-  const venueName = mlb?.venue?.name || homeT.venue || '';
-
-  // ── score display ──
-  let scoreBlock='';
-  if(status==='inprogress'||status==='closed'){
-    scoreBlock=`<div class="gc-score ${status==='inprogress'?'live-score':''}">${awayScore} - ${homeScore}</div>`;
-  } else {
-    scoreBlock=`<div class="gc-vs">VS</div><div class="gc-tw-time">${twTime}</div>`;
-  }
-
-  // ── linescore innings ──
-  let linescoreHTML='';
-  const ls=mlb?.linescore;
-  if(ls&&ls.innings&&ls.innings.length&&(status==='inprogress'||status==='closed')){
-    const innings=ls.innings;
-    const awayRuns=innings.map(i=>i.away?.runs??'-');
-    const homeRuns=innings.map(i=>i.home?.runs??'-');
-    const numInnings=innings.length;
-    linescoreHTML=`<div class="gc-linescore">
-      <span class="ls-team-label">${awayA}</span>
-      ${awayRuns.map((r,i)=>`<span class="ls-cell">${r}</span>`).join('')}
-      <span class="ls-cell total">${awayScore}</span>
+function renderMLRow(awayA,homeA){
+  const od=getOdds(awayA,homeA);
+  if(!od||od.ml_a==null) return ''; // 無 ML 不顯示此行
+  return `<div class="gc-ml-row">
+    <div class="ml-away"><span class="ml-val ${mlClass(od.ml_a)}">${fmtML(od.ml_a)}</span></div>
+    <div class="ml-center">
+      ${od.total!=null?`<div class="ml-ou">O/U <b>${od.total}</b></div>`:''}
+      <div class="ml-src">${od.src}</div>
     </div>
-    <div class="gc-linescore">
-      <span class="ls-team-label">${homeA}</span>
-      ${homeRuns.map((r,i)=>`<span class="ls-cell">${r}</span>`).join('')}
-      <span class="ls-cell total">${homeScore}</span>
-    </div>`;
+    <div class="ml-home"><span class="ml-val ${mlClass(od.ml_h)}">${fmtML(od.ml_h)}</span></div>
+  </div>`;
+}
+
+// 勝率%供 score row 使用
+function getPct(awayA,homeA){
+  const od=getOdds(awayA,homeA);
+  if(!od) return null;
+  return {a:Math.max(od.a,4), h:Math.max(od.h,4), src:od.src};
+}
+
+// ══════════════════════════════════════════════
+// 渲染：卡片
+// ══════════════════════════════════════════════
+function renderCard(g,mlb,delay){
+  const {home,away,st,score,utc}=g;
+  const ht=ti(home),at=ti(away);
+  const hs=score[home]??null,as_=score[away]??null;
+
+  // 左上角狀態 badge
+  let badge='';
+  const half=(g._half||'')==='Top'?'▲':'▼';
+  const inn=g._inn||'';
+  if(st==='inprogress'){
+    // 局數簡短版放 badge 旁
+    badge=`<span class="gc-status-badge badge-live"><span class="pulse"></span>進行中</span>`;
+  } else if(st==='closed'||st==='complete'){
+    badge=`<span class="gc-status-badge badge-final">✅ 已完賽</span>`;
+  } else {
+    badge=`<span class="gc-status-badge badge-sched">🕐 未開賽</span>`;
   }
 
-  // ── probable pitchers ──
-  let pitcherHTML='';
-  const ap=mlb?.teams?.away?.probablePitcher;
-  const hp=mlb?.teams?.home?.probablePitcher;
-  if(ap||hp){
-    function pInfo(p){
-      if(!p) return `<div class="gc-pitcher-side">TBD</div>`;
-      const stats=p.stats?.find(s=>s.type?.displayName==='season')?.splits?.[0]?.stat||{};
-      const era=stats.era??'-.--', w=stats.wins??0, l=stats.losses??0;
-      return `<div class="gc-pitcher-side">⚾ <span>${p.fullName}</span><br>${w}-${l} ERA ${era}</div>`;
-    }
-    pitcherHTML=`<div class="gc-pitchers">
-      ${pInfo(ap)}
-      <div style="text-align:center;color:var(--border);font-size:.7rem;padding:0 4px;">│</div>
-      ${pInfo(hp)}
-    </div>`;
+  // 局數 + 好壞球（進行中才顯示）
+  const countHtml=renderCount(g);
+  const innHtml=(st==='inprogress'&&!countHtml&&inn)?`<span class="gc-inning-label">${half}${inn}局</span>`:'';
+
+  // 開賽時間（待賽才顯示）
+  const schedInfo=st==='scheduled'?`<span style="font-size:.55rem;color:var(--sky);">${twDateLbl(utc)} ${twTime(utc)}</span>`:'';
+
+  const venue=mlb?.venue?.name||ht.venue||'';
+
+  // 比分
+  let scoreHTML='';
+  if(st==='inprogress'){
+    scoreHTML=`<div class="gc-score live">${as_??0} - ${hs??0}</div>`;
+  }else if(st==='closed'||st==='complete'){
+    scoreHTML=`<div class="gc-score">${as_} - ${hs}</div>
+      <div class="gc-win-lbl">${hs>as_?`<b>${ht.zh}</b> 勝`:`<b>${at.zh}</b> 勝`}</div>`;
+  }else{
+    scoreHTML=`<div class="gc-vs">VS</div><div class="gc-tw-time">${twTime(utc)}</div>`;
   }
 
-  // ── win/loss pitcher (final) ──
-  let decisionsHTML='';
-  // (no data from SR game list; shown when available)
+  // 勝率%（第二列使用）
+  const pct=getPct(away,home);
 
-  // ── prediction ──
-  const key=`${awayA}-${homeA}`;
-  const odds=polyOdds[key]||polyOdds[`${awayA.toUpperCase()}-${homeA.toUpperCase()}`];
-  const predHTML=predictBar(awayA, homeA, odds?.away||null, odds?.home||null, odds?.slug||'');
+  // 先發投手
+  let pitHTML='';
+  const ap_=mlb?.teams?.away?.probablePitcher;
+  const hp_=mlb?.teams?.home?.probablePitcher;
+  if(ap_||hp_){
+    const pBlk=(p,lbl)=>{
+      if(!p)return `<div class="pit-s">${lbl}：<b style="color:var(--muted)">TBD</b></div>`;
+      const s=p.stats?.find(x=>x.type?.displayName==='season')?.splits?.[0]?.stat||{};
+      return `<div class="pit-s">${lbl}：<b>${p.fullName}</b><br>${s.wins??0}勝${s.losses??0}敗 ERA ${s.era??'-.--'}</div>`;
+    };
+    pitHTML=`<div class="gc-pit">${pBlk(ap_,at.zh)}<div class="pit-sep">⚾</div>${pBlk(hp_,ht.zh)}</div>`;
+  }
 
-  return `<div class="game-card ${status==='inprogress'?'live-game':status==='closed'?'final-game':''}" style="animation-delay:${delay}ms">
+  return `<div class="game-card${st==='inprogress'?' live-game':(st==='closed'||st==='complete')?' final-game':''}" style="animation-delay:${delay}ms">
     <div class="gc-topbar">
-      ${statusHTML}
-      <div class="gc-venue">🏟 ${venueName}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        ${badge}
+        ${countHtml||innHtml}
+        ${schedInfo}
+      </div>
+      <div class="gc-venue">🏟 ${venue}</div>
     </div>
     <div class="gc-score-row">
       <div class="gc-team away">
-        <div class="team-badge ${tc(awayA)}">${awayA}</div>
+        <div class="team-badge ${tc(away)}">${away}</div>
         <div>
-          <div>${awayT.zh}</div>
-          <div style="font-size:.58rem;color:var(--muted)">${awayA}</div>
+          <div>${at.zh}</div>
+          <div style="font-size:.5rem;color:var(--muted)">${away}</div>
+          ${pct?`<div class="team-pct ${pct.a>=pct.h?'pct-lead':'pct-trail'}">${pct.a>=pct.h?'⭐ ':''}${pct.a}%</div>`:''}
         </div>
       </div>
-      <div class="gc-mid">${scoreBlock}</div>
+      <div class="gc-mid">${scoreHTML}</div>
       <div class="gc-team">
-        <div class="team-badge ${tc(homeA)}">${homeA}</div>
+        <div class="team-badge ${tc(home)}">${home}</div>
         <div>
-          <div>${homeT.zh}</div>
-          <div style="font-size:.58rem;color:var(--muted)">${homeA}</div>
+          <div>${ht.zh}</div>
+          <div style="font-size:.5rem;color:var(--muted)">${home}</div>
+          ${pct?`<div class="team-pct ${pct.h>pct.a?'pct-lead':'pct-trail'}">${pct.h>pct.a?'⭐ ':''}${pct.h}%</div>`:''}
         </div>
       </div>
     </div>
-    ${linescoreHTML}
-    ${pitcherHTML}
-    ${predHTML}
+    ${renderLS(g,mlb)}
+    ${pitHTML}
+    ${renderMLRow(away,home)}
   </div>`;
 }
 
-// ─── GROUP GAMES BY DATE ────────────────────────────────
-function groupByDate(games){
-  const map={};
-  for(const g of games){
-    const dt=new Date(g.start_time).toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'Asia/Taipei'}).replace(/\//g,'-');
-    // convert zh date to ISO
-    const parts=g.start_time.slice(0,10);
-    if(!map[parts]) map[parts]=[];
-    map[parts].push(g);
-  }
-  return map;
-}
-
-// ─── RENDER MAIN ────────────────────────────────────────
+// ══════════════════════════════════════════════
+// 主渲染
+// ══════════════════════════════════════════════
 async function renderMain(){
   const mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="loading"><div class="spinner"></div>載入中...</div>';
-
+  let games=allGames.filter(g=>twISO(g.utc)===selectedDate);
   const mlbDay=await fetchMLBDay(selectedDate);
 
-  // merge SR scores with MLB data by team abbreviation
-  const srGames=allGames.filter(g=>{
-    const d=new Date(g.start_time).toISOString().slice(0,10);
-    return d===selectedDate;
-  });
-
-  // also get next 2 days scheduled from allGames
-  let displayDates=[selectedDate];
-
-  // find MLB game for a SR game
-  function findMLBGame(g){
-    return mlbDay.find(m=>{
-      const mh=m.teams?.home?.team?.abbreviation;
-      const ma=m.teams?.away?.team?.abbreviation;
-      return (mh===g.home||mh===g.away)&&(ma===g.away||ma===g.home);
-    });
+  if(!games.length&&!mlbDay.length){
+    mc.innerHTML=`<div style="text-align:center;padding:28px;color:var(--muted);">此日期無比賽</div>`;return;
   }
 
-  if(!srGames.length && !mlbDay.length){
-    mc.innerHTML=`<div style="text-align:center;padding:30px;color:var(--muted)">此日期無比賽資料</div>`;
-    return;
-  }
+  const ord={inprogress:0,scheduled:1,closed:2,complete:2};
+  games=[...games].sort((a,b)=>(ord[a.st]??1)-(ord[b.st]??1)||(new Date(a.utc)-new Date(b.utc)));
 
-  // if SR has no data for this date (future), use MLB API data only
-  let cards='';
-  let count=0;
-
-  if(srGames.length){
-    srGames.forEach((g,i)=>{
-      const mlb=findMLBGame(g);
-      cards+=renderCard(g,mlb,i*40);
-      count++;
-    });
-  } else {
-    // use MLB API games only (scheduled future)
+  let html='';let count=0;
+  if(games.length){
+    games.forEach((g,i)=>{html+=renderCard(g,findMLB(g,mlbDay),i*30);count++;});
+  }else{
     mlbDay.forEach((m,i)=>{
-      const homeA=m.teams?.home?.team?.abbreviation||'';
-      const awayA=m.teams?.away?.team?.abbreviation||'';
-      const fake={
-        id:m.gamePk,
-        status:'scheduled',
-        start_time:m.gameDate,
-        home:homeA,away:awayA,
-        score:{},
-        teams:{[homeA]:{name:homeA},[awayA]:{name:awayA}},
-      };
-      cards+=renderCard(fake,m,i*40);
+      const ha=m.teams?.home?.team?.abbreviation||'';
+      const aa=m.teams?.away?.team?.abbreviation||'';
+      html+=renderCard({st:'scheduled',utc:m.gameDate,home:ha,away:aa,score:{},sbp:{},rhe:{}},m,i*30);
       count++;
     });
   }
 
-  const dateLabel=new Date(selectedDate+'T12:00:00').toLocaleDateString('zh-TW',{month:'long',day:'numeric',weekday:'long'});
-  mc.innerHTML=`
-    <div class="sec-hdr">
-      <span>⚾ ${dateLabel}</span>
-      <span class="sec-count">${count} 場比賽</span>
-    </div>
-    ${cards}
-  `;
+  const label=new Date(selectedDate+'T12:00:00+08:00').toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'long',day:'numeric',weekday:'long'});
+  mc.innerHTML=`<div class="sec-hdr">⚾ ${label}<span class="sec-count">${count} 場</span><span class="refresh-time">${lastRefresh?'更新 '+lastRefresh:''}</span></div>${html}`;
 }
 
-// ─── MAIN INIT ──────────────────────────────────────────
+// ══════════════════════════════════════════════
+// 初始化
+// ══════════════════════════════════════════════
 async function init(){
-  // inject SportRadar data (already fetched server-side via tools)
-  allGames = SPORTRADAR_GAMES;
-
-  // compute available dates from allGames
   const dateSet=new Set();
-  for(const g of allGames){
-    const dt=new Date(g.start_time).toISOString().slice(0,10);
-    dateSet.add(dt);
-  }
-  // also add next 3 days
-  const today=new Date();
-  for(let i=0;i<4;i++){
-    dateSet.add(isoDate(addDays(today,i)));
-  }
-  const dates=[...dateSet].sort().slice(0,7);
-
-  // pick today or first date with games
-  const todayISO=isoDate(today);
-  selectedDate=dates.includes(todayISO)?todayISO:dates[0]||todayISO;
-
+  for(const g of allGames)dateSet.add(twISO(g.utc));
+  const today=todayTW();
+  for(let i=0;i<4;i++)dateSet.add(addDay(today,i));
+  const dates=[...dateSet].filter(Boolean).sort();
+  selectedDate=dates.includes(today)?today:(dates.find(d=>d>=today)||dates[0]);
   buildDateNav(dates);
   buildTicker();
-  await Promise.all([renderMain(), fetchPolyOdds()]);
-
-  // re-render after poly loads
-  renderMain();
-
-  // refresh every 30s
-  refreshTimer=setInterval(async()=>{
-    // clear mlbGames cache for today to refetch live data
-    delete mlbGames[selectedDate];
-    await renderMain();
-    buildTicker();
-  }, 30000);
-}
-
-// ─── SPORTRADAR DATA (injected from server) ─────────────
-const SPORTRADAR_GAMES = [
-  {"id":"a9ae8574","status":"inprogress","start_time":"2026-06-08T00:30:00+00:00","home":"CHC","away":"SF","score":{"CHC":1,"SF":1}},
-  {"id":"52a6fae1","status":"scheduled","start_time":"2026-06-08T22:35:00+00:00","home":"BAL","away":"SEA","score":{}},
-  {"id":"3c7c17e7","status":"scheduled","start_time":"2026-06-08T22:40:00+00:00","home":"TB","away":"BOS","score":{}},
-  {"id":"66990254","status":"scheduled","start_time":"2026-06-08T22:40:00+00:00","home":"CLE","away":"NYY","score":{}},
-  {"id":"95b57ec2","status":"scheduled","start_time":"2026-06-08T23:07:00+00:00","home":"TOR","away":"PHI","score":{}},
-  {"id":"3042c795","status":"scheduled","start_time":"2026-06-09T01:38:00+00:00","home":"LAA","away":"HOU","score":{}},
-  {"id":"5b04aa79","status":"scheduled","start_time":"2026-06-09T01:40:00+00:00","home":"SD","away":"CIN","score":{}},
-  {"id":"4c6ec49e","status":"scheduled","start_time":"2026-06-09T01:45:00+00:00","home":"SF","away":"WSH","score":{}},
-  {"id":"b6d00fa3","status":"scheduled","start_time":"2026-06-09T02:05:00+00:00","home":"ATH","away":"MIL","score":{}},
-  {"id":"894a443a","status":"scheduled","start_time":"2026-06-09T22:35:00+00:00","home":"BAL","away":"SEA","score":{}},
-  {"id":"5c97693b","status":"scheduled","start_time":"2026-06-09T22:40:00+00:00","home":"MIA","away":"AZ","score":{}},
-  {"id":"aaa4ad34","status":"scheduled","start_time":"2026-06-09T22:40:00+00:00","home":"TB","away":"BOS","score":{}},
-  {"id":"b568903b","status":"scheduled","start_time":"2026-06-09T22:40:00+00:00","home":"CLE","away":"NYY","score":{}},
-  {"id":"bed034ae","status":"scheduled","start_time":"2026-06-09T22:40:00+00:00","home":"DET","away":"MIN","score":{}},
-  {"id":"d8400862","status":"scheduled","start_time":"2026-06-09T22:40:00+00:00","home":"PIT","away":"LAD","score":{}},
-  {"id":"936aa385","status":"scheduled","start_time":"2026-06-09T23:07:00+00:00","home":"TOR","away":"PHI","score":{}},
-  {"id":"87143836","status":"scheduled","start_time":"2026-06-09T23:10:00+00:00","home":"NYM","away":"STL","score":{}},
-  {"id":"5d15be81","status":"scheduled","start_time":"2026-06-09T23:40:00+00:00","home":"CWS","away":"ATL","score":{}},
-  {"id":"ace6b424","status":"scheduled","start_time":"2026-06-09T23:40:00+00:00","home":"KC","away":"TEX","score":{}},
-  {"id":"806d4626","status":"scheduled","start_time":"2026-06-10T00:40:00+00:00","home":"COL","away":"CHC","score":{}},
-  {"id":"a7640683","status":"scheduled","start_time":"2026-06-10T01:38:00+00:00","home":"LAA","away":"HOU","score":{}},
-  {"id":"5063d62a","status":"scheduled","start_time":"2026-06-10T01:40:00+00:00","home":"SD","away":"CIN","score":{}},
-  {"id":"ee6c157d","status":"scheduled","start_time":"2026-06-10T01:45:00+00:00","home":"SF","away":"WSH","score":{}},
-  {"id":"e53207bd","status":"scheduled","start_time":"2026-06-10T02:05:00+00:00","home":"ATH","away":"MIL","score":{}},
-  {"id":"5f390cee","status":"closed","start_time":"2026-06-07T17:35:00+00:00","home":"NYY","away":"BOS","score":{"NYY":6,"BOS":1}},
-  {"id":"e50095d6","status":"closed","start_time":"2026-06-07T17:35:00+00:00","home":"ATL","away":"PIT","score":{"ATL":3,"PIT":2}},
-  {"id":"fb676497","status":"closed","start_time":"2026-06-07T17:35:00+00:00","home":"PHI","away":"CWS","score":{"PHI":9,"CWS":5}},
-  {"id":"eb1ddf5f","status":"closed","start_time":"2026-06-07T17:37:00+00:00","home":"TOR","away":"BAL","score":{"TOR":6,"BAL":4}},
-  {"id":"ecb31b84","status":"closed","start_time":"2026-06-07T17:40:00+00:00","home":"DET","away":"SEA","score":{"DET":5,"SEA":4}},
-  {"id":"fc5427ae","status":"closed","start_time":"2026-06-07T17:40:00+00:00","home":"MIA","away":"TB","score":{"MIA":4,"TB":1}},
-  {"id":"2c5b3423","status":"closed","start_time":"2026-06-07T18:10:00+00:00","home":"MIN","away":"KC","score":{"MIN":5,"KC":6}},
-  {"id":"aa09b9a4","status":"closed","start_time":"2026-06-07T18:10:00+00:00","home":"HOU","away":"ATH","score":{"HOU":0,"ATH":5}},
-  {"id":"a3bb6c39","status":"closed","start_time":"2026-06-07T18:15:00+00:00","home":"STL","away":"CIN","score":{"STL":5,"CIN":3}},
-  {"id":"0ffffd5b","status":"closed","start_time":"2026-06-07T18:35:00+00:00","home":"TEX","away":"CLE","score":{"TEX":10,"CLE":0}},
-  {"id":"cd62e495","status":"closed","start_time":"2026-06-07T19:10:00+00:00","home":"COL","away":"MIL","score":{"COL":4,"MIL":12}},
-  {"id":"7a341386","status":"closed","start_time":"2026-06-07T19:15:00+00:00","home":"AZ","away":"WSH","score":{"AZ":5,"WSH":1}},
-  {"id":"aad880ef","status":"closed","start_time":"2026-06-07T20:10:00+00:00","home":"SD","away":"NYM","score":{"SD":3,"NYM":7}},
-  {"id":"f4445ead","status":"closed","start_time":"2026-06-07T20:10:00+00:00","home":"LAD","away":"LAA","score":{"LAD":5,"LAA":13}}
-];
-
-init();
-
-// Live score auto-refresh via MLB Stats API
-async function refreshLiveScores(){
-  // re-fetch MLB API for today to get updated linescores
-  delete mlbGames[selectedDate];
   await renderMain();
+  fetchOdds();
+  setInterval(refreshLive,30000);
+  setInterval(fetchOdds,30*60*1000);
 }
-setInterval(refreshLiveScores, 30000);
+init();
 </script>
 </body>
 </html>
