@@ -114,6 +114,19 @@ header{background:linear-gradient(160deg,#000e1e,#001830,#001020);border-bottom:
 .gc-ls{padding:0 12px 6px;overflow-x:auto;scrollbar-width:none;}
 .gc-ls::-webkit-scrollbar{display:none;}
 .ls-skeleton{font-size:.54rem;color:var(--muted);font-style:italic;padding:4px 0;}
+.ls-toggle{
+  display:flex;align-items:center;gap:5px;
+  width:100%;padding:5px 12px;
+  background:none;border:none;border-top:1px solid var(--border);
+  color:var(--muted);font-size:.56rem;font-family:'IBM Plex Mono',monospace;
+  cursor:pointer;text-align:left;letter-spacing:.06em;
+  transition:color .15s;
+}
+.ls-toggle:hover{color:var(--text);}
+.ls-toggle .arrow{font-size:.5rem;transition:transform .2s;}
+.ls-toggle.open .arrow{transform:rotate(90deg);}
+.ls-body{display:none;overflow:hidden;}
+.ls-body.open{display:block;}
 .ls-tbl{border-collapse:collapse;font-size:.52rem;font-family:'IBM Plex Mono',monospace;min-width:max-content;}
 .ls-tbl td{padding:2px 5px;text-align:center;min-width:18px;}
 .ls-tbl .ll{color:var(--muted);text-align:left;padding-right:8px;font-size:.5rem;min-width:28px;}
@@ -202,7 +215,8 @@ footer{text-align:center;padding:12px;color:var(--muted);font-size:.54rem;
       </div>
     </div>
     <div class="hdr-right">
-      <div class="live-dot"><span class="pulse"></span>SportRadar 即時</div>
+      <div class="live-dot"><span class="pulse"></span>多源即時同步</div>
+      <div id="hdr-sync" style="font-size:.52rem;color:var(--grass);">初始化中...</div>
       <div id="hdr-time">--:--:--</div>
       <div id="hdr-date">--</div>
     </div>
@@ -220,65 +234,42 @@ footer{text-align:center;padding:12px;color:var(--muted);font-size:.54rem;
 </div>
 
 <script>
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 // 球隊資料
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 const T={
-  NYY:{zh:'洋基',en:'New York Yankees',venue:'洋基體育場'},
-  BOS:{zh:'紅襪',en:'Boston Red Sox',venue:'芬威球場'},
-  TOR:{zh:'藍鳥',en:'Toronto Blue Jays',venue:'羅傑斯中心'},
-  BAL:{zh:'金鶯',en:'Baltimore Orioles',venue:'坎登院子'},
-  TB:{zh:'光芒',en:'Tampa Bay Rays',venue:'特羅彼卡納球場'},
-  CLE:{zh:'守護者',en:'Cleveland Guardians',venue:'普羅格雷斯球場'},
-  MIN:{zh:'雙城',en:'Minnesota Twins',venue:'目標球場'},
-  DET:{zh:'老虎',en:'Detroit Tigers',venue:'科默里卡球場'},
-  KC:{zh:'皇家',en:'Kansas City Royals',venue:'卡夫曼體育場'},
-  CWS:{zh:'白襪',en:'Chicago White Sox',venue:'保障費率球場'},
-  HOU:{zh:'太空人',en:'Houston Astros',venue:'美粒果球場'},
-  SEA:{zh:'水手',en:'Seattle Mariners',venue:'T-Mobile球場'},
-  TEX:{zh:'遊騎兵',en:'Texas Rangers',venue:'環球人壽球場'},
-  LAA:{zh:'天使',en:'Los Angeles Angels',venue:'天使體育場'},
-  ATH:{zh:'運動家',en:'Athletics',venue:'薩克拉門托球場'},
-  OAK:{zh:'運動家',en:'Oakland Athletics',venue:'薩克拉門托球場'},
-  NYM:{zh:'大都會',en:'New York Mets',venue:'花旗球場'},
-  ATL:{zh:'勇士',en:'Atlanta Braves',venue:'信任公園'},
-  PHI:{zh:'費城人',en:'Philadelphia Phillies',venue:'公民銀行球場'},
-  MIA:{zh:'馬林魚',en:'Miami Marlins',venue:'羅恩馬利斯球場'},
-  WSH:{zh:'國民',en:'Washington Nationals',venue:'國民球場'},
-  WSN:{zh:'國民',en:'Washington Nationals',venue:'國民球場'},
-  CHC:{zh:'小熊',en:'Chicago Cubs',venue:'瑞格利球場'},
-  STL:{zh:'紅雀',en:'St. Louis Cardinals',venue:'布希體育場'},
-  MIL:{zh:'釀酒人',en:'Milwaukee Brewers',venue:'美國家族球場'},
-  PIT:{zh:'海盜',en:'Pittsburgh Pirates',venue:'PNC球場'},
-  CIN:{zh:'紅人',en:'Cincinnati Reds',venue:'大美利堅球場'},
-  LAD:{zh:'道奇',en:'Los Angeles Dodgers',venue:'道奇體育場'},
-  SF:{zh:'巨人',en:'San Francisco Giants',venue:'神諭球場'},
-  SFG:{zh:'巨人',en:'San Francisco Giants',venue:'神諭球場'},
-  SD:{zh:'教士',en:'San Diego Padres',venue:'皮特科球場'},
-  AZ:{zh:'響尾蛇',en:'Arizona Diamondbacks',venue:'蔡斯球場'},
-  ARI:{zh:'響尾蛇',en:'Arizona Diamondbacks',venue:'蔡斯球場'},
-  COL:{zh:'落磯',en:'Colorado Rockies',venue:'庫爾斯球場'},
+  NYY:{zh:'洋基',venue:'洋基體育場'},BOS:{zh:'紅襪',venue:'芬威球場'},
+  TOR:{zh:'藍鳥',venue:'羅傑斯中心'},BAL:{zh:'金鶯',venue:'坎登院子'},
+  TB:{zh:'光芒',venue:'特羅彼卡納球場'},CLE:{zh:'守護者',venue:'普羅格雷斯球場'},
+  MIN:{zh:'雙城',venue:'目標球場'},DET:{zh:'老虎',venue:'科默里卡球場'},
+  KC:{zh:'皇家',venue:'卡夫曼體育場'},CWS:{zh:'白襪',venue:'保障費率球場'},
+  HOU:{zh:'太空人',venue:'美粒果球場'},SEA:{zh:'水手',venue:'T-Mobile球場'},
+  TEX:{zh:'遊騎兵',venue:'環球人壽球場'},LAA:{zh:'天使',venue:'天使體育場'},
+  ATH:{zh:'運動家',venue:'薩克拉門托球場'},OAK:{zh:'運動家',venue:'薩克拉門托球場'},
+  NYM:{zh:'大都會',venue:'花旗球場'},ATL:{zh:'勇士',venue:'信任公園'},
+  PHI:{zh:'費城人',venue:'公民銀行球場'},MIA:{zh:'馬林魚',venue:'羅恩馬利斯球場'},
+  WSH:{zh:'國民',venue:'國民球場'},WSN:{zh:'國民',venue:'國民球場'},
+  CHC:{zh:'小熊',venue:'瑞格利球場'},STL:{zh:'紅雀',venue:'布希體育場'},
+  MIL:{zh:'釀酒人',venue:'美國家族球場'},PIT:{zh:'海盜',venue:'PNC球場'},
+  CIN:{zh:'紅人',venue:'大美利堅球場'},LAD:{zh:'道奇',venue:'道奇體育場'},
+  SF:{zh:'巨人',venue:'神諭球場'},SFG:{zh:'巨人',venue:'神諭球場'},
+  SD:{zh:'教士',venue:'皮特科球場'},AZ:{zh:'響尾蛇',venue:'蔡斯球場'},
+  ARI:{zh:'響尾蛇',venue:'蔡斯球場'},COL:{zh:'落磯',venue:'庫爾斯球場'},
 };
-const ti=a=>T[a]||T[a?.toUpperCase()]||{zh:a||'',en:a||'',venue:''};
+const ti=a=>T[a]||T[a?.toUpperCase()]||{zh:a||'',venue:''};
 const tc=a=>'tc-'+(a||'').toUpperCase();
 
-// ══════════════════════════════════════════════
-// 台灣時間工具
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
+// 台灣時間
+// ════════════════════════════════════════════
 function twISO(u){return new Date(new Date(u).getTime()+8*3600000).toISOString().slice(0,10);}
 function todayTW(){return twISO(new Date());}
 function twTime(u){return new Date(u).toLocaleTimeString('zh-TW',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',hour12:false});}
 function twDateLbl(u){return new Date(u).toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric'});}
 function addDay(iso,n){const d=new Date(iso+'T12:00:00+08:00');d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
-function dateDiff(iso){return Math.round((new Date(iso+'T00:00:00+08:00')-new Date(todayTW()+'T00:00:00+08:00'))/86400000);}
 
-// ══════════════════════════════════════════════
-// 狀態
-// ══════════════════════════════════════════════
 const SR_INIT=[
-  // ── 台灣 06/06 ──
   {id:"89787355",st:"closed",utc:"2026-06-06T02:10:00Z",home:"LAD",away:"LAA",score:{LAD:1,LAA:0},sbp:{},rhe:{}},
-  // ── 台灣 06/07 ──
   {id:"17b87aa5",st:"closed",utc:"2026-06-06T17:10:00Z",home:"DET",away:"SEA",score:{DET:0,SEA:4},sbp:{},rhe:{}},
   {id:"e940c071",st:"closed",utc:"2026-06-06T18:10:00Z",home:"MIN",away:"KC",score:{MIN:2,KC:3},sbp:{},rhe:{}},
   {id:"17e97ff1",st:"closed",utc:"2026-06-06T18:15:00Z",home:"STL",away:"CIN",score:{STL:6,CIN:5},sbp:{},rhe:{}},
@@ -293,7 +284,6 @@ const SR_INIT=[
   {id:"069e6c2a",st:"closed",utc:"2026-06-07T01:10:00Z",home:"COL",away:"MIL",score:{COL:1,MIL:7},sbp:{},rhe:{}},
   {id:"a481c73a",st:"closed",utc:"2026-06-07T02:10:00Z",home:"SD",away:"NYM",score:{SD:3,NYM:2},sbp:{},rhe:{}},
   {id:"d27bdbb9",st:"closed",utc:"2026-06-07T02:10:00Z",home:"LAD",away:"LAA",score:{LAD:9,LAA:2},sbp:{},rhe:{}},
-  // ── 台灣 06/08 ──
   {id:"5f390cee",st:"closed",utc:"2026-06-07T17:35:00Z",home:"NYY",away:"BOS",score:{NYY:6,BOS:1},sbp:{},rhe:{}},
   {id:"e50095d6",st:"closed",utc:"2026-06-07T17:35:00Z",home:"ATL",away:"PIT",score:{ATL:3,PIT:2},sbp:{},rhe:{}},
   {id:"fb676497",st:"closed",utc:"2026-06-07T17:35:00Z",home:"PHI",away:"CWS",score:{PHI:9,CWS:5},sbp:{},rhe:{}},
@@ -309,105 +299,132 @@ const SR_INIT=[
   {id:"aad880ef",st:"closed",utc:"2026-06-07T20:10:00Z",home:"SD",away:"NYM",score:{SD:3,NYM:7},sbp:{},rhe:{}},
   {id:"f4445ead",st:"closed",utc:"2026-06-07T20:10:00Z",home:"LAD",away:"LAA",score:{LAD:5,LAA:13},sbp:{},rhe:{}},
   {id:"a9ae8574",st:"closed",utc:"2026-06-08T00:30:00Z",home:"CHC",away:"SF",score:{CHC:1,SF:2},sbp:{},rhe:{}},
-  // ── 台灣 06/09 ── 全部已完賽
-  {id:"52a6fae1",st:"closed",utc:"2026-06-08T22:35:00Z",home:"BAL",away:"SEA",
-   score:{BAL:3,SEA:6},rhe:{BAL:{r:3,h:6,e:0},SEA:{r:6,h:9,e:0}},
-   sbp:{"1":{BAL:0,SEA:0},"2":{BAL:0,SEA:0},"3":{BAL:1,SEA:0},"4":{BAL:0,SEA:0},"5":{BAL:0,SEA:5},"6":{BAL:0,SEA:0},"7":{BAL:1,SEA:0},"8":{BAL:1,SEA:1},"9":{BAL:0,SEA:0}}},
+  {id:"52a6fae1",st:"closed",utc:"2026-06-08T22:35:00Z",home:"BAL",away:"SEA",score:{BAL:3,SEA:6},sbp:{},rhe:{}},
   {id:"3c7c17e7",st:"closed",utc:"2026-06-08T22:40:00Z",home:"TB",away:"BOS",score:{TB:3,BOS:1},sbp:{},rhe:{}},
-  {id:"66990254",st:"closed",utc:"2026-06-08T22:40:00Z",home:"CLE",away:"NYY",
-   score:{CLE:5,NYY:7},rhe:{CLE:{r:5,h:5,e:2},NYY:{r:7,h:7,e:2}},
-   sbp:{"1":{CLE:0,NYY:2},"2":{CLE:0,NYY:0},"3":{CLE:3,NYY:1},"4":{CLE:0,NYY:0},"5":{CLE:0,NYY:1},"6":{CLE:2,NYY:0},"7":{CLE:0,NYY:0},"8":{CLE:0,NYY:1},"9":{CLE:0,NYY:2}}},
+  {id:"66990254",st:"closed",utc:"2026-06-08T22:40:00Z",home:"CLE",away:"NYY",score:{CLE:5,NYY:7},sbp:{},rhe:{}},
   {id:"95b57ec2",st:"closed",utc:"2026-06-08T23:07:00Z",home:"TOR",away:"PHI",score:{TOR:2,PHI:5},sbp:{},rhe:{}},
   {id:"3042c795",st:"closed",utc:"2026-06-09T01:38:00Z",home:"LAA",away:"HOU",score:{LAA:4,HOU:5},sbp:{},rhe:{}},
   {id:"5b04aa79",st:"closed",utc:"2026-06-09T01:40:00Z",home:"SD",away:"CIN",score:{SD:6,CIN:2},sbp:{},rhe:{}},
   {id:"4c6ec49e",st:"closed",utc:"2026-06-09T01:45:00Z",home:"SF",away:"WSH",score:{SF:3,WSH:4},sbp:{},rhe:{}},
   {id:"b6d00fa3",st:"closed",utc:"2026-06-09T02:05:00Z",home:"ATH",away:"MIL",score:{ATH:14,MIL:15},sbp:{},rhe:{}},
-  // ── 台灣 06/10 ── 待賽
-  {id:"894a443a",st:"scheduled",utc:"2026-06-09T22:35:00Z",home:"BAL",away:"SEA",score:{},sbp:{},rhe:{}},
-  {id:"5c97693b",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"MIA",away:"AZ",score:{},sbp:{},rhe:{}},
-  {id:"aaa4ad34",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"TB",away:"BOS",score:{},sbp:{},rhe:{}},
-  {id:"b568903b",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"CLE",away:"NYY",score:{},sbp:{},rhe:{}},
-  {id:"bed034ae",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"DET",away:"MIN",score:{},sbp:{},rhe:{}},
-  {id:"d8400862",st:"scheduled",utc:"2026-06-09T22:40:00Z",home:"PIT",away:"LAD",score:{},sbp:{},rhe:{}},
-  {id:"936aa385",st:"scheduled",utc:"2026-06-09T23:07:00Z",home:"TOR",away:"PHI",score:{},sbp:{},rhe:{}},
-  {id:"87143836",st:"scheduled",utc:"2026-06-09T23:10:00Z",home:"NYM",away:"STL",score:{},sbp:{},rhe:{}},
-  {id:"5d15be81",st:"scheduled",utc:"2026-06-09T23:40:00Z",home:"CWS",away:"ATL",score:{},sbp:{},rhe:{}},
-  {id:"ace6b424",st:"scheduled",utc:"2026-06-09T23:40:00Z",home:"KC",away:"TEX",score:{},sbp:{},rhe:{}},
-  {id:"806d4626",st:"scheduled",utc:"2026-06-10T00:40:00Z",home:"COL",away:"CHC",score:{},sbp:{},rhe:{}},
-  {id:"a7640683",st:"scheduled",utc:"2026-06-10T01:38:00Z",home:"LAA",away:"HOU",score:{},sbp:{},rhe:{}},
-  {id:"5063d62a",st:"scheduled",utc:"2026-06-10T01:40:00Z",home:"SD",away:"CIN",score:{},sbp:{},rhe:{}},
-  {id:"ee6c157d",st:"scheduled",utc:"2026-06-10T01:45:00Z",home:"SF",away:"WSH",score:{},sbp:{},rhe:{}},
-  {id:"e53207bd",st:"scheduled",utc:"2026-06-10T02:05:00Z",home:"ATH",away:"MIL",score:{},sbp:{},rhe:{}},
-  // ── 台灣 06/11 ── 待賽
-  {id:"46c068c7",st:"scheduled",utc:"2026-06-10T17:10:00Z",home:"CLE",away:"NYY",score:{},sbp:{},rhe:{}},
-  {id:"d64f0abf",st:"scheduled",utc:"2026-06-10T17:10:00Z",home:"TB",away:"BOS",score:{},sbp:{},rhe:{}},
-  {id:"4ca8cedb",st:"scheduled",utc:"2026-06-10T19:45:00Z",home:"SF",away:"WSH",score:{},sbp:{},rhe:{}},
-  {id:"dc04c652",st:"scheduled",utc:"2026-06-10T20:10:00Z",home:"SD",away:"CIN",score:{},sbp:{},rhe:{}},
-  {id:"bfe53f7e",st:"scheduled",utc:"2026-06-10T22:35:00Z",home:"BAL",away:"SEA",score:{},sbp:{},rhe:{}},
-  {id:"5050dd5f",st:"scheduled",utc:"2026-06-10T22:40:00Z",home:"DET",away:"MIN",score:{},sbp:{},rhe:{}},
-  {id:"95291405",st:"scheduled",utc:"2026-06-10T22:40:00Z",home:"MIA",away:"AZ",score:{},sbp:{},rhe:{}},
-  {id:"c4404f0f",st:"scheduled",utc:"2026-06-10T22:40:00Z",home:"PIT",away:"LAD",score:{},sbp:{},rhe:{}},
-  {id:"096ff7d1",st:"scheduled",utc:"2026-06-10T23:07:00Z",home:"TOR",away:"PHI",score:{},sbp:{},rhe:{}},
-  {id:"08c7d3c1",st:"scheduled",utc:"2026-06-10T23:10:00Z",home:"NYM",away:"STL",score:{},sbp:{},rhe:{}},
-  {id:"469c2e98",st:"scheduled",utc:"2026-06-10T23:40:00Z",home:"KC",away:"TEX",score:{},sbp:{},rhe:{}},
-  {id:"7c43fbef",st:"scheduled",utc:"2026-06-10T23:40:00Z",home:"CWS",away:"ATL",score:{},sbp:{},rhe:{}},
-  {id:"ebba52f4",st:"scheduled",utc:"2026-06-11T00:40:00Z",home:"COL",away:"CHC",score:{},sbp:{},rhe:{}},
-  {id:"4a6b0355",st:"scheduled",utc:"2026-06-11T01:05:00Z",home:"ATH",away:"MIL",score:{},sbp:{},rhe:{}},
-  {id:"4846d008",st:"scheduled",utc:"2026-06-11T01:38:00Z",home:"LAA",away:"HOU",score:{},sbp:{},rhe:{}},
+  {id:"894a443a",st:"closed",utc:"2026-06-09T22:35:00Z",home:"BAL",away:"SEA",score:{BAL:3,SEA:2},sbp:{},rhe:{}},
+  {id:"5c97693b",st:"closed",utc:"2026-06-09T22:40:00Z",home:"MIA",away:"AZ",score:{MIA:5,AZ:2},sbp:{},rhe:{}},
+  {id:"aaa4ad34",st:"closed",utc:"2026-06-09T22:40:00Z",home:"TB",away:"BOS",score:{TB:2,BOS:4},sbp:{},rhe:{}},
+  {id:"b568903b",st:"closed",utc:"2026-06-09T22:40:00Z",home:"CLE",away:"NYY",score:{CLE:3,NYY:6},sbp:{},rhe:{}},
+  {id:"bed034ae",st:"closed",utc:"2026-06-09T22:40:00Z",home:"DET",away:"MIN",score:{DET:5,MIN:3},sbp:{},rhe:{}},
+  {id:"d8400862",st:"closed",utc:"2026-06-09T22:40:00Z",home:"PIT",away:"LAD",score:{PIT:3,LAD:12},sbp:{},rhe:{}},
+  {id:"936aa385",st:"closed",utc:"2026-06-09T23:07:00Z",home:"TOR",away:"PHI",score:{TOR:3,PHI:2},sbp:{},rhe:{}},
+  {id:"87143836",st:"closed",utc:"2026-06-09T23:10:00Z",home:"NYM",away:"STL",score:{NYM:0,STL:7},sbp:{},rhe:{}},
+  {id:"5d15be81",st:"closed",utc:"2026-06-09T23:40:00Z",home:"CWS",away:"ATL",score:{CWS:6,ATL:5},sbp:{},rhe:{}},
+  {id:"ace6b424",st:"closed",utc:"2026-06-09T23:40:00Z",home:"KC",away:"TEX",score:{KC:5,TEX:3},sbp:{},rhe:{}},
+  {id:"806d4626",st:"closed",utc:"2026-06-10T00:40:00Z",home:"COL",away:"CHC",score:{COL:7,CHC:3},sbp:{},rhe:{}},
+  {id:"a7640683",st:"closed",utc:"2026-06-10T01:38:00Z",home:"LAA",away:"HOU",score:{LAA:10,HOU:1},sbp:{},rhe:{}},
+  {id:"5063d62a",st:"closed",utc:"2026-06-10T01:40:00Z",home:"SD",away:"CIN",score:{SD:3,CIN:5},sbp:{},rhe:{}},
+  {id:"ee6c157d",st:"closed",utc:"2026-06-10T01:45:00Z",home:"SF",away:"WSH",score:{SF:3,WSH:6},sbp:{},rhe:{}},
+  {id:"e53207bd",st:"closed",utc:"2026-06-10T02:05:00Z",home:"ATH",away:"MIL",score:{ATH:7,MIL:5},sbp:{},rhe:{}},
+  {id:"46c068c7",st:"closed",utc:"2026-06-10T17:10:00Z",home:"CLE",away:"NYY",score:{CLE:4,NYY:8},sbp:{},rhe:{}},
+  {id:"d64f0abf",st:"closed",utc:"2026-06-10T17:10:00Z",home:"TB",away:"BOS",score:{TB:7,BOS:5},sbp:{},rhe:{}},
+  {id:"4ca8cedb",st:"closed",utc:"2026-06-10T19:45:00Z",home:"SF",away:"WSH",score:{SF:11,WSH:10},sbp:{},rhe:{}},
+  {id:"dc04c652",st:"closed",utc:"2026-06-10T20:10:00Z",home:"SD",away:"CIN",score:{SD:5,CIN:4},sbp:{},rhe:{}},
+  {id:"bfe53f7e",st:"closed",utc:"2026-06-10T22:35:00Z",home:"BAL",away:"SEA",score:{BAL:7,SEA:2},sbp:{},rhe:{}},
+  {id:"5050dd5f",st:"closed",utc:"2026-06-10T22:40:00Z",home:"DET",away:"MIN",score:{DET:4,MIN:6},sbp:{},rhe:{}},
+  {id:"95291405",st:"closed",utc:"2026-06-10T22:40:00Z",home:"MIA",away:"AZ",score:{MIA:8,AZ:0},sbp:{},rhe:{}},
+  {id:"c4404f0f",st:"closed",utc:"2026-06-10T22:40:00Z",home:"PIT",away:"LAD",score:{PIT:9,LAD:8},sbp:{},rhe:{}},
+  {id:"096ff7d1",st:"closed",utc:"2026-06-10T23:07:00Z",home:"TOR",away:"PHI",score:{TOR:4,PHI:7},sbp:{},rhe:{}},
+  {id:"08c7d3c1",st:"closed",utc:"2026-06-10T23:10:00Z",home:"NYM",away:"STL",score:{NYM:2,STL:9},sbp:{},rhe:{}},
+  {id:"469c2e98",st:"closed",utc:"2026-06-10T23:40:00Z",home:"KC",away:"TEX",score:{KC:4,TEX:6},sbp:{},rhe:{}},
+  {id:"7c43fbef",st:"closed",utc:"2026-06-10T23:40:00Z",home:"CWS",away:"ATL",score:{CWS:2,ATL:1},sbp:{},rhe:{}},
+  {id:"ebba52f4",st:"closed",utc:"2026-06-11T00:40:00Z",home:"COL",away:"CHC",score:{COL:3,CHC:2},sbp:{},rhe:{}},
+  {id:"4a6b0355",st:"closed",utc:"2026-06-11T01:05:00Z",home:"ATH",away:"MIL",score:{ATH:4,MIL:3},sbp:{},rhe:{}},
+  {id:"4846d008",st:"closed",utc:"2026-06-11T01:38:00Z",home:"LAA",away:"HOU",score:{LAA:3,HOU:2},sbp:{},rhe:{}},
+  {id:"8171625d",st:"closed",utc:"2026-06-11T17:10:00Z",home:"DET",away:"MIN",score:{DET:11,MIN:0},sbp:{},rhe:{}},
+  {id:"bd2ae220",st:"closed",utc:"2026-06-11T17:10:00Z",home:"NYM",away:"STL",score:{NYM:5,STL:4},sbp:{},rhe:{}},
+  {id:"d2848c05",st:"closed",utc:"2026-06-11T17:10:00Z",home:"MIA",away:"AZ",score:{MIA:2,AZ:0},sbp:{},rhe:{}},
+  {id:"38de5435",st:"closed",utc:"2026-06-11T18:10:00Z",home:"KC",away:"TEX",score:{KC:2,TEX:4},sbp:{},rhe:{}},
+  {id:"62904dff",st:"closed",utc:"2026-06-11T19:10:00Z",home:"COL",away:"CHC",score:{COL:3,CHC:9},sbp:{},rhe:{}},
+  {id:"5c2e722a",st:"inprogress",utc:"2026-06-11T22:40:00Z",home:"PIT",away:"LAD",score:{PIT:4,LAD:7},sbp:{},rhe:{}},
+  {id:"b00dd548",st:"inprogress",utc:"2026-06-11T23:05:00Z",home:"BAL",away:"SEA",score:{BAL:7,SEA:5},sbp:{},rhe:{}},
+  {id:"4664f3f4",st:"scheduled",utc:"2026-06-12T22:40:00Z",home:"PIT",away:"MIA",score:{},sbp:{},rhe:{}},
+  {id:"d43683e5",st:"scheduled",utc:"2026-06-12T22:45:00Z",home:"WSH",away:"SEA",score:{},sbp:{},rhe:{}},
+  {id:"cb9088f2",st:"scheduled",utc:"2026-06-12T23:05:00Z",home:"BAL",away:"SD",score:{},sbp:{},rhe:{}},
+  {id:"10e868ad",st:"scheduled",utc:"2026-06-12T23:10:00Z",home:"CLE",away:"DET",score:{},sbp:{},rhe:{}},
+  {id:"bcad0ab7",st:"scheduled",utc:"2026-06-12T23:10:00Z",home:"BOS",away:"TEX",score:{},sbp:{},rhe:{}},
+  {id:"82bfd106",st:"scheduled",utc:"2026-06-12T23:15:00Z",home:"NYM",away:"ATL",score:{},sbp:{},rhe:{}},
+  {id:"e8116cdc",st:"scheduled",utc:"2026-06-12T23:15:00Z",home:"CIN",away:"AZ",score:{},sbp:{},rhe:{}},
+  {id:"4185cf80",st:"scheduled",utc:"2026-06-12T23:37:00Z",home:"TOR",away:"NYY",score:{},sbp:{},rhe:{}},
+  {id:"5e63296e",st:"scheduled",utc:"2026-06-12T23:40:00Z",home:"MIL",away:"PHI",score:{},sbp:{},rhe:{}},
+  {id:"bf7049ad",st:"scheduled",utc:"2026-06-12T23:40:00Z",home:"CWS",away:"LAD",score:{},sbp:{},rhe:{}},
+  {id:"9474d348",st:"scheduled",utc:"2026-06-13T00:10:00Z",home:"KC",away:"HOU",score:{},sbp:{},rhe:{}},
+  {id:"e3bf4b63",st:"scheduled",utc:"2026-06-13T00:10:00Z",home:"MIN",away:"STL",score:{},sbp:{},rhe:{}},
+  {id:"73c7e51e",st:"scheduled",utc:"2026-06-13T01:38:00Z",home:"LAA",away:"TB",score:{},sbp:{},rhe:{}},
+  {id:"636e7fe1",st:"scheduled",utc:"2026-06-13T02:05:00Z",home:"ATH",away:"COL",score:{},sbp:{},rhe:{}},
+  {id:"23a7b241",st:"scheduled",utc:"2026-06-13T02:15:00Z",home:"SF",away:"CHC",score:{},sbp:{},rhe:{}},
+  {id:"e4b5a139",st:"scheduled",utc:"2026-06-13T18:10:00Z",home:"MIN",away:"STL",score:{},sbp:{},rhe:{}},
+  {id:"c00e2575",st:"scheduled",utc:"2026-06-13T19:07:00Z",home:"TOR",away:"NYY",score:{},sbp:{},rhe:{}},
+  {id:"08e19eb6",st:"scheduled",utc:"2026-06-13T20:05:00Z",home:"WSH",away:"SEA",score:{},sbp:{},rhe:{}},
+  {id:"134bd095",st:"scheduled",utc:"2026-06-13T20:05:00Z",home:"BAL",away:"SD",score:{},sbp:{},rhe:{}},
+  {id:"73d51f58",st:"scheduled",utc:"2026-06-13T20:05:00Z",home:"PIT",away:"MIA",score:{},sbp:{},rhe:{}},
+  {id:"48a111df",st:"scheduled",utc:"2026-06-13T20:10:00Z",home:"BOS",away:"TEX",score:{},sbp:{},rhe:{}},
+  {id:"9369e36d",st:"scheduled",utc:"2026-06-13T20:10:00Z",home:"CWS",away:"LAD",score:{},sbp:{},rhe:{}},
+  {id:"99ef26db",st:"scheduled",utc:"2026-06-13T20:10:00Z",home:"NYM",away:"ATL",score:{},sbp:{},rhe:{}},
+  {id:"d7833cf6",st:"scheduled",utc:"2026-06-13T20:10:00Z",home:"CIN",away:"AZ",score:{},sbp:{},rhe:{}},
+  {id:"dffb4b2d",st:"scheduled",utc:"2026-06-13T20:10:00Z",home:"CLE",away:"DET",score:{},sbp:{},rhe:{}},
+  {id:"9efb4155",st:"scheduled",utc:"2026-06-13T23:10:00Z",home:"KC",away:"HOU",score:{},sbp:{},rhe:{}},
+  {id:"affadbbc",st:"scheduled",utc:"2026-06-13T23:10:00Z",home:"MIL",away:"PHI",score:{},sbp:{},rhe:{}},
+  {id:"a3c85e79",st:"scheduled",utc:"2026-06-14T02:05:00Z",home:"ATH",away:"COL",score:{},sbp:{},rhe:{}},
+  {id:"fb9ab878",st:"scheduled",utc:"2026-06-14T02:05:00Z",home:"SF",away:"CHC",score:{},sbp:{},rhe:{}},
+  {id:"624d47a6",st:"scheduled",utc:"2026-06-14T02:07:00Z",home:"LAA",away:"TB",score:{},sbp:{},rhe:{}}
 ];
 
 let allGames=SR_INIT.map(g=>({...g}));
-let mlbCache={};
-let oddsCache={};  // "AWAY-HOME" → {a,h,src,ml_a,ml_h,total}
-let winCache={};   // "AWAY-HOME" → {a,h,src}
-let countCache={}; // gamePk → {balls,strikes,outs,batter}
+let mlbCache={};    // date→MLB schedule games
+let oddsCache={};   // key→odds
+let countData={};   // pk→pitch count
+let lsFetched=new Set();
 let selectedDate='';
-let lastRefresh=null;
+let syncTick=0;
+let lastSync='';
 
-// DRatings 靜態備援
-const DR={
-  "BOS-TB":{a:44.5,h:55.5},"NYY-CLE":{a:57.3,h:42.7},"PHI-TOR":{a:52.8,h:47.2},
-  "HOU-LAA":{a:61.4,h:38.6},"CIN-SD":{a:39.2,h:60.8},"WSH-SF":{a:36.7,h:63.3},"MIL-ATH":{a:55.1,h:44.9},
-  "SEA-BAL":{a:52.0,h:48.0},"AZ-MIA":{a:54.3,h:45.7},"MIN-DET":{a:50.2,h:49.8},"LAD-PIT":{a:72.1,h:27.9},
-  "STL-NYM":{a:44.6,h:55.4},"ATL-CWS":{a:64.3,h:35.7},"TEX-KC":{a:48.7,h:51.3},
-  "CHC-COL":{a:62.5,h:37.5},"CIN-SD":{a:38.9,h:61.1},"MIL-ATH":{a:54.7,h:45.3},
-};
-
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 // 時鐘
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function tick(){
   const n=new Date();
-  document.getElementById('hdr-time').textContent=n.toLocaleTimeString('zh-TW',{timeZone:'Asia/Taipei'});
-  document.getElementById('hdr-date').textContent=n.toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',weekday:'short'});
+  const el1=document.getElementById('hdr-time');
+  const el2=document.getElementById('hdr-date');
+  if(el1) el1.textContent=n.toLocaleTimeString('zh-TW',{timeZone:'Asia/Taipei'});
+  if(el2) el2.textContent=n.toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'numeric',day:'numeric',weekday:'short'});
 }
-tick();setInterval(tick,1000);
+tick(); setInterval(tick,1000);
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 // TICKER
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function buildTicker(){
-  const done=allGames.filter(g=>g.st==='closed'||g.st==='inprogress'||g.st==='complete');
-  if(!done.length)return;
-  const items=done.slice(-28).map(g=>{
+  const done=allGames.filter(g=>g.st==='closed'||g.st==='inprogress');
+  if(!done.length) return;
+  const items=done.slice(-30).map(g=>{
     const hs=g.score[g.home]??0,as=g.score[g.away]??0;
     const lv=g.st==='inprogress'?'<span class="lv">LIVE</span> ':'';
     return `<span class="ti">${lv}${g.away} <span class="${as>hs?'w':'l'}">${as}</span>-<span class="${hs>as?'w':'l'}">${hs}</span> ${g.home}</span>`;
   });
-  document.getElementById('ticker').innerHTML=[...items,...items].join('');
+  const el=document.getElementById('ticker');
+  if(el) el.innerHTML=[...items,...items].join('');
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 // DATE NAV
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 function buildDateNav(dates){
   const today=todayTW();
-  document.getElementById('date-nav').innerHTML=dates.map((dt,i)=>{
-    const isToday=dt===today;
+  const nav=document.getElementById('date-nav');
+  if(!nav) return;
+  nav.innerHTML=dates.map((dt,i)=>{
+    const isT=dt===today;
     const d=new Date(dt+'T12:00:00+08:00');
     const wk=d.toLocaleDateString('zh-TW',{weekday:'short',timeZone:'Asia/Taipei'});
     const md=d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',timeZone:'Asia/Taipei'});
-    return `<button class="date-btn${dt===selectedDate?' active':''}${isToday?' today':''}" onclick="selectDate('${dt}',this)">${isToday?'⚾ ':''}<b>${md}</b><br><span style="font-size:.5rem;opacity:.6;">${wk}</span></button>${i<dates.length-1?'<div class="date-sep"></div>':''}`;
+    return `<button class="date-btn${dt===selectedDate?' active':''}${isT?' today':''}" onclick="selectDate('${dt}',this)">${isT?'⚾ ':''}<b>${md}</b><br><span style="font-size:.5rem;opacity:.6;">${wk}</span></button>${i<dates.length-1?'<div class="date-sep"></div>':''}`;
   }).join('');
 }
 function selectDate(dt,btn){
@@ -417,98 +434,19 @@ function selectDate(dt,btn){
   renderMain();
 }
 
-// ══════════════════════════════════════════════
-// MLB Stats API
-// ══════════════════════════════════════════════
-async function fetchMLBDay(dt){
-  if(mlbCache[dt])return mlbCache[dt];
-  try{
-    const r=await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${dt}&hydrate=probablePitcher(stats(type=season)),linescore,venue&gameType=R`);
-    const d=await r.json();
-    mlbCache[dt]=d.dates?.[0]?.games||[];
-  }catch(e){mlbCache[dt]=[];}
-  return mlbCache[dt];
-}
-function findMLB(g,mlbGames){
-  const m=mlbGames.find(m=>m.teams?.home?.team?.abbreviation===g.home&&m.teams?.away?.team?.abbreviation===g.away);
-  // 把 gamePk 存回 allGames，供 fetchGameLS 使用
-  if(m&&!g._pk){
-    const idx=allGames.findIndex(x=>x.home===g.home&&x.away===g.away&&x.utc===g.utc);
-    if(idx>=0) allGames[idx]._pk=m.gamePk;
-    g._pk=m.gamePk;
-  }
-  return m;
-}
+// ════════════════════════════════════════════
+// MLB Stats API（CORS 允許）
+// ════════════════════════════════════════════
+const MLB='https://statsapi.mlb.com/api/v1';
 
-// ══════════════════════════════════════════════
-// 好壞球 Play-by-Play（MLB Stats API）
-// ══════════════════════════════════════════════
-async function fetchCount(gamePk){
-  if(!gamePk||countCache[gamePk]?.ts>Date.now()-15000)return;
-  try{
-    const r=await fetch(`https://statsapi.mlb.com/api/v1/game/${gamePk}/playByPlay?fields=currentPlay,allPlays`);
-    const d=await r.json();
-    const cp=d.currentPlay;
-    if(cp){
-      countCache[gamePk]={
-        balls:cp.count?.balls??0,
-        strikes:cp.count?.strikes??0,
-        outs:cp.count?.outs??0,
-        batter:cp.matchup?.batter?.fullName||'',
-        pitcher:cp.matchup?.pitcher?.fullName||'',
-        ts:Date.now()
-      };
-    }
-  }catch(e){}
-}
-
-// ══════════════════════════════════════════════
-// 補抓單場逐局記分（已完賽舊比賽用）
-// ══════════════════════════════════════════════
-const lsFetching=new Set();
-async function fetchGameLS(pk,homeA,awayA){
-  const key=`${homeA}-${awayA}`;
-  if(lsFetching.has(key))return;
-  lsFetching.add(key);
-  try{
-    const r=await fetch(`https://statsapi.mlb.com/api/v1/game/${pk}/linescore`);
-    const d=await r.json();
-    const innings=d.innings||[];
-    if(!innings.length){lsFetching.delete(key);return;}
-    const sbp={};
-    innings.forEach(i=>{sbp[i.num]={[homeA]:i.home?.runs??'-',[awayA]:i.away?.runs??'-'};});
-    const rhe={
-      [homeA]:{h:d.teams?.home?.hits??'',e:d.teams?.home?.errors??''},
-      [awayA]:{h:d.teams?.away?.hits??'',e:d.teams?.away?.errors??''},
-    };
-    // 更新 allGames
-    const idx=allGames.findIndex(g=>g.home===homeA&&g.away===awayA);
-    if(idx>=0){allGames[idx].sbp=sbp;allGames[idx].rhe=rhe;}
-    // 直接更新 DOM skeleton
-    const el=document.getElementById(`ls-${homeA}-${awayA}`);
-    if(el){
-      const inns=Object.keys(sbp).sort((a,b)=>+a-+b);
-      const rHm=rhe[homeA],rAw=rhe[awayA];
-      const gObj=allGames[idx]||{score:{}};
-      el.innerHTML=`<table class="ls-tbl">
-        <tr><td class="ll"> </td>${inns.map(n=>`<td class="lh">${n}</td>`).join('')}<td class="lth">R</td><td class="lrh">H</td><td class="lrh">E</td></tr>
-        <tr><td class="ll">${awayA}</td>${inns.map(n=>`<td>${sbp[n]?.[awayA]??'-'}</td>`).join('')}<td class="lt">${gObj.score[awayA]??''}</td><td class="lr">${rAw?.h??''}</td><td class="lr">${rAw?.e??''}</td></tr>
-        <tr><td class="ll">${homeA}</td>${inns.map(n=>`<td>${sbp[n]?.[homeA]??'-'}</td>`).join('')}<td class="lt">${gObj.score[homeA]??''}</td><td class="lr">${rHm?.h??''}</td><td class="lr">${rHm?.e??''}</td></tr>
-      </table>`;
-    }
-  }catch(e){}
-  lsFetching.delete(key);
-}
-
-// ══════════════════════════════════════════════
-// 即時比分刷新
-// ══════════════════════════════════════════════
-async function refreshLive(){
+// 同步比分＋逐局
+async function syncToday(){
   const today=todayTW();
-  delete mlbCache[today];
   try{
-    const r=await fetch(`https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${today}&hydrate=linescore&gameType=R`);
+    const r=await fetch(`${MLB}/schedule?sportId=1&date=${today}&hydrate=linescore&gameType=R`);
+    if(!r.ok) throw new Error(r.status);
     const d=await r.json();
+    let changed=0;
     for(const mg of d.dates?.[0]?.games||[]){
       const ha=mg.teams?.home?.team?.abbreviation;
       const aa=mg.teams?.away?.team?.abbreviation;
@@ -516,128 +454,185 @@ async function refreshLive(){
       const as_=mg.teams?.away?.score??null;
       const st=mg.status?.abstractGameState;
       const det=mg.status?.detailedState||'';
-      const srSt=(st==='Live'||det==='In Progress'||det==='Critical')?'inprogress':
-                 (st==='Final'||st==='Completed'||det==='Final'||det==='Game Over'||det==='Completed Early')?'closed':'scheduled';
-      const ls=mg.linescore;
+      const srSt=st==='Live'?'inprogress':
+                 (st==='Final'||det==='Final'||det==='Game Over')?'closed':'scheduled';
       const idx=allGames.findIndex(g=>g.home===ha&&g.away===aa);
-      if(idx>=0&&hs!==null){
-        allGames[idx].score={[ha]:hs,[aa]:as_};
-        allGames[idx].st=srSt;
-        allGames[idx]._inn=ls?.currentInning;
-        allGames[idx]._half=ls?.inningHalf;
-        allGames[idx]._outs=ls?.outs;
-        allGames[idx]._pk=mg.gamePk;
-        if(ls?.innings){
-          const sbp={};
-          ls.innings.forEach(inn=>{sbp[inn.num]={[ha]:inn.home?.runs??'-',[aa]:inn.away?.runs??'-'};});
-          allGames[idx].sbp=sbp;
-          allGames[idx].rhe={
-            [ha]:{r:hs,h:ls.teams?.home?.hits??'',e:ls.teams?.home?.errors??''},
-            [aa]:{r:as_,h:ls.teams?.away?.hits??'',e:ls.teams?.away?.errors??''}
-          };
+      if(idx<0){
+        // 新增沒有的比賽
+        allGames.push({id:String(mg.gamePk),st:srSt,utc:mg.gameDate,
+          home:ha,away:aa,score:hs!==null?{[ha]:hs,[aa]:as_}:{},sbp:{},rhe:{},_pk:mg.gamePk});
+        changed++;
+      } else {
+        const g=allGames[idx];
+        g.st=srSt; g._pk=mg.gamePk;
+        if(hs!==null){g.score={[ha]:hs,[aa]:as_};}
+        const ls=mg.linescore;
+        if(ls){
+          g._inn=ls.currentInning; g._half=ls.inningHalf; g._outs=ls.outs??0;
+          if(ls.innings?.length){
+            const sbp={};
+            ls.innings.forEach(i=>{sbp[i.num]={[ha]:i.home?.runs??'-',[aa]:i.away?.runs??'-'};});
+            g.sbp=sbp;
+            g.rhe={[ha]:{r:hs,h:ls.teams?.home?.hits??'',e:ls.teams?.home?.errors??''},
+                   [aa]:{r:as_,h:ls.teams?.away?.hits??'',e:ls.teams?.away?.errors??''}};
+          }
         }
-        // 抓好壞球
-        if(srSt==='inprogress'&&mg.gamePk) fetchCount(mg.gamePk);
+        changed++;
       }
     }
-    lastRefresh=new Date().toLocaleTimeString('zh-TW',{timeZone:'Asia/Taipei'});
-  }catch(e){}
-  buildTicker();
-  if(selectedDate===todayTW())renderMain();
-}
-
-// ══════════════════════════════════════════════
-// 盤口：SBR / ActionNetwork via allorigins proxy
-// ══════════════════════════════════════════════
-const ABBR_MAP={
-  'Yankees':'NYY','Red Sox':'BOS','Blue Jays':'TOR','Orioles':'BAL','Rays':'TB',
-  'Guardians':'CLE','Twins':'MIN','Tigers':'DET','Royals':'KC','White Sox':'CWS',
-  'Astros':'HOU','Mariners':'SEA','Rangers':'TEX','Angels':'LAA','Athletics':'ATH',
-  'Mets':'NYM','Braves':'ATL','Phillies':'PHI','Marlins':'MIA','Nationals':'WSH',
-  'Cubs':'CHC','Cardinals':'STL','Brewers':'MIL','Pirates':'PIT','Reds':'CIN',
-  'Dodgers':'LAD','Giants':'SF','Padres':'SD','Diamondbacks':'AZ','Rockies':'COL',
-};
-function nameToAbbr(n){
-  for(const[k,v] of Object.entries(ABBR_MAP)){if(n&&n.includes(k))return v;}
-  return null;
-}
-function amerToProb(ml){return ml>0?100/(ml+100):(-ml)/((-ml)+100);}
-function noVig(pA,pH){const s=pA+pH;return{a:Math.round(pA/s*100),h:Math.round(pH/s*100)};}
-function mlClass(ml){return ml<0?'fav':ml>100?'dog':'even';}
-function fmtML(ml){return ml>0?'+'+ml:String(ml);}
-
-async function fetchOdds(){
-  // 嘗試 SBR 免費公開盤口（no API key needed）
-  try{
-    const url='https://www.sportsbookreview.com/betting-odds/mlb-baseball/';
-    const proxy='https://api.allorigins.win/get?url='+encodeURIComponent(url);
-    const r=await fetch(proxy,{signal:AbortSignal.timeout(10000)});
-    const d=await r.json();
-    const html=d.contents||'';
-    // 解析美式賠率：pattern like "-135" "+115"
-    const mlPats=[...html.matchAll(/([+-]\d{3,4})/g)].map(m=>parseInt(m[1]));
-    const teamPats=[...html.matchAll(/class="[^"]*team-name[^"]*"[^>]*>([^<]+)</g)].map(m=>m[1].trim());
-    let loaded=0;
-    for(let i=0;i+1<teamPats.length&&i+1<mlPats.length;i+=2){
-      const awayA=nameToAbbr(teamPats[i]),homeA=nameToAbbr(teamPats[i+1]);
-      const mlA=mlPats[i*2],mlH=mlPats[i*2+1];
-      if(awayA&&homeA&&mlA&&mlH){
-        const pA=amerToProb(mlA),pH=amerToProb(mlH);
-        const {a,h}=noVig(pA,pH);
-        oddsCache[`${awayA}-${homeA}`]={a,h,ml_a:mlA,ml_h:mlH,src:'SBR',total:null};
-        loaded++;
-      }
-    }
-    if(loaded>0){console.log(`✅ SBR odds: ${loaded}`);renderMain();return;}
-  }catch(e){console.warn('SBR proxy failed:',e.message);}
-
-  // 備援：DRatings proxy
-  try{
-    const proxy2='https://api.allorigins.win/get?url='+encodeURIComponent('https://www.dratings.com/predictor/mlb-baseball-predictions/');
-    const r2=await fetch(proxy2,{signal:AbortSignal.timeout(10000)});
-    const d2=await r2.json();
-    const html2=d2.contents||'';
-    const SLUG={
-      'new-york-yankees':'NYY','boston-red-sox':'BOS','toronto-blue-jays':'TOR','baltimore-orioles':'BAL',
-      'tampa-bay-rays':'TB','cleveland-guardians':'CLE','minnesota-twins':'MIN','detroit-tigers':'DET',
-      'kansas-city-royals':'KC','chicago-white-sox':'CWS','houston-astros':'HOU','seattle-mariners':'SEA',
-      'texas-rangers':'TEX','los-angeles-angels':'LAA','athletics':'ATH','new-york-mets':'NYM',
-      'atlanta-braves':'ATL','philadelphia-phillies':'PHI','miami-marlins':'MIA','washington-nationals':'WSH',
-      'chicago-cubs':'CHC','st-louis-cardinals':'STL','milwaukee-brewers':'MIL','pittsburgh-pirates':'PIT',
-      'cincinnati-reds':'CIN','los-angeles-dodgers':'LAD','san-francisco-giants':'SF',
-      'san-diego-padres':'SD','arizona-diamondbacks':'AZ','colorado-rockies':'COL',
-    };
-    const slugs=[...html2.matchAll(/mlb-baseball-ratings\/\d+-([a-z-]+)["']/g)].map(m=>m[1]);
-    const pcts=[...html2.matchAll(/(\d{1,2}\.\d)%/g)].map(m=>parseFloat(m[1]));
-    let loaded2=0;
-    for(let i=0;i+1<slugs.length&&i/2+1<pcts.length;i+=2){
-      const awayA=SLUG[slugs[i]],homeA=SLUG[slugs[i+1]];
-      const ap=pcts[Math.floor(i/2)*2],hp=pcts[Math.floor(i/2)*2+1];
-      if(awayA&&homeA&&ap&&hp){
-        oddsCache[`${awayA}-${homeA}`]={a:ap,h:hp,src:'DRatings',ml_a:null,ml_h:null,total:null};
-        loaded2++;
-      }
-    }
-    if(loaded2>0){console.log(`✅ DRatings live: ${loaded2}`);renderMain();return;}
-  }catch(e){console.warn('DRatings proxy failed:',e.message);}
-
-  // 最終備援：靜態 DRatings
-  for(const[k,v] of Object.entries(DR)){
-    if(!oddsCache[k])oddsCache[k]={a:v.a,h:v.h,src:'DRatings靜態',ml_a:null,ml_h:null,total:null};
+    return changed;
+  }catch(e){
+    console.warn('syncToday failed:',e.message);
+    return 0;
   }
-  renderMain();
 }
 
-// ══════════════════════════════════════════════
-// 渲染：逐局計分
-// ══════════════════════════════════════════════
+// 先發投手＋球場
+async function fetchMLBDay(dt){
+  if(mlbCache[dt]) return mlbCache[dt];
+  try{
+    const r=await fetch(`${MLB}/schedule?sportId=1&date=${dt}&hydrate=probablePitcher(stats(type=season)),venue&gameType=R`);
+    if(!r.ok) throw new Error(r.status);
+    const d=await r.json();
+    const games=d.dates?.[0]?.games||[];
+    mlbCache[dt]=games;
+    // 存 gamePk
+    for(const mg of games){
+      const ha=mg.teams?.home?.team?.abbreviation;
+      const aa=mg.teams?.away?.team?.abbreviation;
+      const idx=allGames.findIndex(g=>g.home===ha&&g.away===aa&&twISO(g.utc)===dt);
+      if(idx>=0&&!allGames[idx]._pk) allGames[idx]._pk=mg.gamePk;
+    }
+  }catch(e){ mlbCache[dt]=[]; }
+  return mlbCache[dt];
+}
+function findMLB(g,mlbGames){
+  return mlbGames.find(m=>m.teams?.home?.team?.abbreviation===g.home&&
+                          m.teams?.away?.team?.abbreviation===g.away);}
+
+// 好壞球
+async function fetchPitchCount(pk){
+  try{
+    const r=await fetch(`${MLB}/game/${pk}/playByPlay?fields=currentPlay`);
+    if(!r.ok) return null;
+    const d=await r.json();
+    const cp=d.currentPlay;
+    if(!cp) return null;
+    return{balls:cp.count?.balls??0,strikes:cp.count?.strikes??0,
+           outs:cp.count?.outs??0,batter:cp.matchup?.batter?.fullName||''};
+  }catch(e){return null;}
+}
+
+// 逐局補抓
+async function fetchGameLS(pk,g){
+  const key=`${g.home}-${g.away}`;
+  if(lsFetched.has(key)||!pk) return;
+  lsFetched.add(key);
+  try{
+    const r=await fetch(`${MLB}/game/${pk}/linescore`);
+    if(!r.ok){lsFetched.delete(key);return;}
+    const d=await r.json();
+    if(!d.innings?.length){lsFetched.delete(key);return;}
+    const sbp={};
+    d.innings.forEach(i=>{sbp[i.num]={[g.home]:i.home?.runs??'-',[g.away]:i.away?.runs??'-'};});
+    g.sbp=sbp;
+    g.rhe={[g.home]:{h:d.teams?.home?.hits??'',e:d.teams?.home?.errors??''},
+           [g.away]:{h:d.teams?.away?.hits??'',e:d.teams?.away?.errors??''}};
+    // 更新 DOM
+    const id=`${g.home}-${g.away}-${g.id||''}`;
+    const bodyEl=document.getElementById('body-'+id);
+    const btnEl=document.getElementById('btn-'+id);
+    if(bodyEl){
+      const inns=Object.keys(sbp).sort((a,b)=>+a-+b);
+      bodyEl.innerHTML=lsTable(g,sbp,inns,null);
+      if(btnEl) btnEl.innerHTML=`<span class="arrow">▶</span> 逐局記分（${inns.length}局）<span class="hint" style="margin-left:auto;font-size:.5rem;">點擊展開</span>`;
+    }
+  }catch(e){lsFetched.delete(key);}
+}
+
+// 勝率（standings Log5）
+async function syncOdds(){
+  try{
+    const r=await fetch(`${MLB}/standings?leagueId=103,104&hydrate=team`);
+    if(!r.ok) return;
+    const d=await r.json();
+    const wp={};
+    for(const rec of d.records||[])
+      for(const tr of rec.teamRecords||[])
+        wp[tr.team?.abbreviation]=parseFloat(tr.winningPercentage||0.5);
+    for(const g of allGames.filter(x=>x.st==='scheduled')){
+      const pA=wp[g.away]??0.5, pH=wp[g.home]??0.5;
+      const num=pA-pA*pH, den=pA+pH-2*pA*pH;
+      const aW=den>0?num/den:0.5;
+      const key=`${g.away}-${g.home}`;
+      oddsCache[key]={a:Math.round(aW*100),h:Math.round((1-aW)*100),src:'勝率統計'};
+    }
+  }catch(e){}
+}
+
+// ════════════════════════════════════════════
+// 主同步（MLB Stats API，每15秒）
+// ════════════════════════════════════════════
+async function masterSync(){
+  syncTick++;
+  const today=todayTW();
+
+  // 1. 比分+逐局
+  await syncToday();
+
+  // 2. 進行中好壞球
+  for(const g of allGames.filter(x=>x.st==='inprogress'&&x._pk&&twISO(x.utc)===today)){
+    const c=await fetchPitchCount(g._pk);
+    if(c) countData[g._pk]=c;
+  }
+
+  // 3. 先發（清快取每次重抓）
+  delete mlbCache[today];
+  await fetchMLBDay(today);
+
+  // 4. 勝率（每10次一次，≈2.5分）
+  if(syncTick%10===1) await syncOdds();
+
+  lastSync=`#${syncTick} ${new Date().toLocaleTimeString('zh-TW',{timeZone:'Asia/Taipei',hour:'2-digit',minute:'2-digit',second:'2-digit'})}`;
+  buildTicker();
+  if(selectedDate===today) renderMain();
+}
+
+// ════════════════════════════════════════════
+// 工具
+// ════════════════════════════════════════════
+function mlClass(ml){return ml==null?'even':ml<0?'fav':ml>100?'dog':'even';}
+function fmtML(ml){return ml==null?'–':ml>0?'+'+ml:String(ml);}
+function lsId(g){return `${g.home}-${g.away}-${g.id||''}`;}
+function toggleLS(id){
+  const btn=document.getElementById('btn-'+id);
+  const body=document.getElementById('body-'+id);
+  if(!btn||!body) return;
+  const open=body.classList.toggle('open');
+  btn.classList.toggle('open',open);
+  const hint=btn.querySelector('.hint');
+  if(hint) hint.textContent=open?'點擊收合':'點擊展開';
+}
+
+// ════════════════════════════════════════════
+// 逐局表格
+// ════════════════════════════════════════════
+function lsTable(g,sbp,inns,curInn){
+  const rhe=g.rhe||{};
+  const aR=rhe[g.away]||{};const hR=rhe[g.home]||{};
+  const isLive=g.st==='inprogress';
+  return `<div class="gc-ls"><table class="ls-tbl">
+    <tr><td class="ll"></td>${inns.map(n=>`<td class="lh">${n}</td>`).join('')}<td class="lth">R</td><td class="lrh">H</td><td class="lrh">E</td></tr>
+    <tr><td class="ll">${g.away}</td>${inns.map(n=>`<td class="${n==curInn&&isLive?'ls-cur':''}">${sbp[n]?.[g.away]??'-'}</td>`).join('')}<td class="lt">${g.score[g.away]??''}</td><td class="lr">${aR.h??''}</td><td class="lr">${aR.e??''}</td></tr>
+    <tr><td class="ll">${g.home}</td>${inns.map(n=>`<td class="${n==curInn&&isLive?'ls-cur':''}">${sbp[n]?.[g.home]??'-'}</td>`).join('')}<td class="lt">${g.score[g.home]??''}</td><td class="lr">${hR.h??''}</td><td class="lr">${hR.e??''}</td></tr>
+  </table></div>`;
+}
+
 function renderLS(g,mlb){
   let sbp={...g.sbp};
   const ls=mlb?.linescore;
-  // 從 MLB API linescore 填入
   if(!Object.keys(sbp).length&&ls?.innings?.length){
     ls.innings.forEach(i=>{sbp[i.num]={[g.home]:i.home?.runs??'-',[g.away]:i.away?.runs??'-'};});
-    // 同步回 game 物件
     g.sbp=sbp;
     if(ls.teams){
       g.rhe=g.rhe||{};
@@ -645,143 +640,95 @@ function renderLS(g,mlb){
       g.rhe[g.away]=g.rhe[g.away]||{h:ls.teams.away?.hits??'',e:ls.teams.away?.errors??''};
     }
   }
-  const innings=Object.keys(sbp).sort((a,b)=>+a-+b);
-  // 已完賽但無逐局：觸發補抓，暫顯skeleton
-  if(!innings.length&&(g.st==='closed'||g.st==='complete')){
-    const pk=g._pk||mlb?.gamePk;
-    if(pk) fetchGameLS(pk,g.home,g.away);
-    return `<div class="gc-ls" id="ls-${g.home}-${g.away}">
-      <div class="ls-skeleton">⏳ 抓取逐局記分中...</div>
-    </div>`;
-  }
-  if(!innings.length)return '';
-  const rhe=g.rhe||{};
-  const hRHE=rhe[g.home]||{};const aRHE=rhe[g.away]||{};
+  const inns=Object.keys(sbp).sort((a,b)=>+a-+b);
+  const id=lsId(g);
+  const isLive=g.st==='inprogress';
   const curInn=g._inn;
-  return `<div class="gc-ls">
-    <table class="ls-tbl">
-      <tr><td class="ll"> </td>${innings.map(n=>`<td class="lh">${n}</td>`).join('')}<td class="lth">R</td><td class="lrh">H</td><td class="lrh">E</td></tr>
-      <tr><td class="ll">${g.away}</td>${innings.map(n=>`<td class="${n==curInn?'ls-cur':''}">${sbp[n]?.[g.away]??'-'}</td>`).join('')}<td class="lt">${g.score[g.away]??''}</td><td class="lr">${aRHE.h??''}</td><td class="lr">${aRHE.e??''}</td></tr>
-      <tr><td class="ll">${g.home}</td>${innings.map(n=>`<td class="${n==curInn?'ls-cur':''}">${sbp[n]?.[g.home]??'-'}</td>`).join('')}<td class="lt">${g.score[g.home]??''}</td><td class="lr">${hRHE.h??''}</td><td class="lr">${hRHE.e??''}</td></tr>
-    </table>
-  </div>`;
+
+  if(!inns.length&&(g.st==='closed')){
+    const pk=g._pk||mlb?.gamePk;
+    if(pk) fetchGameLS(pk,g);
+    return `<button class="ls-toggle" id="btn-${id}" onclick="toggleLS('${id}')">
+      <span class="arrow">▶</span> 逐局記分
+      <span class="hint" style="margin-left:auto;font-size:.5rem;">⏳ 載入中</span>
+    </button>
+    <div class="ls-body" id="body-${id}"><div class="gc-ls"><div class="ls-skeleton">抓取中...</div></div></div>`;
+  }
+  if(!inns.length) return '';
+
+  return `<button class="ls-toggle${isLive?' open':''}" id="btn-${id}" onclick="toggleLS('${id}')">
+    <span class="arrow">▶</span> 逐局記分（${inns.length}局）
+    <span class="hint" style="margin-left:auto;font-size:.5rem;">${isLive?'點擊收合':'點擊展開'}</span>
+  </button>
+  <div class="ls-body${isLive?' open':''}" id="body-${id}">${lsTable(g,sbp,inns,curInn)}</div>`;
 }
 
-// ══════════════════════════════════════════════
-// 渲染：好壞球 + 好壞球圓點
-// ══════════════════════════════════════════════
-function countDots(n,type,filled){
-  let s='';
-  for(let i=0;i<n;i++)s+=`<span class="dot ${i<filled?type:''}"></span>`;
-  return s;
-}
+// ════════════════════════════════════════════
+// 好壞球
+// ════════════════════════════════════════════
 function renderCount(g){
-  if(g.st!=='inprogress'||!g._pk)return '';
-  const c=countCache[g._pk];
-  if(!c)return '';
-  const balls=c.balls??0,strikes=c.strikes??0,outs=c.outs??0;
+  if(g.st!=='inprogress'||!g._pk) return '';
+  const c=countData[g._pk];
   const half=(g._half||'')==='Top'?'▲':'▼';
   const inn=g._inn||'';
+  const inningHtml=`<span class="gc-inning-label">${half}${inn}局</span>`;
+  if(!c) return `<div class="gc-game-info">${inningHtml}</div>`;
+  const dots=(n,cls,f)=>{let s='';for(let i=0;i<n;i++)s+=`<span class="dot${i<f?' '+cls:''}"></span>`;return s;};
   return `<div class="gc-game-info">
-    <span class="gc-inning-label">${half}${inn}局</span>
-    <span class="count-dots">${countDots(3,'',(outs))} </span>
-    <span style="font-size:.5rem;color:var(--muted)">出局</span>
-    <span class="count-dots">${countDots(4,'ball',balls)}</span>
-    <span style="font-size:.5rem;color:var(--muted)">B</span>
-    <span class="count-dots">${countDots(3,'strike',strikes)}</span>
-    <span style="font-size:.5rem;color:var(--muted)">S</span>
-    ${c.batter?`<span style="font-size:.52rem;color:var(--muted)">${c.batter}</span>`:''}
+    ${inningHtml}
+    ${dots(3,'out',c.outs??0)}<span class="ci-lbl">OUT</span>
+    ${dots(4,'ball',c.balls??0)}<span class="ci-lbl">B</span>
+    ${dots(3,'strike',c.strikes??0)}<span class="ci-lbl">S</span>
+    ${c.batter?`<span class="ci-batter">${c.batter}</span>`:''}
   </div>`;
 }
 
-// ══════════════════════════════════════════════
-// 渲染：ML 盤口行（底部，只顯示 ML，勝率在第二列）
-// ══════════════════════════════════════════════
-function getOdds(awayA,homeA){ return oddsCache[`${awayA}-${homeA}`]||null; }
-
-function renderMLRow(awayA,homeA){
-  const od=getOdds(awayA,homeA);
-  if(!od||od.ml_a==null) return ''; // 無 ML 不顯示此行
-  return `<div class="gc-ml-row">
-    <div class="ml-away"><span class="ml-val ${mlClass(od.ml_a)}">${fmtML(od.ml_a)}</span></div>
-    <div class="ml-center">
-      ${od.total!=null?`<div class="ml-ou">O/U <b>${od.total}</b></div>`:''}
-      <div class="ml-src">${od.src}</div>
-    </div>
-    <div class="ml-home"><span class="ml-val ${mlClass(od.ml_h)}">${fmtML(od.ml_h)}</span></div>
-  </div>`;
-}
-
-// 勝率%供 score row 使用
-function getPct(awayA,homeA){
-  const od=getOdds(awayA,homeA);
-  if(!od) return null;
-  return {a:Math.max(od.a,4), h:Math.max(od.h,4), src:od.src};
-}
-
-// ══════════════════════════════════════════════
-// 渲染：卡片
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
+// 卡片
+// ════════════════════════════════════════════
 function renderCard(g,mlb,delay){
   const {home,away,st,score,utc}=g;
   const ht=ti(home),at=ti(away);
   const hs=score[home]??null,as_=score[away]??null;
 
-  // 左上角狀態 badge
   let badge='';
-  const half=(g._half||'')==='Top'?'▲':'▼';
-  const inn=g._inn||'';
-  if(st==='inprogress'){
-    // 局數簡短版放 badge 旁
-    badge=`<span class="gc-status-badge badge-live"><span class="pulse"></span>進行中</span>`;
-  } else if(st==='closed'||st==='complete'){
-    badge=`<span class="gc-status-badge badge-final">✅ 已完賽</span>`;
-  } else {
-    badge=`<span class="gc-status-badge badge-sched">🕐 未開賽</span>`;
-  }
+  if(st==='inprogress')      badge=`<span class="gc-status-badge badge-live"><span class="pulse"></span>進行中</span>`;
+  else if(st==='closed')     badge=`<span class="gc-status-badge badge-final">✅ 已完賽</span>`;
+  else                       badge=`<span class="gc-status-badge badge-sched">🕐 未開賽</span>`;
 
-  // 局數 + 好壞球（進行中才顯示）
   const countHtml=renderCount(g);
-  const innHtml=(st==='inprogress'&&!countHtml&&inn)?`<span class="gc-inning-label">${half}${inn}局</span>`:'';
-
-  // 開賽時間（待賽才顯示）
   const schedInfo=st==='scheduled'?`<span style="font-size:.55rem;color:var(--sky);">${twDateLbl(utc)} ${twTime(utc)}</span>`:'';
-
   const venue=mlb?.venue?.name||ht.venue||'';
 
-  // 比分
   let scoreHTML='';
   if(st==='inprogress'){
     scoreHTML=`<div class="gc-score live">${as_??0} - ${hs??0}</div>`;
-  }else if(st==='closed'||st==='complete'){
+  }else if(st==='closed'){
     scoreHTML=`<div class="gc-score">${as_} - ${hs}</div>
       <div class="gc-win-lbl">${hs>as_?`<b>${ht.zh}</b> 勝`:`<b>${at.zh}</b> 勝`}</div>`;
   }else{
     scoreHTML=`<div class="gc-vs">VS</div><div class="gc-tw-time">${twTime(utc)}</div>`;
   }
 
-  // 勝率%（第二列使用）
-  const pct=getPct(away,home);
+  const od=oddsCache[`${away}-${home}`];
+  const pct=od?{a:od.a,h:od.h}:null;
 
-  // 先發投手
   let pitHTML='';
   const ap_=mlb?.teams?.away?.probablePitcher;
   const hp_=mlb?.teams?.home?.probablePitcher;
   if(ap_||hp_){
     const pBlk=(p,lbl)=>{
-      if(!p)return `<div class="pit-s">${lbl}：<b style="color:var(--muted)">TBD</b></div>`;
+      if(!p) return `<div class="pit-s">${lbl}：<b style="color:var(--muted)">TBD</b></div>`;
       const s=p.stats?.find(x=>x.type?.displayName==='season')?.splits?.[0]?.stat||{};
       return `<div class="pit-s">${lbl}：<b>${p.fullName}</b><br>${s.wins??0}勝${s.losses??0}敗 ERA ${s.era??'-.--'}</div>`;
     };
     pitHTML=`<div class="gc-pit">${pBlk(ap_,at.zh)}<div class="pit-sep">⚾</div>${pBlk(hp_,ht.zh)}</div>`;
   }
 
-  return `<div class="game-card${st==='inprogress'?' live-game':(st==='closed'||st==='complete')?' final-game':''}" style="animation-delay:${delay}ms">
+  return `<div class="game-card${st==='inprogress'?' live-game':st==='closed'?' final-game':''}" style="animation-delay:${delay}ms">
     <div class="gc-topbar">
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        ${badge}
-        ${countHtml||innHtml}
-        ${schedInfo}
+        ${badge}${countHtml||''}${schedInfo}
       </div>
       <div class="gc-venue">🏟 ${venue}</div>
     </div>
@@ -806,58 +753,66 @@ function renderCard(g,mlb,delay){
     </div>
     ${renderLS(g,mlb)}
     ${pitHTML}
-    ${renderMLRow(away,home)}
   </div>`;
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 // 主渲染
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 async function renderMain(){
   const mc=document.getElementById('main-content');
+  if(!mc) return;
   let games=allGames.filter(g=>twISO(g.utc)===selectedDate);
   const mlbDay=await fetchMLBDay(selectedDate);
 
   if(!games.length&&!mlbDay.length){
-    mc.innerHTML=`<div style="text-align:center;padding:28px;color:var(--muted);">此日期無比賽</div>`;return;
+    mc.innerHTML=`<div style="text-align:center;padding:28px;color:var(--muted);">此日期無比賽</div>`;
+    return;
   }
 
-  const ord={inprogress:0,scheduled:1,closed:2,complete:2};
+  const ord={inprogress:0,scheduled:1,closed:2};
   games=[...games].sort((a,b)=>(ord[a.st]??1)-(ord[b.st]??1)||(new Date(a.utc)-new Date(b.utc)));
 
-  let html='';let count=0;
-  if(games.length){
-    games.forEach((g,i)=>{html+=renderCard(g,findMLB(g,mlbDay),i*30);count++;});
-  }else{
-    mlbDay.forEach((m,i)=>{
-      const ha=m.teams?.home?.team?.abbreviation||'';
-      const aa=m.teams?.away?.team?.abbreviation||'';
-      html+=renderCard({st:'scheduled',utc:m.gameDate,home:ha,away:aa,score:{},sbp:{},rhe:{}},m,i*30);
-      count++;
-    });
+  // 補上 MLB API 有但 SR 沒有的比賽
+  for(const m of mlbDay){
+    const ha=m.teams?.home?.team?.abbreviation||'';
+    const aa=m.teams?.away?.team?.abbreviation||'';
+    if(ha&&aa&&!games.find(g=>g.home===ha&&g.away===aa)){
+      games.push({st:'scheduled',utc:m.gameDate,home:ha,away:aa,score:{},sbp:{},rhe:{},_pk:m.gamePk});
+    }
   }
 
-  const label=new Date(selectedDate+'T12:00:00+08:00').toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'long',day:'numeric',weekday:'long'});
-  mc.innerHTML=`<div class="sec-hdr">⚾ ${label}<span class="sec-count">${count} 場</span><span class="refresh-time">${lastRefresh?'更新 '+lastRefresh:''}</span></div>${html}`;
+  let html=''; let count=0;
+  games.forEach((g,i)=>{html+=renderCard(g,findMLB(g,mlbDay),i*25);count++;});
+
+  const label=new Date(selectedDate+'T12:00:00+08:00')
+    .toLocaleDateString('zh-TW',{timeZone:'Asia/Taipei',month:'long',day:'numeric',weekday:'long'});
+  mc.innerHTML=`<div class="sec-hdr">⚾ ${label}
+    <span class="sec-count">${count} 場</span>
+    <span class="refresh-time">${lastSync?'🔄 '+lastSync:''}</span>
+  </div>${html}`;
 }
 
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 // 初始化
-// ══════════════════════════════════════════════
+// ════════════════════════════════════════════
 async function init(){
   const dateSet=new Set();
-  for(const g of allGames)dateSet.add(twISO(g.utc));
+  for(const g of allGames) dateSet.add(twISO(g.utc));
   const today=todayTW();
-  for(let i=0;i<4;i++)dateSet.add(addDay(today,i));
-  const dates=[...dateSet].filter(Boolean).sort();
+  for(let i=0;i<5;i++) dateSet.add(addDay(today,i));
+  const dates=[...dateSet].filter(Boolean).sort().slice(0,8);
   selectedDate=dates.includes(today)?today:(dates.find(d=>d>=today)||dates[0]);
   buildDateNav(dates);
   buildTicker();
-  await renderMain();
-  fetchOdds();
-  setInterval(refreshLive,30000);
-  setInterval(fetchOdds,30*60*1000);
+  await fetchMLBDay(selectedDate);
+  renderMain();
+  // 立刻同步一次
+  masterSync();
+  // 每15秒同步
+  setInterval(masterSync,15000);
 }
+
 init();
 </script>
 </body>
