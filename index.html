@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>全台股 AI 掃盤（全市場版）</title>
+<title>50元以下起漲掃盤</title>
 
 <style>
 body{
@@ -17,8 +17,8 @@ button{
     background:#22c55e;
     border:none;
     color:white;
-    cursor:pointer;
     border-radius:6px;
+    cursor:pointer;
 }
 
 #status{
@@ -36,6 +36,7 @@ button{
 }
 
 .good{border-left-color:#22c55e;}
+.mid{border-left-color:#fbbf24;}
 .bad{border-left-color:#ef4444;}
 
 .row{
@@ -52,7 +53,7 @@ button{
 
 <body>
 
-<h2>📊 全市場 AI 掃盤（1800檔）</h2>
+<h2>🚀 50元以下起漲掃盤</h2>
 <button onclick="scan()">開始掃描</button>
 
 <div id="status"></div>
@@ -60,46 +61,40 @@ button{
 
 <script>
 
-// ================= 台股生成（2330~9999粗略市場） =================
-// 👉 實務上：先用數字池 + 逐步過濾（避免API炸）
-function generateStocks(){
-    let arr = [];
+// ================= 股票池（先用TWSE+TPEx） =================
+async function getAllStocks(){
 
-    // 台股常見區段
-    for(let i=1100;i<=9950;i++){
-        let s = i.toString();
+    let list = [];
 
-        // 排除太怪的
-        if(s.endsWith("0") || s.endsWith("5")){
-            arr.push(s);
-        }
-    }
+    // 上市
+    try{
+        const r = await fetch("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL");
+        const j = await r.json();
 
-    // 加權核心股
-    const core = [
-        "2330","2317","2454","2382","2308",
-        "2881","2882","2886","2891","2884",
-        "2303","2379","2357","2395","1216",
-        "1301","1303","1326","2002","2412",
-        "2603","2609","2610","2615","2618"
-    ];
+        j.forEach(s=>{
+            if(s.Code) list.push(s.Code);
+        });
+    }catch(e){}
 
-    return [...core, ...arr.slice(0,1500)];
+    // 上櫃
+    try{
+        const r = await fetch("https://www.tpex.org.tw/openapi/v1/mopsfin_t03sal2");
+        const j = await r.json();
+
+        j.forEach(s=>{
+            if(s.SecuritiesCompanyCode)
+                list.push(s.SecuritiesCompanyCode);
+        });
+    }catch(e){}
+
+    return [...new Set(list)];
 }
 
 // ================= tools =================
 const delay = ms => new Promise(r=>setTimeout(r,ms));
 
-function score(change, macd){
-    let s = 0;
-    if(macd > 0) s += 40;
-    if(change > 2) s += 30;
-    if(change > 0) s += 20;
-    return s;
-}
-
 // ================= Yahoo =================
-async function getQuote(id){
+async function quote(id){
 
     try{
         const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW`);
@@ -120,7 +115,7 @@ async function getQuote(id){
     }
 }
 
-async function getHistory(id){
+async function history(id){
 
     try{
         const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW?range=3mo&interval=1d`);
@@ -144,16 +139,44 @@ function ema(arr,p){
 }
 
 function macd(arr){
-    let e12 = ema(arr,12);
-    let e26 = ema(arr,26);
-    return e12.map((v,i)=>v-e26[i]).at(-1);
+    let e12=ema(arr,12);
+    let e26=ema(arr,26);
+    return e12.map((v,i)=>v-e26[i]);
+}
+
+// ================= 起漲評分 =================
+function score(close, change){
+
+    let m = macd(close);
+
+    let last = m.at(-1);
+    let prev = m.at(-2);
+
+    let s = 0;
+
+    // MACD翻紅
+    if(last > 0 && prev < 0) s += 40;
+
+    // 動能
+    if(change > 2) s += 30;
+    if(change > 0) s += 10;
+
+    // 連續上漲
+    let up = 0;
+    for(let i=close.length-5;i<close.length;i++){
+        if(close[i] > close[i-1]) up++;
+    }
+    if(up >= 3) s += 20;
+
+    return s;
 }
 
 // ================= UI =================
 function addCard(d){
 
     let div = document.createElement("div");
-    div.className = "card " + (d.score>=60 ? "good":"bad");
+
+    div.className = "card " + (d.score>=70?"good":d.score>=50?"mid":"bad");
 
     div.innerHTML = `
         <div class="row">
@@ -161,74 +184,75 @@ function addCard(d){
             <b>${d.price.toFixed(2)}</b>
         </div>
         <div class="small">
-            漲跌：${d.change.toFixed(2)}% ｜ MACD：${d.macd.toFixed(2)} ｜ 分數：${d.score}
+            漲跌 ${d.change.toFixed(2)}% ｜ 分數 ${d.score}
         </div>
     `;
 
     document.getElementById("list").prepend(div);
 }
 
-// ================= WORKER（關鍵） =================
-async function worker(pool, stocks, status){
-
-    while(stocks.length){
-
-        const id = stocks.pop();
-
-        status.innerText = `掃描中｜剩餘 ${stocks.length} ｜ ${id}`;
-
-        const q = await Promise.race([
-            getQuote(id),
-            delay(1500).then(()=>null)
-        ]);
-
-        if(!q) continue;
-
-        const h = await Promise.race([
-            getHistory(id),
-            delay(1500).then(()=>null)
-        ]);
-
-        if(!h || h.length < 30) continue;
-
-        const m = macd(h);
-
-        const s = score(q.change, m);
-
-        if(s >= 60){
-            addCard({
-                id,
-                ...q,
-                macd:m,
-                score:s
-            });
-        }
-
-        await delay(80); // 控制 API 壓力
-    }
-}
-
 // ================= MAIN =================
 async function scan(){
 
     const status = document.getElementById("status");
-    const list = document.getElementById("list");
+    const listBox = document.getElementById("list");
 
-    list.innerHTML = "";
+    listBox.innerHTML = "";
 
-    let stocks = generateStocks();
+    status.innerText = "載入股票池...";
 
-    status.innerText = "初始化股票池..." + stocks.length;
+    let all = await getAllStocks();
 
-    // 👉 4條並行掃描（重點）
-    await Promise.all([
-        worker(1, stocks, status),
-        worker(2, stocks, status),
-        worker(3, stocks, status),
-        worker(4, stocks, status)
-    ]);
+    status.innerText = `總股票 ${all.length}，開始過濾 50元以下...`;
 
-    status.innerText = "掃描完成";
+    let low50 = [];
+
+    // ===== 第一步：先篩 50元以下 =====
+    for(let i=0;i<all.length;i++){
+
+        let id = all[i];
+
+        let q = await quote(id);
+
+        if(!q) continue;
+
+        if(q.price <= 50){
+            low50.push({id, price:q.price, change:q.change});
+        }
+
+        status.innerText = `篩選中 ${i}/${all.length} ｜ 50以下 ${low50.length}`;
+
+        await delay(30);
+    }
+
+    status.innerText = `進入掃盤：50元以下 ${low50.length} 檔`;
+
+    // ===== 第二步：掃起漲 =====
+    for(let i=0;i<low50.length;i++){
+
+        let s = low50[i];
+
+        let h = await history(s.id);
+
+        if(!h || h.length < 40) continue;
+
+        let sc = score(h, s.change);
+
+        if(sc >= 60){
+            addCard({
+                id:s.id,
+                price:s.price,
+                change:s.change,
+                score:sc
+            });
+        }
+
+        status.innerText = `掃盤中 ${i}/${low50.length} ｜ ${s.id}`;
+
+        await delay(80);
+    }
+
+    status.innerText = "完成（50元以下起漲股已輸出）";
 }
 
 </script>
