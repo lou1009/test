@@ -3,1513 +3,397 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>2026 FIFA 世界盃</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;600;700&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
-<script type="text/javascript" src="https://www.footballwidgets.com/js/major_cup_widgets.js" async="async"></script>
+<title>台股技術分析</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  :root {
-    --gold: #C9A84C;
-    --gold-light: #F0D080;
-    --dark: #080C14;
-    --dark2: #0D1420;
-    --dark3: #111B2A;
-    --accent: #1A6FD8;
-    --accent2: #00CFFF;
-    --red: #E03030;
-    --green: #00C878;
-    --text: #D4DFF0;
-    --muted: #6A7E99;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Barlow Condensed', 'Noto Sans TC', sans-serif;
-    background: var(--dark);
-    color: var(--text);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Background */
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: 
-      radial-gradient(ellipse at 20% 20%, rgba(26,111,216,0.12) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.08) 0%, transparent 60%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .content { position: relative; z-index: 1; }
-
-  /* Header */
-  header {
-    padding: 32px 24px 20px;
-    text-align: center;
-    border-bottom: 1px solid rgba(201,168,76,0.2);
-    background: linear-gradient(180deg, rgba(201,168,76,0.05) 0%, transparent 100%);
-  }
-
-  .tournament-logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 4px;
-  }
-
-  .ball-icon {
-    width: 44px; height: 44px;
-    background: radial-gradient(circle at 35% 35%, #fff 0%, #ccc 60%, #888 100%);
-    border-radius: 50%;
-    position: relative;
-    flex-shrink: 0;
-    box-shadow: 0 0 20px rgba(201,168,76,0.4);
-    animation: spin 8s linear infinite;
-  }
-
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-
-  .ball-icon::before {
-    content: '';
-    position: absolute;
-    top: 12px; left: 6px;
-    width: 14px; height: 14px;
-    background: #333;
-    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
-    border-radius: 2px;
-  }
-
-  h1 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: clamp(2.2rem, 6vw, 4rem);
-    letter-spacing: 0.08em;
-    line-height: 1;
-    background: linear-gradient(135deg, var(--gold-light), var(--gold));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .subtitle {
-    font-size: 0.85rem;
-    color: var(--muted);
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    margin-top: 6px;
-  }
-
-  .host-flags {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 14px;
-    font-size: 1.6rem;
-  }
-
-  .host-label {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.2em;
-    text-align: center;
-    margin-top: 4px;
-  }
-
-  /* Status bar */
-  .status-bar {
-    display: flex;
-    justify-content: center;
-    gap: 32px;
-    padding: 14px 24px;
-    background: rgba(13,20,32,0.8);
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    flex-wrap: wrap;
-    font-size: 0.8rem;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-  }
-
-  .status-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .status-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--green);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.7); }
-  }
-
-  /* Countdown */
-  .countdown-section {
-    padding: 28px 24px;
-    text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-  }
-
-  .countdown-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.3em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 14px;
-  }
-
-  .countdown-grid {
-    display: flex;
-    justify-content: center;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .countdown-unit {
-    background: var(--dark3);
-    border: 1px solid rgba(201,168,76,0.2);
-    border-radius: 8px;
-    padding: 14px 20px;
-    min-width: 80px;
-  }
-
-  .countdown-num {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 2.4rem;
-    color: var(--gold);
-    line-height: 1;
-    display: block;
-  }
-
-  .countdown-unit-label {
-    font-size: 0.65rem;
-    color: var(--muted);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
-
-  /* Tabs - Two rows */
-  .tabs-wrapper {
-    background: var(--dark2);
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-  }
-
-  .tabs-row {
-    display: flex;
-    overflow-x: auto;
-    padding: 0 12px;
-    gap: 2px;
-    scrollbar-width: none;
-  }
-  .tabs-row::-webkit-scrollbar { display: none; }
-
-  .tabs-row-label {
-    font-size: 0.6rem;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-    padding: 6px 16px 2px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-  }
-  .tabs-row-label:first-child { border-top: none; }
-
-  .tab {
-    padding: 10px 16px;
-    font-size: 0.75rem;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    font-weight: 600;
-    color: var(--muted);
-    border: none;
-    background: none;
-    cursor: pointer;
-    white-space: nowrap;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-
-  .tab:hover { color: var(--text); }
-
-  .tab.active {
-    color: var(--gold);
-    border-bottom-color: var(--gold);
-  }
-
-  .tab.active-blue {
-    color: var(--accent2);
-    border-bottom-color: var(--accent2);
-  }
-
-  /* Sections */
-  .section {
-    display: none;
-    padding: 20px 16px;
-    max-width: 860px;
-    margin: 0 auto;
-  }
-  .section.active { display: block; }
-
-  /* Groups grid */
-  .groups-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
-  }
-
-  .group-card {
-    background: var(--dark3);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 10px;
-    overflow: hidden;
-    animation: fadeUp 0.4s ease forwards;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .group-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: linear-gradient(90deg, rgba(26,111,216,0.15), transparent);
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-  }
-
-  .group-letter {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.6rem;
-    color: var(--gold);
-    line-height: 1;
-  }
-
-  .group-title {
-    font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-
-  .team-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    transition: background 0.15s;
-  }
-
-  .team-row:last-child { border-bottom: none; }
-  .team-row:hover { background: rgba(255,255,255,0.03); }
-
-  .team-flag { font-size: 1.2rem; flex-shrink: 0; }
-
-  .team-name {
-    flex: 1;
-    font-size: 0.9rem;
-    font-weight: 400;
-  }
-
-  .host-badge {
-    font-size: 0.6rem;
-    padding: 2px 6px;
-    background: rgba(201,168,76,0.15);
-    color: var(--gold);
-    border: 1px solid rgba(201,168,76,0.3);
-    border-radius: 10px;
-    letter-spacing: 0.1em;
-  }
-
-  /* Schedule */
-  .schedule-day {
-    margin-bottom: 24px;
-  }
-
-  .day-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-
-  .day-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    color: var(--gold);
-    letter-spacing: 0.1em;
-  }
-
-  .day-line {
-    flex: 1;
-    height: 1px;
-    background: rgba(255,255,255,0.08);
-  }
-
-  .match-card {
-    background: var(--dark3);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 8px;
-    padding: 12px 16px;
-    margin-bottom: 8px;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    gap: 10px;
-    transition: border-color 0.2s, background 0.2s;
-    cursor: default;
-  }
-
-  .match-card:hover {
-    border-color: rgba(201,168,76,0.2);
-    background: rgba(13,20,32,0.9);
-  }
-
-  .match-team {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.95rem;
-    font-weight: 600;
-  }
-
-  .match-team.right {
-    flex-direction: row-reverse;
-    text-align: right;
-  }
-
-  .match-flag { font-size: 1.3rem; }
-
-  .match-center {
-    text-align: center;
-    min-width: 90px;
-  }
-
-  .match-score {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.6rem;
-    color: var(--gold-light);
-    line-height: 1;
-  }
-
-  .match-time {
-    font-size: 0.72rem;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-
-  .match-venue {
-    font-size: 0.65rem;
-    color: var(--muted);
-    margin-top: 4px;
-    letter-spacing: 0.05em;
-  }
-
-  .match-group-tag {
-    font-size: 0.6rem;
-    color: var(--accent2);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-
-  .live-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    background: rgba(224,48,48,0.15);
-    border: 1px solid rgba(224,48,48,0.4);
-    color: var(--red);
-    font-size: 0.65rem;
-    letter-spacing: 0.1em;
-    padding: 2px 7px;
-    border-radius: 10px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }
-
-  .live-dot {
-    width: 5px; height: 5px;
-    background: var(--red);
-    border-radius: 50%;
-    animation: pulse 1s ease-in-out infinite;
-  }
-
-  /* Knockout bracket */
-  .knockout-section { margin-bottom: 28px; }
-
-  .ko-round-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 0.2em;
-    color: var(--accent2);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(0,207,255,0.15);
-  }
-
-  .ko-dates {
-    font-size: 0.75rem;
-    color: var(--muted);
-    margin-bottom: 12px;
-  }
-
-  .ko-info {
-    background: var(--dark3);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 8px;
-    padding: 14px 16px;
-    font-size: 0.85rem;
-    color: var(--muted);
-    line-height: 1.6;
-  }
-
-  /* Venues */
-  .venues-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 12px;
-  }
-
-  .venue-card {
-    background: var(--dark3);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 10px;
-    padding: 16px;
-    animation: fadeUp 0.3s ease forwards;
-  }
-
-  .venue-flag { font-size: 1.4rem; margin-bottom: 8px; }
-
-  .venue-city {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.1rem;
-    letter-spacing: 0.08em;
-    color: var(--gold);
-  }
-
-  .venue-stadium {
-    font-size: 0.8rem;
-    color: var(--text);
-    margin-top: 4px;
-  }
-
-  .venue-country {
-    font-size: 0.7rem;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    margin-top: 4px;
-  }
-
-  .venue-capacity {
-    font-size: 0.75rem;
-    color: var(--accent2);
-    margin-top: 8px;
-  }
-
-  /* Loading */
-  .loading {
-    text-align: center;
-    padding: 48px;
-    color: var(--muted);
-  }
-
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid rgba(201,168,76,0.2);
-    border-top-color: var(--gold);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 12px;
-  }
-
-  /* Responsive */
-  @media (max-width: 480px) {
-    .match-team-name { display: none; }
-    .match-card { grid-template-columns: auto auto auto; }
-    .groups-grid { grid-template-columns: 1fr; }
-    .venues-grid { grid-template-columns: 1fr; }
-  }
-
-  .section-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.4rem;
-    letter-spacing: 0.15em;
-    color: var(--gold);
-    margin-bottom: 16px;
-    text-transform: uppercase;
-  }
-
-  footer {
-    text-align: center;
-    padding: 24px;
-    color: var(--muted);
-    font-size: 0.72rem;
-    letter-spacing: 0.1em;
-    border-top: 1px solid rgba(255,255,255,0.05);
-    margin-top: 40px;
-  }
+:root{
+  --bg:#0b0e14;--surface:#131720;--card:#1a1f2e;--border:#252d3d;
+  --accent:#4f8ef7;--bull:#34c77b;--bear:#f05c5c;--warn:#f0a830;
+  --text:#e2e8f4;--muted:#7a8499;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,'Helvetica Neue',sans-serif;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px}
+.header h1{font-size:16px;font-weight:700;margin-bottom:10px}
+.search-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.code-input{background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:9px 14px;color:var(--text);font-size:14px;font-weight:700;outline:none;
+  width:130px;letter-spacing:2px;transition:border-color .15s}
+.code-input:focus{border-color:var(--accent)}
+.code-input::placeholder{color:var(--muted);letter-spacing:0;font-weight:400}
+.btn-go{padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;
+  font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-go:hover{opacity:.85}
+.btn-go:disabled{opacity:.4;cursor:not-allowed}
+.hint{font-size:11px;color:var(--muted)}
+.hint.err{color:var(--bear)}
+.hint.ok{color:var(--bull)}
+
+.results{padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+
+/* card */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.card.bull{border-color:rgba(52,199,123,.35)}
+.card.bear{border-color:rgba(240,92,92,.35)}
+.card-head{padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.c-code{font-size:16px;font-weight:800}
+.c-name{font-size:12px;color:var(--muted)}
+.verdict{padding:3px 10px;border-radius:5px;font-size:12px;font-weight:700}
+.v-bull{background:rgba(52,199,123,.15);color:var(--bull);border:1px solid rgba(52,199,123,.3)}
+.v-bear{background:rgba(240,92,92,.15);color:var(--bear);border:1px solid rgba(240,92,92,.3)}
+.v-neu{background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.25)}
+.price-row{display:flex;align-items:baseline;gap:8px}
+.c-price{font-size:20px;font-weight:800}
+.c-chg{font-size:12px;font-weight:600}
+.up{color:var(--bull)} .dn{color:var(--bear)}
+
+.card-body{display:grid;grid-template-columns:1fr 200px}
+@media(max-width:580px){.card-body{grid-template-columns:1fr}}
+.chart-area{padding:10px 8px 6px;height:210px}
+.chart-area canvas{width:100%!important}
+.stats{border-left:1px solid var(--border);padding:14px;display:flex;flex-direction:column;gap:12px}
+@media(max-width:580px){.stats{border-left:none;border-top:1px solid var(--border)}}
+.s-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.boll-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px}
+.boll-row span:first-child{color:var(--muted);font-size:10px}
+.col-u{color:var(--warn);font-weight:700} .col-m{color:var(--accent);font-weight:700} .col-l{color:var(--warn);font-weight:700}
+.pos-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:6px 0 2px}
+.pos-fill{height:100%;border-radius:2px}
+.pos-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
+.sigs-list{display:flex;flex-direction:column;gap:5px}
+.sig{display:flex;gap:5px;font-size:11px}
+.sig .t{font-weight:700;color:var(--text)}
+.sig .s{color:var(--muted);font-size:10px}
+.reason{padding:10px 16px;border-top:1px solid var(--border);font-size:12px;
+  color:var(--muted);line-height:1.7;background:rgba(0,0,0,.15)}
+.reason strong{color:var(--text)}
+
+.loading-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:28px 20px;display:flex;align-items:center;gap:14px}
+.spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* debug */
+.debug{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;font-size:11px;color:var(--muted);margin-top:8px;font-family:monospace;line-height:1.6}
+.debug .err{color:var(--bear)} .debug .ok{color:var(--bull)}
+
+/* source badge */
+.src-badge{font-size:9px;color:var(--muted);margin-left:auto;padding:2px 7px;
+  background:var(--surface);border:1px solid var(--border);border-radius:4px}
 </style>
 </head>
 <body>
-<div class="content">
 
-<header>
-  <div class="tournament-logo">
-    <div class="ball-icon"></div>
-    <h1>FIFA 世界盃 2026™</h1>
-    <div class="ball-icon"></div>
-  </div>
-  <div class="subtitle">FIFA World Cup 2026 · 美國 · 加拿大 · 墨西哥</div>
-  <div class="host-flags">🇺🇸 🇨🇦 🇲🇽</div>
-  <div class="host-label">2026年6月11日 — 7月19日</div>
-</header>
-
-<div class="status-bar">
-  <div class="status-item">
-    <div class="status-dot"></div>
-    <span>即時資料同步中</span>
-  </div>
-  <div class="status-item" id="lastUpdate">最後更新：載入中...</div>
-  <div class="status-item" id="localTime">本地時間：--:--</div>
-</div>
-
-<div class="countdown-section">
-  <div class="countdown-label">距離開幕倒數</div>
-  <div class="countdown-grid">
-    <div class="countdown-unit">
-      <span class="countdown-num" id="cdDays">--</span>
-      <div class="countdown-unit-label">天</div>
-    </div>
-    <div class="countdown-unit">
-      <span class="countdown-num" id="cdHours">--</span>
-      <div class="countdown-unit-label">時</div>
-    </div>
-    <div class="countdown-unit">
-      <span class="countdown-num" id="cdMins">--</span>
-      <div class="countdown-unit-label">分</div>
-    </div>
-    <div class="countdown-unit">
-      <span class="countdown-num" id="cdSecs">--</span>
-      <div class="countdown-unit-label">秒</div>
-    </div>
+<div class="header">
+  <h1>📊 台股技術分析 — 日K × 布林通道</h1>
+  <div class="search-bar">
+    <input class="code-input" id="codeInput" placeholder="代號，如 2330"
+      maxlength="6" onkeydown="if(event.key==='Enter')analyze()">
+    <button class="btn-go" id="goBtn" onclick="analyze()">分析</button>
+    <span class="hint" id="hint">輸入台股代號按Enter或點分析</span>
   </div>
 </div>
 
-<div class="tabs-wrapper">
-  <div class="tabs-row-label">📊 賽事資訊</div>
-  <div class="tabs-row">
-    <button class="tab active" onclick="showTab('live', this)">🔴 即時比分</button>
-    <button class="tab" onclick="showTab('groups', this)">⚽ 小組分組</button>
-    <button class="tab" onclick="showTab('schedule', this)">📅 賽程表</button>
-    <button class="tab" onclick="showTab('knockout', this)">⚡ 淘汰賽</button>
-    <button class="tab" onclick="showTab('venues', this)">🏟️ 場地</button>
-  </div>
-  <div class="tabs-row-label">🎯 互動功能</div>
-  <div class="tabs-row">
-    <button class="tab" onclick="showTab('predict', this)" style="color:var(--accent2);">🔮 預測推薦</button>
-    <button class="tab" onclick="showTab('bet', this)">🎰 投注體驗</button>
-  </div>
-</div>
-
-<!-- LIVE SCORES TAB -->
-<div class="section active" id="tab-live">
-  <div class="section-title">🔴 即時比分</div>
-  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:16px;line-height:1.6;">
-    資料來自開源 API（worldcup26.ir），每60秒自動刷新。
-  </p>
-
-  <!-- 篩選列 -->
-  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;" id="live-filters">
-    <button onclick="setLiveFilter('all')" id="filter-all" style="font-size:0.72rem;padding:5px 14px;border-radius:20px;border:1px solid rgba(201,168,76,0.5);background:rgba(201,168,76,0.15);color:var(--gold);cursor:pointer;">全部</button>
-    <button onclick="setLiveFilter('live')" id="filter-live" style="font-size:0.72rem;padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted);cursor:pointer;">🔴 進行中</button>
-    <button onclick="setLiveFilter('finished')" id="filter-finished" style="font-size:0.72rem;padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted);cursor:pointer;">✅ 已結束</button>
-    <button onclick="setLiveFilter('upcoming')" id="filter-upcoming" style="font-size:0.72rem;padding:5px 14px;border-radius:20px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:var(--muted);cursor:pointer;">📅 即將開賽</button>
-  </div>
-
-  <div id="live-scores-container">
-    <div class="loading"><div class="spinner"></div>載入比賽資料中...</div>
-  </div>
-</div>
-
-<!-- GROUPS TAB -->
-<div class="section" id="tab-groups">
-  <div class="section-title">🏆 12小組 · 48支球隊</div>
-  <div class="groups-grid" id="groupsGrid">
-    <div class="loading"><div class="spinner"></div>載入中...</div>
-  </div>
-</div>
-
-<!-- SCHEDULE TAB -->
-<div class="section" id="tab-schedule">
-  <div class="section-title">📅 完整賽程</div>
-  <div id="scheduleContainer">
-    <div class="loading"><div class="spinner"></div>載入中...</div>
-  </div>
-</div>
-
-<!-- KNOCKOUT TAB -->
-<div class="section" id="tab-knockout">
-  <div class="section-title">⚡ 淘汰賽階段</div>
-  <div id="knockoutContainer"></div>
-</div>
-
-<!-- VENUES TAB -->
-<div class="section" id="tab-venues">
-  <div class="section-title">🏟️ 16座比賽場地</div>
-  <div class="venues-grid" id="venuesGrid"></div>
-</div>
-
-<!-- PREDICT TAB -->
-<div class="section" id="tab-predict">
-  <div class="section-title">🔮 預測推薦</div>
-  <p style="font-size:0.78rem;color:var(--muted);margin-bottom:4px;line-height:1.6;">
-    資料來自 <span style="color:var(--accent2);">Polymarket</span> 群眾預測市場，反映真實資金押注的勝率。每60秒更新。
-  </p>
-  <a href="https://polymarket.com/sports/fifa-world-cup" target="_blank" style="font-size:0.7rem;color:var(--accent);text-decoration:none;display:inline-block;margin-bottom:18px;">→ 前往 Polymarket 查看更多</a>
-
-  <!-- 冠軍賠率 -->
-  <div style="margin-bottom:24px;">
-    <div style="font-size:0.7rem;letter-spacing:0.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-      <span>🏆 冠軍賠率（群眾預測）</span>
-      <span id="poly-update-time" style="font-size:0.62rem;color:var(--muted);letter-spacing:0;text-transform:none;"></span>
-    </div>
-    <div id="poly-winner-container">
-      <div class="loading"><div class="spinner"></div>從 Polymarket 載入中...</div>
-    </div>
-  </div>
-
-  <!-- 每場比賽預測 -->
-  <div>
-    <div style="font-size:0.7rem;letter-spacing:0.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:12px;">⚽ 比賽預測市場</div>
-    <div id="poly-matches-container">
-      <div class="loading"><div class="spinner"></div>載入比賽預測...</div>
-    </div>
-  </div>
-</div>
-
-<!-- BET TAB -->
-<div class="section" id="tab-bet">
-  <div class="section-title">🎰 投注體驗 Demo</div>
-  <p style="font-size:0.8rem;color:var(--muted);margin-bottom:20px;line-height:1.6;">
-    模擬世界盃滾球投注介面，僅供展示用途，非真實博彩。
-  </p>
-
-  <!-- 餘額 -->
-  <div style="display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#1a2744,#111b2a);border:1px solid rgba(201,168,76,0.25);border-radius:12px;padding:14px 18px;margin-bottom:18px;">
-    <div>
-      <div style="font-size:0.65rem;color:var(--muted);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:4px;">帳戶餘額</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);letter-spacing:0.05em;" id="bet-balance">1,250.00 <span style="font-size:0.9rem;">USDT</span></div>
-    </div>
-    <div style="text-align:right;">
-      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:4px;">連線狀態</div>
-      <div style="font-size:0.72rem;color:#4ade80;display:flex;align-items:center;gap:5px;">
-        <span style="width:6px;height:6px;background:#4ade80;border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;"></span>Bot 連線正常
-      </div>
-    </div>
-  </div>
-
-  <!-- 亮點 Banner -->
-  <div style="background:linear-gradient(90deg,#1d4ed8,#4338ca);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-    <div>
-      <div style="font-weight:700;font-size:0.9rem;">無縫加密支付</div>
-      <div style="font-size:0.72rem;color:rgba(255,255,255,0.7);margin-top:3px;">免下載・免KYC・TG ID 即帳戶</div>
-    </div>
-    <div style="font-size:1.8rem;">⚡</div>
-  </div>
-
-  <!-- 滾球盤口標題 -->
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-    <div style="font-size:0.75rem;color:var(--muted);letter-spacing:0.1em;display:flex;align-items:center;gap:6px;">
-      <span style="color:#ef4444;animation:pulse 1s infinite;">●</span> 滾球盤口 (Live)
-    </div>
-    <span style="font-size:0.7rem;color:var(--accent2);">全部賽事 ›</span>
-  </div>
-
-  <!-- 賽事卡片 1 -->
-  <div style="background:var(--dark3);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:16px;margin-bottom:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <span style="font-size:0.7rem;color:var(--muted);">🏆 歐洲冠軍聯賽・下半場 <span style="color:#ef4444;font-weight:700;" id="match1-min">72'</span></span>
-      <span style="font-size:0.65rem;background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.3);padding:2px 8px;border-radius:10px;">高熱度</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.95rem;">
-          <span style="width:8px;height:8px;background:#ef4444;border-radius:50%;"></span> 皇家馬德里
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.95rem;">
-          <span style="width:8px;height:8px;background:#3b82f6;border-radius:50%;"></span> 曼徹斯特城
-        </div>
-      </div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#4ade80;background:#0a0f1a;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);letter-spacing:0.1em;" id="match1-score">2 - 2</div>
-    </div>
-    <!-- 賠率按鈕 -->
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
-      <button onclick="betSelectOdds('皇馬 獨贏', 2.85, 1)" style="background:#0d1a2a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a3a6a'" onmouseout="this.style.background='#0d1a2a'">
-        <div style="font-size:0.65rem;color:var(--muted);">主勝</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);margin-top:2px;">2.85</div>
-      </button>
-      <button onclick="betSelectOdds('和局', 3.10, 1)" style="background:#0d1a2a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a3a6a'" onmouseout="this.style.background='#0d1a2a'">
-        <div style="font-size:0.65rem;color:var(--muted);">和局</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);margin-top:2px;">3.10</div>
-      </button>
-      <button onclick="betSelectOdds('曼城 獨贏', 2.45, 1)" style="background:#0d1a2a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a3a6a'" onmouseout="this.style.background='#0d1a2a'">
-        <div style="font-size:0.65rem;color:var(--muted);">客勝</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);margin-top:2px;">2.45 <span style="font-size:0.6rem;color:#4ade80;">▲</span></div>
-      </button>
-    </div>
-  </div>
-
-  <!-- 賽事卡片 2（世界盃）-->
-  <div style="background:var(--dark3);border:1px solid rgba(201,168,76,0.2);border-radius:12px;padding:16px;margin-bottom:12px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <span style="font-size:0.7rem;color:var(--muted);">🏆 世界盃 2026 小組賽 A組・<span style="color:#4ade80;">尚未開賽</span></span>
-      <span style="font-size:0.65rem;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.25);padding:2px 8px;border-radius:10px;">世界盃</span>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="font-weight:700;font-size:0.95rem;">🇲🇽 墨西哥</div>
-        <div style="font-weight:700;font-size:0.95rem;">🇿🇦 南非</div>
-      </div>
-      <div style="font-size:0.72rem;color:var(--muted);text-align:right;line-height:1.8;">
-        <div style="color:var(--gold);">6月11日</div>
-        <div>03:00 台灣時間</div>
-        <div>墨西哥城體育場</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px;">
-      <button onclick="betSelectOdds('墨西哥 獨贏', 1.95, 2)" style="background:#0d1a2a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a3a6a'" onmouseout="this.style.background='#0d1a2a'">
-        <div style="font-size:0.65rem;color:var(--muted);">主勝</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);margin-top:2px;">1.95</div>
-      </button>
-      <button onclick="betSelectOdds('和局', 3.40, 2)" style="background:#0d1a2a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a3a6a'" onmouseout="this.style.background='#0d1a2a'">
-        <div style="font-size:0.65rem;color:var(--muted);">和局</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);margin-top:2px;">3.40</div>
-      </button>
-      <button onclick="betSelectOdds('南非 獨贏', 4.20, 2)" style="background:#0d1a2a;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 6px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#1a3a6a'" onmouseout="this.style.background='#0d1a2a'">
-        <div style="font-size:0.65rem;color:var(--muted);">客勝</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);margin-top:2px;">4.20</div>
-      </button>
-    </div>
-  </div>
-
-  <!-- 投注記錄 -->
-  <div style="margin-top:8px;">
-    <div style="font-size:0.7rem;letter-spacing:0.2em;color:var(--accent2);text-transform:uppercase;margin-bottom:10px;">📋 本次投注記錄</div>
-    <div id="bet-history" style="font-size:0.8rem;color:var(--muted);text-align:center;padding:16px;background:var(--dark3);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
-      尚無投注記錄
-    </div>
-  </div>
-</div>
-
-<!-- 注單彈窗 -->
-<div id="bet-slip-panel" style="position:fixed;bottom:0;left:0;right:0;background:#131f2e;border-top:1px solid rgba(201,168,76,0.25);border-radius:20px 20px 0 0;padding:20px;transform:translateY(100%);transition:transform 0.3s ease;z-index:200;max-width:860px;margin:0 auto;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-    <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.95rem;">
-      🧾 確認注單：<span style="color:var(--gold);" id="slip-type-label">--</span>
-    </div>
-    <button onclick="closeBetSlip()" style="background:none;border:none;color:var(--muted);font-size:1.1rem;cursor:pointer;">✕</button>
-  </div>
-  <div style="background:#0a1018;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-    <div style="font-size:0.8rem;color:var(--muted);">賠率：<span style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:#4ade80;" id="slip-odds-label">0.00</span></div>
-    <div style="display:flex;align-items:center;gap:6px;background:#1a2535;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 12px;">
-      <span style="font-size:0.7rem;color:var(--muted);">金額</span>
-      <input type="number" id="slip-amount" value="100" oninput="updateBetReturn()" style="width:60px;background:transparent;border:none;outline:none;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold);text-align:right;">
-      <span style="font-size:0.7rem;color:var(--muted);">USDT</span>
-    </div>
-  </div>
-  <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:16px;padding:0 4px;">
-    <span style="color:var(--muted);">預計回報：</span>
-    <span style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);" id="slip-return">0.00 USDT</span>
-  </div>
-  <button onclick="submitBetDemo()" id="bet-submit-btn" style="width:100%;background:linear-gradient(90deg,#1d4ed8,#4338ca);border:none;color:white;font-weight:700;font-size:0.95rem;padding:14px;border-radius:12px;cursor:pointer;letter-spacing:0.05em;transition:opacity 0.2s;">
-    立即下注（模擬）
-  </button>
-</div>
-
-<!-- Toast 通知 -->
-<div id="bet-toast" style="position:fixed;top:70px;left:16px;right:16px;background:#1a2535;border:1px solid rgba(59,130,246,0.3);border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:12px;transform:translateY(-120px);transition:transform 0.3s ease;z-index:300;max-width:828px;margin:0 auto;">
-  <div style="background:#3b82f6;border-radius:8px;padding:8px;flex-shrink:0;">🔔</div>
-  <div>
-    <div style="font-size:0.72rem;color:#60a5fa;font-weight:700;margin-bottom:3px;">系統通知</div>
-    <div style="font-size:0.8rem;color:var(--text);" id="toast-text">--</div>
-  </div>
-</div>
-
-  2026 FIFA World Cup™ · 資料來源：FIFA · 本頁每30秒自動更新
-</footer>
-
-</div>
+<div class="results" id="results"></div>
 
 <script>
-const GROUPS = {
-  A: { teams: [
-    { name: '墨西哥', en: 'Mexico', flag: '🇲🇽', host: true },
-    { name: '南非', en: 'South Africa', flag: '🇿🇦' },
-    { name: '南韓', en: 'Korea Republic', flag: '🇰🇷' },
-    { name: '捷克', en: 'Czechia', flag: '🇨🇿' },
-  ]},
-  B: { teams: [
-    { name: '加拿大', en: 'Canada', flag: '🇨🇦', host: true },
-    { name: '波斯尼亞', en: 'Bosnia and Herzegovina', flag: '🇧🇦' },
-    { name: '卡達', en: 'Qatar', flag: '🇶🇦' },
-    { name: '瑞士', en: 'Switzerland', flag: '🇨🇭' },
-  ]},
-  C: { teams: [
-    { name: '巴西', en: 'Brazil', flag: '🇧🇷' },
-    { name: '摩洛哥', en: 'Morocco', flag: '🇲🇦' },
-    { name: '海地', en: 'Haiti', flag: '🇭🇹' },
-    { name: '蘇格蘭', en: 'Scotland', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿' },
-  ]},
-  D: { teams: [
-    { name: '美國', en: 'United States', flag: '🇺🇸', host: true },
-    { name: '巴拉圭', en: 'Paraguay', flag: '🇵🇾' },
-    { name: '澳洲', en: 'Australia', flag: '🇦🇺' },
-    { name: '土耳其', en: 'Türkiye', flag: '🇹🇷' },
-  ]},
-  E: { teams: [
-    { name: '德國', en: 'Germany', flag: '🇩🇪' },
-    { name: '庫拉索', en: 'Curacao', flag: '🇨🇼' },
-    { name: '象牙海岸', en: 'Ivory Coast', flag: '🇨🇮' },
-    { name: '厄瓜多', en: 'Ecuador', flag: '🇪🇨' },
-  ]},
-  F: { teams: [
-    { name: '荷蘭', en: 'Netherlands', flag: '🇳🇱' },
-    { name: '日本', en: 'Japan', flag: '🇯🇵' },
-    { name: '瑞典', en: 'Sweden', flag: '🇸🇪' },
-    { name: '突尼西亞', en: 'Tunisia', flag: '🇹🇳' },
-  ]},
-  G: { teams: [
-    { name: '比利時', en: 'Belgium', flag: '🇧🇪' },
-    { name: '埃及', en: 'Egypt', flag: '🇪🇬' },
-    { name: '伊朗', en: 'Iran', flag: '🇮🇷' },
-    { name: '紐西蘭', en: 'New Zealand', flag: '🇳🇿' },
-  ]},
-  H: { teams: [
-    { name: '西班牙', en: 'Spain', flag: '🇪🇸' },
-    { name: '維德角', en: 'Cape Verde', flag: '🇨🇻' },
-    { name: '沙烏地阿拉伯', en: 'Saudi Arabia', flag: '🇸🇦' },
-    { name: '烏拉圭', en: 'Uruguay', flag: '🇺🇾' },
-  ]},
-  I: { teams: [
-    { name: '法國', en: 'France', flag: '🇫🇷' },
-    { name: '塞內加爾', en: 'Senegal', flag: '🇸🇳' },
-    { name: '伊拉克', en: 'Iraq', flag: '🇮🇶' },
-    { name: '挪威', en: 'Norway', flag: '🇳🇴' },
-  ]},
-  J: { teams: [
-    { name: '阿根廷', en: 'Argentina', flag: '🇦🇷' },
-    { name: '阿爾及利亞', en: 'Algeria', flag: '🇩🇿' },
-    { name: '奧地利', en: 'Austria', flag: '🇦🇹' },
-    { name: '約旦', en: 'Jordan', flag: '🇯🇴' },
-  ]},
-  K: { teams: [
-    { name: '葡萄牙', en: 'Portugal', flag: '🇵🇹' },
-    { name: '剛果民主共和國', en: 'DR Congo', flag: '🇨🇩' },
-    { name: '烏茲別克', en: 'Uzbekistan', flag: '🇺🇿' },
-    { name: '哥倫比亞', en: 'Colombia', flag: '🇨🇴' },
-  ]},
-  L: { teams: [
-    { name: '英格蘭', en: 'England', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿' },
-    { name: '克羅埃西亞', en: 'Croatia', flag: '🇭🇷' },
-    { name: '迦納', en: 'Ghana', flag: '🇬🇭' },
-    { name: '巴拿馬', en: 'Panama', flag: '🇵🇦' },
-  ]},
+const KNOWN={
+  '2330':'台積電','2317':'鴻海','2454':'聯發科','2382':'廣達','2308':'台達電',
+  '2881':'富邦金','2882':'國泰金','2886':'兆豐金','2891':'中信金','2884':'玉山金',
+  '2303':'聯電','2379':'瑞昱','2357':'華碩','2395':'研華','2912':'統一超',
+  '1301':'台塑','1303':'南亞','1326':'台化','2002':'中鋼','1216':'統一',
+  '6505':'台塑化','3008':'大立光','2412':'中華電','4904':'遠傳','2408':'南亞科',
+  '6509':'金麗科','3290':'東浦','3039':'台灣碳化矽','6189':'豐藝','6743':'安格','2302':'麗正',
+  '2615':'萬海','2603':'長榮','2609':'陽明','2610':'華航','2618':'長榮航',
+  '3034':'聯詠','3711':'日月光','2337':'旺宏','2344':'華邦電','6415':'矽力-KY',
+  '8046':'南電','5871':'中租-KY','2049':'上銀','6669':'緯穎','1590':'亞德客-KY',
 };
+const TW_SET=new Set(['2330','2317','2454','2382','2308','2881','2882','2886','2891','2884',
+  '2303','2379','2357','2395','2912','1301','1303','1326','2002','1216','6505','3008',
+  '2412','4904','2408','2615','2603','2609','2610','2618','3034','3711','2337','2344',
+  '6415','8046','5871','2049','6669','1590']);
 
-const SCHEDULE = [
-  { date: '6月11日（四）', matches: [
-    { time: '03:00 (台灣)', home: '🇲🇽 墨西哥', away: '🇿🇦 南非', venue: '墨西哥城體育場', group: 'A組' },
-    { time: '10:00 (台灣)', home: '🇰🇷 南韓', away: '🇨🇿 捷克', venue: '瓜達拉哈拉體育場', group: 'A組' },
-  ]},
-  { date: '6月12日（五）', matches: [
-    { time: '03:00 (台灣)', home: '🇨🇦 加拿大', away: '🇧🇦 波斯尼亞', venue: '多倫多體育場', group: 'B組' },
-    { time: '09:00 (台灣)', home: '🇺🇸 美國', away: '🇵🇾 巴拉圭', venue: '洛杉磯體育場', group: 'D組' },
-  ]},
-  { date: '6月13日（六）', matches: [
-    { time: '03:00 (台灣)', home: '🇶🇦 卡達', away: '🇨🇭 瑞士', venue: '舊金山灣區體育場', group: 'B組' },
-    { time: '06:00 (台灣)', home: '🇧🇷 巴西', away: '🇲🇦 摩洛哥', venue: '紐約紐澤西體育場', group: 'C組' },
-    { time: '09:00 (台灣)', home: '🇭🇹 海地', away: '🏴󠁧󠁢󠁳󠁣󠁴󠁿 蘇格蘭', venue: '波士頓體育場', group: 'C組' },
-    { time: '12:00 (台灣)', home: '🇦🇺 澳洲', away: '🇹🇷 土耳其', venue: '溫哥華BC Place', group: 'D組' },
-  ]},
-  { date: '6月14日（日）', matches: [
-    { time: '01:00 (台灣)', home: '🇩🇪 德國', away: '🇨🇼 庫拉索', venue: '休士頓體育場', group: 'E組' },
-    { time: '04:00 (台灣)', home: '🇳🇱 荷蘭', away: '🇯🇵 日本', venue: '達拉斯體育場', group: 'F組' },
-    { time: '04:00 (台灣)', home: '🇧🇪 比利時', away: '🇪🇬 埃及', venue: '堪薩斯城體育場', group: 'G組' },
-    { time: '07:00 (台灣)', home: '🇪🇸 西班牙', away: '🇨🇻 維德角', venue: '亞特蘭大體育場', group: 'H組' },
-  ]},
-  { date: '6月15日（一）', matches: [
-    { time: '04:00 (台灣)', home: '🇦🇹 奧地利', away: '🇯🇴 約旦', venue: '舊金山灣區體育場', group: 'J組' },
-    { time: '05:00 (台灣)', home: '🇵🇹 葡萄牙', away: '🇨🇩 剛果DRC', venue: '休士頓體育場', group: 'K組' },
-    { time: '08:00 (台灣)', home: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 英格蘭', away: '🇭🇷 克羅埃西亞', venue: '達拉斯體育場', group: 'L組' },
-  ]},
-  { date: '6月16日（二）', matches: [
-    { time: '04:00 (台灣)', home: '🇫🇷 法國', away: '🇸🇳 塞內加爾', venue: '西雅圖體育場', group: 'I組' },
-    { time: '04:00 (台灣)', home: '🇦🇷 阿根廷', away: '🇩🇿 阿爾及利亞', venue: '邁阿密體育場', group: 'J組' },
-    { time: '07:00 (台灣)', home: '🇨🇴 哥倫比亞', away: '🇺🇿 烏茲別克', venue: '費城體育場', group: 'K組' },
-    { time: '07:00 (台灣)', home: '🇬🇭 迦納', away: '🇵🇦 巴拿馬', venue: '波士頓體育場', group: 'L組' },
-  ]},
-];
+let charts={};
 
-const KNOCKOUT_ROUNDS = [
-  { round: '32強', dates: '6月28日 — 7月3日', info: '12組第1、第2名共24隊，加上8支最佳第3名共32隊，進行單淘汰賽。' },
-  { round: '16強', dates: '7月4日 — 7月7日', info: '32強勝者晉級，進行16場單淘汰賽。' },
-  { round: '8強（準決賽）', dates: '7月9日 — 7月11日', info: '16強勝者中4場準決賽，決定4強名單。' },
-  { round: '4強（半準決賽）', dates: '7月14日 — 7月15日', info: '兩場半準決賽，勝者晉級決賽，敗者爭奪季軍。' },
-  { round: '季軍賽', dates: '7月18日', info: '兩支半準決賽落敗隊伍爭奪第三名。場地：紐約紐澤西體育場。' },
-  { round: '🏆 決賽', dates: '7月19日', info: '世界盃決賽！地點：紐約紐澤西體育場（MetLife Stadium）。開球時間：台灣時間凌晨3:00。' },
-];
+// ── Fetch: try multiple sources ──
+async function fetchData(code){
+  const isTW = TW_SET.has(code);
+  const sym  = code + (isTW ? '.TW' : '.TWO');
+  const logs = [];
 
-const VENUES = [
-  { city: '墨西哥城', stadium: '墨西哥城體育場 (Estadio Azteca)', country: '🇲🇽 墨西哥', capacity: '87,500' },
-  { city: '瓜達拉哈拉', stadium: '瓜達拉哈拉體育場 (Estadio Akron)', country: '🇲🇽 墨西哥', capacity: '49,850' },
-  { city: '蒙特雷', stadium: '蒙特雷體育場 (Estadio BBVA)', country: '🇲🇽 墨西哥', capacity: '53,500' },
-  { city: '多倫多', stadium: '多倫多體育場 (BMO Field)', country: '🇨🇦 加拿大', capacity: '45,736' },
-  { city: '溫哥華', stadium: '溫哥華體育場 (BC Place)', country: '🇨🇦 加拿大', capacity: '54,500' },
-  { city: '洛杉磯', stadium: '洛杉磯體育場 (SoFi Stadium)', country: '🇺🇸 美國', capacity: '70,240' },
-  { city: '紐約/紐澤西', stadium: '紐約紐澤西體育場 (MetLife)', country: '🇺🇸 美國', capacity: '82,500' },
-  { city: '達拉斯', stadium: '達拉斯體育場 (AT&T Stadium)', country: '🇺🇸 美國', capacity: '80,000' },
-  { city: '休士頓', stadium: '休士頓體育場 (NRG Stadium)', country: '🇺🇸 美國', capacity: '72,220' },
-  { city: '舊金山灣區', stadium: '舊金山灣區體育場 (Levi\'s)', country: '🇺🇸 美國', capacity: '68,500' },
-  { city: '西雅圖', stadium: '西雅圖體育場 (Lumen Field)', country: '🇺🇸 美國', capacity: '72,000' },
-  { city: '邁阿密', stadium: '邁阿密體育場 (Hard Rock)', country: '🇺🇸 美國', capacity: '65,326' },
-  { city: '費城', stadium: '費城體育場 (Lincoln Financial Field)', country: '🇺🇸 美國', capacity: '69,176' },
-  { city: '亞特蘭大', stadium: '亞特蘭大體育場 (Mercedes-Benz)', country: '🇺🇸 美國', capacity: '71,000' },
-  { city: '波士頓', stadium: '波士頓體育場 (Gillette Stadium)', country: '🇺🇸 美國', capacity: '65,878' },
-  { city: '堪薩斯城', stadium: '堪薩斯城體育場 (Arrowhead)', country: '🇺🇸 美國', capacity: '76,416' },
-];
-
-// Tab switching
-function showTab(name, btn) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => {
-    t.classList.remove('active');
-    t.classList.remove('active-blue');
-  });
-  document.getElementById('tab-' + name).classList.add('active');
-  if (btn) {
-    btn.classList.add(name === 'predict' ? 'active-blue' : 'active');
-  }
-}
-
-// Countdown
-function updateCountdown() {
-  const opening = new Date('2026-06-11T19:00:00Z');
-  const now = new Date();
-  const diff = opening - now;
-
-  if (diff <= 0) {
-    document.getElementById('cdDays').textContent = '🎉';
-    document.getElementById('cdHours').textContent = 'WC';
-    document.getElementById('cdMins').textContent = '2026';
-    document.getElementById('cdSecs').textContent = '🏆';
-    return;
-  }
-
-  const days = Math.floor(diff / 86400000);
-  const hours = Math.floor((diff % 86400000) / 3600000);
-  const mins = Math.floor((diff % 3600000) / 60000);
-  const secs = Math.floor((diff % 60000) / 1000);
-
-  document.getElementById('cdDays').textContent = String(days).padStart(2, '0');
-  document.getElementById('cdHours').textContent = String(hours).padStart(2, '0');
-  document.getElementById('cdMins').textContent = String(mins).padStart(2, '0');
-  document.getElementById('cdSecs').textContent = String(secs).padStart(2, '0');
-}
-
-// Clock
-function updateClock() {
-  const now = new Date();
-  document.getElementById('localTime').textContent = '本地時間：' + now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}
-
-// Render groups
-function renderGroups() {
-  const grid = document.getElementById('groupsGrid');
-  grid.innerHTML = '';
-  let delay = 0;
-  for (const [letter, data] of Object.entries(GROUPS)) {
-    const card = document.createElement('div');
-    card.className = 'group-card';
-    card.style.animationDelay = delay + 'ms';
-    delay += 50;
-    card.innerHTML = `
-      <div class="group-header">
-        <div class="group-letter">${letter}</div>
-        <div class="group-title">小組 ${letter}</div>
-      </div>
-      ${data.teams.map(t => `
-        <div class="team-row">
-          <span class="team-flag">${t.flag}</span>
-          <span class="team-name">${t.name}</span>
-          ${t.host ? '<span class="host-badge">主辦國</span>' : ''}
-        </div>
-      `).join('')}
-    `;
-    grid.appendChild(card);
-  }
-}
-
-// Render schedule
-function renderSchedule() {
-  const container = document.getElementById('scheduleContainer');
-  container.innerHTML = SCHEDULE.map(day => `
-    <div class="schedule-day">
-      <div class="day-header">
-        <div class="day-label">${day.date}</div>
-        <div class="day-line"></div>
-      </div>
-      ${day.matches.map(m => `
-        <div class="match-card">
-          <div class="match-team">
-            <span class="match-flag">${m.home.split(' ')[0]}</span>
-            <span class="match-team-name">${m.home.split(' ').slice(1).join(' ')}</span>
-          </div>
-          <div class="match-center">
-            <div class="match-group-tag">${m.group}</div>
-            <div class="match-score">VS</div>
-            <div class="match-time">${m.time}</div>
-            <div class="match-venue">${m.venue}</div>
-          </div>
-          <div class="match-team right">
-            <span class="match-flag">${m.away.split(' ')[0]}</span>
-            <span class="match-team-name">${m.away.split(' ').slice(1).join(' ')}</span>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `).join('');
-
-  const moreNote = document.createElement('div');
-  moreNote.style.cssText = 'text-align:center;padding:20px;color:var(--muted);font-size:0.8rem;';
-  moreNote.textContent = '顯示開幕週賽程 (6月11-16日) · 完整104場賽程至7月19日決賽';
-  container.appendChild(moreNote);
-}
-
-// Render knockout
-function renderKnockout() {
-  const container = document.getElementById('knockoutContainer');
-  container.innerHTML = KNOCKOUT_ROUNDS.map(r => `
-    <div class="knockout-section">
-      <div class="ko-round-title">${r.round}</div>
-      <div class="ko-dates">📅 ${r.dates}</div>
-      <div class="ko-info">${r.info}</div>
-    </div>
-  `).join('');
-}
-
-// Render venues
-function renderVenues() {
-  const grid = document.getElementById('venuesGrid');
-  const flags = ['🇲🇽','🇲🇽','🇲🇽','🇨🇦','🇨🇦','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸','🇺🇸'];
-  grid.innerHTML = VENUES.map((v, i) => `
-    <div class="venue-card" style="animation-delay:${i * 40}ms">
-      <div class="venue-flag">${flags[i]}</div>
-      <div class="venue-city">${v.city}</div>
-      <div class="venue-stadium">${v.stadium}</div>
-      <div class="venue-country">${v.country}</div>
-      <div class="venue-capacity">容量：${v.capacity}</div>
-    </div>
-  `).join('');
-}
-
-// Update timestamp
-function updateTimestamp() {
-  const now = new Date();
-  document.getElementById('lastUpdate').textContent = '最後更新：' + now.toLocaleTimeString('zh-TW');
-}
-
-// Init
-renderGroups();
-renderSchedule();
-renderKnockout();
-renderVenues();
-updateCountdown();
-updateClock();
-updateTimestamp();
-
-setInterval(updateCountdown, 1000);
-setInterval(updateClock, 1000);
-setInterval(updateTimestamp, 30000);
-
-// ========== LIVE SCORES API ==========
-let allMatches = [];
-let liveFilter = 'all';
-
-function setLiveFilter(f) {
-  liveFilter = f;
-  ['all','live','finished','upcoming'].forEach(id => {
-    const btn = document.getElementById('filter-' + id);
-    if (!btn) return;
-    if (id === f) {
-      btn.style.background = 'rgba(201,168,76,0.15)';
-      btn.style.borderColor = 'rgba(201,168,76,0.5)';
-      btn.style.color = 'var(--gold)';
-    } else {
-      btn.style.background = 'transparent';
-      btn.style.borderColor = 'rgba(255,255,255,0.1)';
-      btn.style.color = 'var(--muted)';
-    }
-  });
-  renderLiveScores();
-}
-
-async function fetchLiveScores() {
-  const container = document.getElementById('live-scores-container');
-  try {
-    const res = await fetch('https://worldcup26.ir/get/games', { cache: 'no-cache' });
-    if (!res.ok) throw new Error('API error');
-    const data = await res.json();
-    allMatches = Array.isArray(data) ? data : (data.matches || data.games || []);
-    renderLiveScores();
-  } catch (e) {
-    // API 不可用時顯示友善提示
-    container.innerHTML = `
-      <div style="background:var(--dark3);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:24px;text-align:center;">
-        <div style="font-size:2rem;margin-bottom:12px;">⚽</div>
-        <div style="font-size:0.9rem;color:var(--gold);margin-bottom:8px;font-weight:600;">世界盃即將開幕！</div>
-        <div style="font-size:0.78rem;color:var(--muted);line-height:1.7;">
-          即時比分 API 將於 6月11日開賽後啟用。<br>
-          目前資料伺服器尚未有賽事資料，請開賽後再來查看。<br><br>
-          <span style="color:var(--accent2);">倒數計時在頁面上方持續更新 ↑</span>
-        </div>
-        <button onclick="fetchLiveScores()" style="margin-top:16px;background:rgba(26,111,216,0.2);border:1px solid rgba(26,111,216,0.4);color:var(--accent2);font-size:0.75rem;padding:8px 20px;border-radius:20px;cursor:pointer;letter-spacing:0.1em;">
-          🔄 重新嘗試
-        </button>
-      </div>`;
-  }
-}
-
-function getMatchStatus(m) {
-  const s = (m.status || m.matchStatus || '').toLowerCase();
-  if (s.includes('live') || s.includes('progress') || s.includes('ht') || s === 'in_play') return 'live';
-  if (s.includes('finish') || s.includes('ft') || s === 'ended' || s === 'completed' || s === 'finished') return 'finished';
-  return 'upcoming';
-}
-
-function renderLiveScores() {
-  const container = document.getElementById('live-scores-container');
-  if (!allMatches.length) return;
-
-  let filtered = allMatches;
-  if (liveFilter !== 'all') {
-    filtered = allMatches.filter(m => getMatchStatus(m) === liveFilter);
-  }
-
-  if (!filtered.length) {
-    container.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);font-size:0.85rem;">此分類目前沒有賽事</div>`;
-    return;
-  }
-
-  // 排序：進行中 > 即將 > 已結束
-  const order = { live: 0, upcoming: 1, finished: 2 };
-  filtered = [...filtered].sort((a, b) => (order[getMatchStatus(a)] || 2) - (order[getMatchStatus(b)] || 2));
-
-  container.innerHTML = filtered.map(m => {
-    const status = getMatchStatus(m);
-    const home = m.home_team || m.homeTeam || m.team1 || {};
-    const away = m.away_team || m.awayTeam || m.team2 || {};
-    const homeName = typeof home === 'string' ? home : (home.name || home.name_en || '主隊');
-    const awayName = typeof away === 'string' ? away : (away.name || away.name_en || '客隊');
-    const homeFlag = (typeof home === 'object' && home.flag) ? `<img src="${home.flag}" style="height:20px;border-radius:2px;">` : '';
-    const awayFlag = (typeof away === 'object' && away.flag) ? `<img src="${away.flag}" style="height:20px;border-radius:2px;">` : '';
-    const homeScore = m.home_score ?? m.homeScore ?? m.score1 ?? '-';
-    const awayScore = m.away_score ?? m.awayScore ?? m.score2 ?? '-';
-    const group = m.group || m.stage || m.round || '';
-    const venue = m.venue || m.stadium || m.ground || '';
-    const matchTime = m.time || m.match_time || m.datetime || m.date || '';
-
-    let statusHTML = '';
-    if (status === 'live') {
-      const min = m.minute || m.elapsed || '';
-      statusHTML = `<div style="display:inline-flex;align-items:center;gap:4px;background:rgba(224,48,48,0.15);border:1px solid rgba(224,48,48,0.35);color:#ef4444;font-size:0.62rem;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:0.1em;margin-bottom:6px;"><span style="width:5px;height:5px;background:#ef4444;border-radius:50%;animation:pulse 1s infinite;"></span>LIVE${min ? ' ' + min + "'" : ''}</div>`;
-    } else if (status === 'finished') {
-      statusHTML = `<div style="font-size:0.62rem;color:#4ade80;letter-spacing:0.1em;margin-bottom:6px;">✅ 已結束</div>`;
-    } else {
-      const d = matchTime ? new Date(matchTime) : null;
-      const tw = d ? d.toLocaleString('zh-TW', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit', timeZone:'Asia/Taipei' }) : matchTime;
-      statusHTML = `<div style="font-size:0.62rem;color:var(--accent2);letter-spacing:0.05em;margin-bottom:6px;">📅 ${tw} (台灣時間)</div>`;
-    }
-
-    const scoreDisplay = status === 'upcoming'
-      ? `<div style="font-size:0.75rem;color:var(--muted);">VS</div>`
-      : `<div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;color:${status==='live'?'#f59e0b':'var(--gold-light)'};letter-spacing:0.1em;line-height:1;">${homeScore} - ${awayScore}</div>`;
-
-    return `
-      <div style="background:var(--dark3);border:1px solid ${status==='live'?'rgba(239,68,68,0.3)':'rgba(255,255,255,0.07)'};border-radius:12px;padding:16px;margin-bottom:10px;transition:border-color 0.2s;">
-        <div style="text-align:center;">${statusHTML}</div>
-        <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;">
-          <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.9rem;">
-            ${homeFlag}<span>${homeName}</span>
-          </div>
-          <div style="text-align:center;min-width:80px;">${scoreDisplay}</div>
-          <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:0.9rem;flex-direction:row-reverse;text-align:right;">
-            ${awayFlag}<span>${awayName}</span>
-          </div>
-        </div>
-        ${(group || venue) ? `<div style="text-align:center;margin-top:8px;font-size:0.65rem;color:var(--muted);">${group ? group + ' · ' : ''}${venue}</div>` : ''}
-      </div>`;
-  }).join('');
-}
-
-// 初始載入 + 每60秒刷新
-fetchLiveScores();
-setInterval(fetchLiveScores, 60000);
-
-// ========== POLYMARKET PREDICT ==========
-const TEAM_FLAGS = {
-  'France':'🇫🇷','Spain':'🇪🇸','England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Brazil':'🇧🇷','Argentina':'🇦🇷',
-  'Portugal':'🇵🇹','Germany':'🇩🇪','Netherlands':'🇳🇱','Belgium':'🇧🇪','Morocco':'🇲🇦',
-  'Uruguay':'🇺🇾','Mexico':'🇲🇽','United States':'🇺🇸','USA':'🇺🇸','Japan':'🇯🇵',
-  'South Korea':'🇰🇷','Australia':'🇦🇺','Canada':'🇨🇦','Ecuador':'🇪🇨','Colombia':'🇨🇴',
-  'Croatia':'🇭🇷','Switzerland':'🇨🇭','Senegal':'🇸🇳','Turkey':'🇹🇷','Türkiye':'🇹🇷',
-  'Sweden':'🇸🇪','Norway':'🇳🇴','Austria':'🇦🇹','Algeria':'🇩🇿','Egypt':'🇪🇬',
-  'Tunisia':'🇹🇳','Ivory Coast':'🇨🇮','Ghana':'🇬🇭','South Africa':'🇿🇦',
-  'Saudi Arabia':'🇸🇦','Iran':'🇮🇷','Iraq':'🇮🇶','Jordan':'🇯🇴','Qatar':'🇶🇦',
-  'Czechia':'🇨🇿','Scotland':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','Bosnia':'🇧🇦','Panama':'🇵🇦','Haiti':'🇭🇹',
-  'Cape Verde':'🇨🇻','Uzbekistan':'🇺🇿','Paraguay':'🇵🇾','Congo':'🇨🇩',
-  'New Zealand':'🇳🇿','Curacao':'🇨🇼','Other':'🌍',
-};
-function getFlag(name) {
-  if (!name) return '🏳️';
-  for (const [k, v] of Object.entries(TEAM_FLAGS)) {
-    if (name.toLowerCase().includes(k.toLowerCase())) return v;
-  }
-  return '🏳️';
-}
-function probBar(pct, color='var(--accent)') {
-  return `<div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:6px;overflow:hidden;"><div style="height:100%;width:${Math.min(pct,100)}%;background:${color};border-radius:2px;"></div></div>`;
-}
-function probColor(p) {
-  if (p >= 15) return 'var(--gold)';
-  if (p >= 8)  return 'var(--accent2)';
-  return 'var(--muted)';
-}
-
-async function fetchPolymarket() {
-  const winnerEl = document.getElementById('poly-winner-container');
-  const matchEl  = document.getElementById('poly-matches-container');
-  const timeEl   = document.getElementById('poly-update-time');
-  try {
-    const res = await fetch('https://gamma-api.polymarket.com/markets?tag_slug=soccer&limit=100&active=true&order=volume24hr&ascending=false', { cache:'no-cache' });
-    if (!res.ok) throw new Error('API error');
-    const markets = await res.json();
-    if (timeEl) timeEl.textContent = '更新：' + new Date().toLocaleTimeString('zh-TW');
-
-    const wcMarkets = markets.filter(m => m.question &&
-      (m.question.toLowerCase().includes('world cup') || m.question.toLowerCase().includes('2026'))
-    );
-    const winnerM = wcMarkets.filter(m =>
-      m.question.toLowerCase().includes('winner') || m.question.toLowerCase().includes('champion') || m.question.toLowerCase().includes('win the')
-    );
-    const matchM = wcMarkets.filter(m =>
-      !m.question.toLowerCase().includes('winner') && !m.question.toLowerCase().includes('champion') && m.outcomePrices
-    ).slice(0, 10);
-
-    // --- render winner ---
-    let rendered = false;
-    if (winnerM.length) {
-      const wm = winnerM[0];
-      try {
-        const prices = typeof wm.outcomePrices==='string' ? JSON.parse(wm.outcomePrices) : wm.outcomePrices;
-        const names  = typeof wm.outcomes==='string' ? JSON.parse(wm.outcomes) : wm.outcomes;
-        if (prices && names) {
-          const outcomes = names.map((n,i) => ({ name:n, prob:Math.round(parseFloat(prices[i])*100) }))
-            .sort((a,b) => b.prob - a.prob).slice(0,16);
-          winnerEl.innerHTML = `
-            <div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">${wm.question}</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px;">
-              ${outcomes.map((o,i) => `
-                <div style="background:${i===0?'rgba(201,168,76,0.1)':'rgba(255,255,255,0.02)'};border:1px solid ${i===0?'rgba(201,168,76,0.3)':'rgba(255,255,255,0.07)'};border-radius:10px;padding:12px;">
-                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-                    <span style="font-size:1rem;">${getFlag(o.name)}</span>
-                    <span style="font-size:0.78rem;font-weight:600;${i===0?'color:var(--gold)':''}">${o.name}</span>
-                  </div>
-                  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:${probColor(o.prob)};">${o.prob}%</div>
-                  ${probBar(Math.min(o.prob*5,100), probColor(o.prob))}
-                  ${i===0?'<div style="font-size:0.6rem;color:var(--gold);margin-top:4px;">▲ 最高機率</div>':''}
-                </div>`).join('')}
-            </div>`;
-          rendered = true;
+  // Source 1: TWSE/TPEx official (no CORS issue for listed stocks)
+  // TWSE monthly data — works without proxy for .twse.com.tw
+  if(isTW){
+    try{
+      const now = new Date();
+      const rows = [];
+      // fetch last 3 months
+      for(let m=2;m>=0;m--){
+        const d = new Date(now.getFullYear(), now.getMonth()-m, 1);
+        const dateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}01`;
+        const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${dateStr}&stockNo=${code}`;
+        const r = await fetch(url, {headers:{'Accept':'application/json'}});
+        if(!r.ok) throw new Error(`TWSE HTTP ${r.status}`);
+        const j = await r.json();
+        if(j.stat==='OK'&&j.data){
+          j.data.forEach(row=>{
+            // row: [民國日期, 成交股數, 成交金額, 開盤, 最高, 最低, 收盤, 漲跌, 筆數]
+            const [mDate,,, open, high, low, close] = row;
+            const parts = mDate.split('/');
+            const year = parseInt(parts[0])+1911;
+            const date = `${year}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+            const parseNum = s => parseFloat(s.replace(/,/g,''));
+            rows.push({date, open:parseNum(open), high:parseNum(high), low:parseNum(low), close:parseNum(close)});
+          });
         }
-      } catch(_) {}
+      }
+      if(rows.length >= 20){
+        logs.push({src:'TWSE官方',ok:true,msg:`${rows.length}筆`});
+        return {data:rows, src:'TWSE官方', logs};
+      }
+    }catch(e){
+      logs.push({src:'TWSE官方',ok:false,msg:e.message});
     }
-    if (!rendered) winnerEl.innerHTML = fallbackWinner();
-
-    // --- render matches ---
-    if (matchM.length) {
-      matchEl.innerHTML = matchM.map(m => {
-        let outcomes = [];
-        try {
-          const prices = typeof m.outcomePrices==='string' ? JSON.parse(m.outcomePrices) : m.outcomePrices;
-          const names  = typeof m.outcomes==='string' ? JSON.parse(m.outcomes) : m.outcomes;
-          if (prices && names) outcomes = names.map((n,i) => ({ name:n, prob:Math.round(parseFloat(prices[i])*100) }));
-        } catch(_) {}
-        const vol = m.volume ? `$${(parseFloat(m.volume)/1000).toFixed(0)}K` : '';
-        return `
-          <div style="background:var(--dark3);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;margin-bottom:8px;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;">
-              <div style="font-size:0.82rem;font-weight:600;line-height:1.4;">${m.question}</div>
-              ${vol ? `<div style="font-size:0.65rem;color:var(--muted);white-space:nowrap;">Vol ${vol}</div>` : ''}
-            </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              ${outcomes.map(o => `
-                <div style="flex:1;min-width:80px;background:rgba(255,255,255,0.03);border-radius:8px;padding:8px 10px;text-align:center;">
-                  <div style="font-size:0.68rem;color:var(--muted);margin-bottom:3px;">${getFlag(o.name)} ${o.name}</div>
-                  <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:${probColor(o.prob)};">${o.prob}%</div>
-                  ${probBar(o.prob, probColor(o.prob))}
-                </div>`).join('')}
-            </div>
-            <div style="margin-top:8px;text-align:right;">
-              <a href="https://polymarket.com/event/${m.slug||''}" target="_blank" style="font-size:0.65rem;color:var(--accent);text-decoration:none;">在 Polymarket 查看 →</a>
-            </div>
-          </div>`;
-      }).join('');
-    } else {
-      matchEl.innerHTML = fallbackMatches();
-    }
-  } catch(e) {
-    if (winnerEl) winnerEl.innerHTML = fallbackWinner();
-    if (matchEl)  matchEl.innerHTML  = fallbackMatches();
-    if (timeEl)   timeEl.textContent = 'API 暫時無法連線';
   }
-}
 
-function fallbackWinner() {
-  const data = [
-    {name:'France',prob:17},{name:'Spain',prob:16},{name:'England',prob:11},
-    {name:'Brazil',prob:10},{name:'Argentina',prob:9},{name:'Portugal',prob:8},
-    {name:'Germany',prob:7},{name:'Netherlands',prob:5},{name:'Belgium',prob:4},
-    {name:'Morocco',prob:3},{name:'Uruguay',prob:2},{name:'Other',prob:8},
+  // Source 2: TPEx for OTC stocks
+  if(!isTW){
+    try{
+      const now = new Date();
+      const rows = [];
+      for(let m=2;m>=0;m--){
+        const d = new Date(now.getFullYear(), now.getMonth()-m, 1);
+        const rocYear = d.getFullYear()-1911;
+        const dateStr = `${rocYear}/${String(d.getMonth()+1).padStart(2,'0')}/01`;
+        const url = `https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_print.php?l=zh-tw&d=${dateStr}&stkno=${code}&ajax=1`;
+        const r = await fetch(url, {headers:{'Accept':'application/json'}});
+        if(!r.ok) throw new Error(`TPEx HTTP ${r.status}`);
+        const j = await r.json();
+        if(j.aaData&&j.aaData.length){
+          j.aaData.forEach(row=>{
+            const parts = row[0].split('/');
+            const year = parseInt(parts[0])+1911;
+            const date = `${year}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
+            const p = s=>parseFloat(s.replace(/,/g,'')||'0');
+            rows.push({date, open:p(row[3]), high:p(row[4]), low:p(row[5]), close:p(row[6])});
+          });
+        }
+      }
+      if(rows.length>=20){
+        logs.push({src:'TPEx官方',ok:true,msg:`${rows.length}筆`});
+        return {data:rows, src:'TPEx官方', logs};
+      }
+    }catch(e){
+      logs.push({src:'TPEx官方',ok:false,msg:e.message});
+    }
+  }
+
+  // Source 3: Yahoo Finance via multiple proxies
+  const yfURL = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=3mo`;
+  const proxies = [
+    {name:'proxy1', url:`https://corsproxy.io/?${encodeURIComponent(yfURL)}`},
+    {name:'proxy2', url:`https://api.allorigins.win/raw?url=${encodeURIComponent(yfURL)}`},
+    {name:'proxy3', url:`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(yfURL)}`},
+    {name:'direct', url:yfURL},
   ];
-  return `
-    <div style="font-size:0.7rem;color:var(--muted);margin-bottom:10px;">🏆 世界盃冠軍預測（備援靜態資料・來源 Polymarket 6/4）</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">
-      ${data.map((o,i) => `
-        <div style="background:${i===0?'rgba(201,168,76,0.1)':'rgba(255,255,255,0.02)'};border:1px solid ${i===0?'rgba(201,168,76,0.3)':'rgba(255,255,255,0.07)'};border-radius:10px;padding:12px;">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-            <span>${getFlag(o.name)}</span>
-            <span style="font-size:0.78rem;font-weight:600;${i===0?'color:var(--gold)':''}">${o.name}</span>
-          </div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:${probColor(o.prob)};">${o.prob}%</div>
-          ${probBar(Math.min(o.prob*5,100), probColor(o.prob))}
-          ${i===0?'<div style="font-size:0.6rem;color:var(--gold);margin-top:4px;">▲ 最高機率</div>':''}
-        </div>`).join('')}
-    </div>`;
-}
-function fallbackMatches() {
-  return `<div style="text-align:center;padding:20px;color:var(--muted);font-size:0.8rem;background:var(--dark3);border-radius:10px;border:1px solid rgba(255,255,255,0.05);">
-    <div style="font-size:1.4rem;margin-bottom:8px;">🔮</div>
-    比賽預測市場將於開賽後逐步更新<br>
-    <a href="https://polymarket.com/sports/fifa-world-cup" target="_blank" style="color:var(--accent);font-size:0.75rem;text-decoration:none;">→ 直接在 Polymarket 查看</a>
-  </div>`;
-}
-
-fetchPolymarket();
-setInterval(fetchPolymarket, 60000);
-
-
-let betOdds = 0;
-let betType = '';
-let betHistory = [];
-let betBalance = 1250.00;
-
-// 模擬走地比分跳動
-setInterval(() => {
-  const el = document.getElementById('match1-min');
-  const sc = document.getElementById('match1-score');
-  if (!el || !sc) return;
-  let min = parseInt(el.textContent);
-  if (min < 90) {
-    el.textContent = (min + 1) + "'";
-    // 隨機進球（機率3%）
-    if (Math.random() < 0.03) {
-      const scores = sc.textContent.split(' - ');
-      const side = Math.random() < 0.5 ? 0 : 1;
-      scores[side] = parseInt(scores[side]) + 1;
-      sc.textContent = scores.join(' - ');
-      sc.style.color = '#f59e0b';
-      setTimeout(() => sc.style.color = '#4ade80', 1500);
+  for(const px of proxies){
+    try{
+      const r = await fetch(px.url, {headers:{Accept:'application/json'}, signal:AbortSignal.timeout(8000)});
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      const res = j?.chart?.result?.[0];
+      if(!res) throw new Error('格式異常');
+      const ts=res.timestamp, q=res.indicators.quote[0];
+      const rows = ts.map((t,i)=>({
+        date:new Date(t*1000).toISOString().slice(0,10),
+        open:+q.open[i]?.toFixed(2)||null,
+        high:+q.high[i]?.toFixed(2)||null,
+        low: +q.low[i]?.toFixed(2)||null,
+        close:+q.close[i]?.toFixed(2)||null,
+      })).filter(d=>d.close!=null);
+      logs.push({src:px.name,ok:true,msg:`${rows.length}筆`});
+      return {data:rows, src:`Yahoo(${px.name})`, logs};
+    }catch(e){
+      logs.push({src:px.name,ok:false,msg:e.message});
     }
   }
-}, 3000);
 
-function betSelectOdds(type, odds, matchId) {
-  betOdds = odds;
-  betType = type;
-  document.getElementById('slip-type-label').textContent = type;
-  document.getElementById('slip-odds-label').textContent = odds;
-  updateBetReturn();
-  document.getElementById('bet-slip-panel').style.transform = 'translateY(0)';
+  throw {message:'所有資料來源均失敗', logs};
 }
 
-function closeBetSlip() {
-  document.getElementById('bet-slip-panel').style.transform = 'translateY(100%)';
+// ── Bollinger ──
+function boll(closes,p=20,m=2){
+  return closes.map((_,i)=>{
+    if(i<p-1)return{u:null,mid:null,l:null};
+    const sl=closes.slice(i-p+1,i+1);
+    const avg=sl.reduce((a,b)=>a+b,0)/p;
+    const std=Math.sqrt(sl.reduce((a,b)=>a+(b-avg)**2,0)/p);
+    return{u:+(avg+m*std).toFixed(2),mid:+avg.toFixed(2),l:+(avg-m*std).toFixed(2)};
+  });
 }
 
-function updateBetReturn() {
-  const amt = parseFloat(document.getElementById('slip-amount').value) || 0;
-  document.getElementById('slip-return').textContent = (amt * betOdds).toFixed(2) + ' USDT';
-}
-
-function submitBetDemo() {
-  const btn = document.getElementById('bet-submit-btn');
-  const amt = parseFloat(document.getElementById('slip-amount').value) || 0;
-  if (amt <= 0 || amt > betBalance) {
-    showBetToast('❌ 下注金額無效或餘額不足');
-    return;
+// ── Signals ──
+function getSignals(closes,bands){
+  const sigs=[]; const n=closes.length-1;
+  if(n<5||!bands[n].u)return sigs;
+  const last=closes[n],{u,mid,l}=bands[n];
+  const p3mid=bands[n-3]?.mid||mid;
+  if(last>u*0.99)              sigs.push({ico:'⚠️',type:'bear',t:'觸及上軌',s:'短線超買，注意回落'});
+  if(last<l*1.01)              sigs.push({ico:'🟢',type:'bull',t:'觸及下軌',s:'短線超賣，留意反彈'});
+  if(last>mid&&closes[n-3]<p3mid) sigs.push({ico:'📈',type:'bull',t:'突破布林中軌',s:'多方轉強訊號'});
+  if(last<mid&&closes[n-3]>p3mid) sigs.push({ico:'📉',type:'bear',t:'跌破布林中軌',s:'空方轉強訊號'});
+  const bws=bands.filter(b=>b.u).map(b=>b.u-b.l);
+  if(bws.length>=10){
+    const avg=bws.slice(-20).reduce((a,b)=>a+b,0)/Math.min(20,bws.length),cur=bws[bws.length-1];
+    if(cur>avg*1.2)  sigs.push({ico:'🔥',type:'bull',t:'布林帶寬擴張',s:'趨勢啟動中'});
+    if(cur<avg*0.75) sigs.push({ico:'🔵',type:'neu', t:'布林帶寬收縮',s:'整理蓄力，即將變盤'});
   }
-  btn.disabled = true;
-  btn.textContent = '⏳ 賠率鎖定中...';
-  setTimeout(() => {
-    betBalance -= amt;
-    document.getElementById('bet-balance').innerHTML = betBalance.toLocaleString('en-US', {minimumFractionDigits:2}) + ' <span style="font-size:0.9rem;">USDT</span>';
-    betHistory.unshift({ type: betType, odds: betOdds, amt, time: new Date().toLocaleTimeString('zh-TW') });
-    renderBetHistory();
-    closeBetSlip();
-    showBetToast(`✅ 下注成功！【${betType}】金額: ${amt} USDT・賠率: ${betOdds}・已加密備份`);
-    btn.disabled = false;
-    btn.textContent = '立即下注（模擬）';
-  }, 1200);
+  const up5=closes.slice(-6).filter((c,i,a)=>i>0&&c>a[i-1]).length;
+  if(up5>=4) sigs.push({ico:'💚',type:'bull',t:'近5日連漲',s:'短線多頭格局'});
+  if(up5<=1) sigs.push({ico:'🔴',type:'bear',t:'近5日連跌',s:'短線空頭格局'});
+  const ma5=closes.slice(-5).reduce((a,b)=>a+b,0)/5;
+  if(last>mid&&ma5>mid) sigs.push({ico:'🏔',type:'bull',t:'站穩中軌之上',s:'多頭趨勢確立'});
+  if(last<mid&&ma5<mid) sigs.push({ico:'🕳',type:'bear',t:'壓在中軌之下',s:'空頭趨勢確立'});
+  return sigs;
 }
 
-function renderBetHistory() {
-  const el = document.getElementById('bet-history');
-  if (!betHistory.length) { el.textContent = '尚無投注記錄'; return; }
-  el.innerHTML = betHistory.slice(0,5).map(b => `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-      <div>
-        <div style="font-size:0.82rem;color:var(--text);font-weight:600;">${b.type}</div>
-        <div style="font-size:0.68rem;color:var(--muted);margin-top:2px;">賠率 ${b.odds} · ${b.time}</div>
-      </div>
-      <div style="text-align:right;">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold);">${b.amt} USDT</div>
-        <div style="font-size:0.68rem;color:#4ade80;">預計回報 ${(b.amt*b.odds).toFixed(2)}</div>
-      </div>
-    </div>
-  `).join('');
+function verdict(sigs,last,mid){
+  const b=sigs.filter(s=>s.type==='bull').length,br=sigs.filter(s=>s.type==='bear').length;
+  const ab=last>mid;
+  if(b>br&&ab)  return{cls:'bull',text:'📈 偏多操作',reason:`多方訊號 ${b} 個，股價站穩中軌上方，趨勢偏多，可考慮進場或持有。`};
+  if(br>b&&!ab) return{cls:'bear',text:'📉 偏空觀望',reason:`空方訊號 ${br} 個，股價壓在中軌下方，趨勢偏空，建議觀望或減碼。`};
+  if(b>br)      return{cls:'bull',text:'📈 短線偏多',reason:`多方訊號居多 (${b} vs ${br})，但需等股價站回中軌確認。`};
+  if(br>b)      return{cls:'bear',text:'📉 短線偏空',reason:`空方訊號居多 (${br} vs ${b})，多方需等待反轉訊號。`};
+  return{cls:'neu',text:'⚖️ 中性整理',reason:`多空訊號均衡，布林通道整理中，等待方向選擇後再進場。`};
 }
 
-function showBetToast(msg) {
-  const toast = document.getElementById('bet-toast');
-  document.getElementById('toast-text').textContent = msg;
-  toast.style.transform = 'translateY(0)';
-  setTimeout(() => toast.style.transform = 'translateY(-120px)', 4000);
+// ── Draw ──
+function drawChart(cid,data){
+  if(charts[cid]){charts[cid].destroy();delete charts[cid];}
+  const cv=document.getElementById(cid);if(!cv)return;
+  const closes=data.map(d=>d.close),bands=boll(closes);
+  charts[cid]=new Chart(cv,{type:'bar',data:{
+    labels:data.map(d=>d.date.slice(5)),
+    datasets:[
+      {label:'K線',data:data.map(d=>[Math.min(d.open,d.close),Math.max(d.open,d.close)]),
+        backgroundColor:data.map(d=>d.close>=d.open?'rgba(52,199,123,.8)':'rgba(240,92,92,.8)'),borderWidth:.5,borderRadius:1},
+      {label:'上軌',type:'line',data:bands.map(b=>b.u),borderColor:'rgba(210,153,34,.7)',borderWidth:1,pointRadius:0,fill:false,tension:.3},
+      {label:'中軌',type:'line',data:bands.map(b=>b.mid),borderColor:'rgba(79,142,247,.85)',borderWidth:1.3,pointRadius:0,fill:false,tension:.3},
+      {label:'下軌',type:'line',data:bands.map(b=>b.l),borderColor:'rgba(210,153,34,.7)',borderWidth:1,pointRadius:0,fill:false,tension:.3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:(ctx)=>{
+        if(ctx.datasetIndex===0){const d=data[ctx.dataIndex];return`O:${d.open} H:${d.high} L:${d.low} C:${d.close}`;}
+        return`${ctx.dataset.label}: ${ctx.raw?.toFixed?.(2)??ctx.raw}`;
+      }}}},
+      scales:{
+        x:{ticks:{color:'#7a8499',font:{size:9},maxRotation:0,maxTicksLimit:10},grid:{color:'rgba(255,255,255,0.03)'}},
+        y:{ticks:{color:'#7a8499',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}
+      }
+    }
+  });
+}
+
+// ── Main ──
+async function analyze(){
+  const inp=document.getElementById('codeInput');
+  const hint=document.getElementById('hint');
+  const btn=document.getElementById('goBtn');
+  const code=inp.value.trim().replace(/\D/g,'');
+  if(!code||code.length<4){hint.textContent='請輸入4~6位數代號';hint.className='hint err';return;}
+
+  hint.textContent='';hint.className='hint';
+  btn.disabled=true;btn.textContent='載入中…';
+  const name=KNOWN[code]||code;
+
+  // remove old + show loader
+  document.getElementById(`result-${code}`)?.remove();
+  const loader=document.createElement('div');
+  loader.id=`load-${code}`;loader.className='loading-card';
+  loader.innerHTML=`<div class="spin"></div><div style="font-size:13px;color:var(--muted)">正在載入 <strong style="color:var(--text)">${code} ${name}</strong> 資料…</div>`;
+  document.getElementById('results').prepend(loader);
+
+  try{
+    const {data, src, logs} = await fetchData(code);
+    const closes=data.map(d=>d.close);
+    const bands=boll(closes);
+    const last=closes[closes.length-1],prev=closes[closes.length-2];
+    const chg=+(last-prev).toFixed(2),chgp=+((last-prev)/prev*100).toFixed(2);
+    const isUp=chg>=0;
+    const{u,mid,l}=bands[bands.length-1]||{};
+    const pctMid=mid?+((last-mid)/mid*100).toFixed(2):null;
+    const sigs=getSignals(closes,bands);
+    const vd=verdict(sigs,last,mid);
+    const pct=u&&l&&u!==l?Math.max(0,Math.min(100,(last-l)/(u-l)*100)):50;
+    const barColor=pct>75?'var(--bear)':pct<25?'var(--bull)':'var(--accent)';
+    const cid=`ch-${code}`;
+
+    const card=document.createElement('div');
+    card.id=`result-${code}`;card.className=`card ${vd.cls}`;
+    card.innerHTML=`
+      <div class="card-head">
+        <div class="card-title">
+          <span class="c-code">${code}</span>
+          <span class="c-name">${name}</span>
+          <span class="verdict v-${vd.cls}">${vd.text}</span>
+          <span class="src-badge">來源：${src}</span>
+        </div>
+        <div class="price-row">
+          <span class="c-price ${isUp?'up':'dn'}">${last}</span>
+          <span class="c-chg ${isUp?'up':'dn'}">${isUp?'▲':'▼'}${Math.abs(chg)} (${Math.abs(chgp)}%)</span>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-area"><canvas id="${cid}"></canvas></div>
+        <div class="stats">
+          <div>
+            <div class="s-label">布林通道 (20,2)</div>
+            <div class="boll-row"><span>上軌</span><span class="col-u">${u??'—'}</span></div>
+            <div class="boll-row"><span>中軌 MA20</span><span class="col-m">${mid??'—'}</span></div>
+            <div class="boll-row"><span>下軌</span><span class="col-l">${l??'—'}</span></div>
+            <div style="font-size:10px;color:var(--muted);margin-top:6px">
+              距中軌 <strong style="color:${pctMid>=0?'var(--bull)':'var(--bear)'}">${pctMid!=null?(pctMid>=0?'+':'')+pctMid+'%':'—'}</strong>
+            </div>
+            <div class="pos-track"><div class="pos-fill" style="width:${pct}%;background:${barColor}"></div></div>
+            <div class="pos-labels"><span>下軌</span><span>上軌</span></div>
+          </div>
+          <div>
+            <div class="s-label">技術訊號</div>
+            <div class="sigs-list">
+              ${sigs.length?sigs.map(sg=>`<div class="sig"><span>${sg.ico}</span><div><div class="t">${sg.t}</div><div class="s">${sg.s}</div></div></div>`).join('')
+                :'<div style="font-size:11px;color:var(--muted)">無明顯訊號</div>'}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="reason"><strong>操作建議：</strong>${vd.reason}</div>`;
+
+    loader.replaceWith(card);
+    setTimeout(()=>drawChart(cid,data),50);
+    inp.value='';
+    hint.textContent=`${code} 分析完成（${data.length}筆K線）`;hint.className='hint ok';
+    setTimeout(()=>{hint.textContent='輸入台股代號按Enter或點分析';hint.className='hint';},3000);
+
+  }catch(e){
+    const logs=e.logs||[];
+    const debugHTML=logs.map(l=>`<div class="${l.ok?'ok':'err'}">${l.ok?'✓':'✗'} ${l.src}：${l.msg}</div>`).join('');
+    loader.innerHTML=`
+      <div style="width:100%">
+        <div style="color:var(--bear);font-size:13px;margin-bottom:8px">⚠️ ${code} 載入失敗：${e.message||e}</div>
+        <div class="debug">${debugHTML||'無詳細資訊'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">
+          💡 請確認：① 代號正確 ② 網路正常 ③ 若用Safari請改Chrome
+        </div>
+      </div>`;
+    hint.textContent=`${code} 失敗`;hint.className='hint err';
+  }
+
+  btn.disabled=false;btn.textContent='分析';
 }
 </script>
-
 </body>
 </html>
