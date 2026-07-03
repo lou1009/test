@@ -1,260 +1,338 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<title>50元以下起漲掃盤</title>
-
-<style>
-body{
-    background:#0f172a;
-    color:#e2e8f0;
-    font-family:Arial;
-    padding:20px;
-}
-
-button{
-    padding:10px 20px;
-    background:#22c55e;
-    border:none;
-    color:white;
-    border-radius:6px;
-    cursor:pointer;
-}
-
-#status{
-    margin-top:10px;
-    color:#94a3b8;
-    font-size:14px;
-}
-
-.card{
-    background:#1e293b;
-    margin-top:8px;
-    padding:10px;
-    border-radius:8px;
-    border-left:4px solid #334155;
-}
-
-.good{border-left-color:#22c55e;}
-.mid{border-left-color:#fbbf24;}
-.bad{border-left-color:#ef4444;}
-
-.row{
-    display:flex;
-    justify-content:space-between;
-}
-
-.small{
-    font-size:12px;
-    color:#94a3b8;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>無母池全市場智慧掃盤系統 (TWSE + TPEx)</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background: #0b1220;
+            color: #e5e7eb;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header-section {
+            background: linear-gradient(135deg, #1e293b, #111827);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        h2 { margin: 0 0 10px 0; color: #ffffff; font-size: 22px; display: flex; align-items: center; gap: 10px; }
+        p { margin: 0 0 15px 0; color: #94a3b8; font-size: 14px; line-height: 1.5; }
+        button {
+            padding: 12px 24px;
+            background: #22c55e;
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(34, 197, 94, 0.4);
+        }
+        button:hover { background: #16a34a; }
+        button:disabled { background: #475569; cursor: not-allowed; box-shadow: none; }
+        #status {
+            margin-top: 15px;
+            color: #38bdf8;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: monospace;
+        }
+        .progress-bar-container {
+            width: 100%;
+            background-color: #334155;
+            border-radius: 4px;
+            margin-top: 8px;
+            display: none;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 6px;
+            width: 0%;
+            background-color: #38bdf8;
+            transition: width 0.1s ease;
+        }
+        #list { margin-top: 20px; }
+        .card {
+            background: #111827;
+            margin-bottom: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 5px solid #4b5563;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .card:hover { transform: translateX(2px); }
+        .good { border-left-color: #22c55e; background: linear-gradient(90deg, #111c18, #111827); }
+        .mid { border-left-color: #fbbf24; background: linear-gradient(90deg, #1c1a12, #111827); }
+        .normal { border-left-color: #3b82f6; }
+        .row { display: flex; justify-content: space-between; align-items: center; }
+        .stock-id { font-size: 18px; font-weight: bold; color: #ffffff; }
+        .market-tag { font-size: 11px; background: #374151; padding: 2px 6px; border-radius: 4px; color: #9ca3af; margin-left: 6px; font-weight: normal; }
+        .stock-price { font-size: 20px; font-weight: bold; color: #f3f4f6; font-family: monospace; }
+        .small { font-size: 13px; color: #94a3b8; }
+        .up { color: #ef4444; font-weight: bold; }
+        .down { color: #22c55e; font-weight: bold; }
+        .score-badge { color: #ffffff; font-weight: bold; background: #1e293b; padding: 2px 8px; border-radius: 4px; border: 1px solid #475569; }
+    </style>
 </head>
-
 <body>
 
-<h2>🚀 50元以下起漲掃盤</h2>
-<button onclick="scan()">開始掃描</button>
+<div class="header-section">
+    <h2>🚀 無母池全市場多頭智慧掃盤網頁版</h2>
+    <p>系統將自動從台灣證交所與櫃買中心獲取全市場清單，透過公共代理中繼計算最新 3 個月的日K線，並根據標準 MACD 翻紅、突破 20 日高點、MA20 均線多頭排列進行量化評分（僅顯示 60 分以上多頭標的）。</p>
+    <button id="scanBtn" onclick="runScan()">開始全市場掃描</button>
+    <div id="status">準備就緒</div>
+    <div class="progress-bar-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+</div>
 
-<div id="status"></div>
 <div id="list"></div>
 
 <script>
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// ================= 股票池（先用TWSE+TPEx） =================
-async function getAllStocks(){
+// 利用開放的 CORS 代理伺服器解決瀏覽器跨網域限制問題
+const CORS_PROXY = "https://cors-anywhere.herokuapp.com/"; 
+// 如果上方代理流量爆滿，可替換為其他開放代理如 "https://api.allorigins.win/raw?url="
 
-    let list = [];
+/* ========================================================
+   🟢 1. 取得全市場清單 (TWSE + TPEx 完美分類代碼後綴)
+   ======================================================== */
+async function getAllStocks() {
+    updateStatus("⏳ 正在獲取最新全市場清單（上市 + 上櫃）...");
+    try {
+        const twseURL = `https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL`;
+        const tpexURL = `https://www.tpex.org.tw/openapi/v1/tpex_mainboard_quotes`;
 
-    // 上市
-    try{
-        const r = await fetch("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL");
-        const j = await r.json();
+        // 為了確保前端順利抓取，加入代理處理（部分 OpenAPI 有可能允許前端直連，若失敗則走代理）
+        let twseData, tpexData;
+        try {
+            twseData = await fetch(twseURL).then(r => r.json());
+        } catch {
+            twseData = await fetch(CORS_PROXY + twseURL).then(r => r.json());
+        }
 
-        j.forEach(s=>{
-            if(s.Code) list.push(s.Code);
-        });
-    }catch(e){}
+        try {
+            tpexData = await fetch(tpexURL).then(r => r.json());
+        } catch {
+            tpexData = await fetch(CORS_PROXY + tpexURL).then(r => r.json());
+        }
 
-    // 上櫃
-    try{
-        const r = await fetch("https://www.tpex.org.tw/openapi/v1/mopsfin_t03sal2");
-        const j = await r.json();
+        // 篩選純 4 碼數字的標準股票，排除權證與特殊憑證
+        const twseList = twseData
+            .map(x => x.Code || x.code)
+            .filter(code => code && /^\d{4}$/.test(code))
+            .map(code => ({ id: code, symbol: `${code}.TW`, market: "上市" }));
 
-        j.forEach(s=>{
-            if(s.SecuritiesCompanyCode)
-                list.push(s.SecuritiesCompanyCode);
-        });
-    }catch(e){}
+        const tpexList = tpexData
+            .map(x => x.code || x.Code)
+            .filter(code => code && /^\d{4}$/.test(code))
+            .map(code => ({ id: code, symbol: `${code}.TWO`, market: "上櫃" }));
 
-    return [...new Set(list)];
+        return [...twseList, ...tpexList];
+    } catch (error) {
+        console.error(error);
+        updateStatus("❌ 獲取市場清單失敗，請確認 CORS 代理是否正常運作。");
+        return [];
+    }
 }
 
-// ================= tools =================
-const delay = ms => new Promise(r=>setTimeout(r,ms));
+/* ========================================================
+   🟡 2. 抓取 Yahoo 歷史 K 線與最新報價
+   ======================================================== */
+async function getHistoryData(symbol) {
+    try {
+        const targetUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?range=3mo&interval=1d`;
+        // 瀏覽器端抓取 Yahoo 必須強制經過 CORS 代理
+        const res = await fetch(CORS_PROXY + targetUrl).then(r => r.json());
+        
+        const result = res?.chart?.result?.[0];
+        const meta = result?.meta;
+        const closePrices = result?.indicators?.quote?.[0]?.close?.filter(x => x !== null && x !== undefined);
 
-// ================= Yahoo =================
-async function quote(id){
+        if (!meta || !closePrices || closePrices.length < 35) return null;
 
-    try{
-        const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW`);
-        const j = await r.json();
-
-        const m = j.chart.result[0].meta;
-
-        const price = m.regularMarketPrice;
-        const prev = m.previousClose;
+        const currentPrice = meta.regularMarketPrice || closePrices.at(-1);
+        const prevClose = meta.previousClose || closePrices.at(-2);
+        const changePercent = ((currentPrice - prevClose) / prevClose) * 100;
 
         return {
-            price,
-            change: ((price-prev)/prev)*100
+            close: closePrices,
+            currentPrice: currentPrice,
+            changePercent: changePercent
         };
-
-    }catch{
-        return null;
+    } catch {
+        return null; // 忽略連線失敗或異常代碼
     }
 }
 
-async function history(id){
-
-    try{
-        const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW?range=3mo&interval=1d`);
-        const j = await r.json();
-
-        return j.chart.result[0].indicators.quote[0].close.filter(Boolean);
-
-    }catch{
-        return null;
-    }
-}
-
-// ================= MACD =================
-function ema(arr,p){
-    let k = 2/(p+1);
-    let out=[arr[0]];
-    for(let i=1;i<arr.length;i++){
-        out.push(arr[i]*k + out[i-1]*(1-k));
+/* ========================================================
+   📊 3. 數學指標計算 (精準 EMA 與標準 MACD 紅綠柱)
+   ======================================================== */
+function ema(arr, period) {
+    let k = 2 / (period + 1);
+    let out = [arr[0]];
+    for (let i = 1; i < arr.length; i++) {
+        out.push(arr[i] * k + out[i - 1] * (1 - k));
     }
     return out;
 }
 
-function macd(arr){
-    let e12=ema(arr,12);
-    let e26=ema(arr,26);
-    return e12.map((v,i)=>v-e26[i]);
+function calculateMACD(arr) {
+    let e12 = ema(arr, 12);
+    let e26 = ema(arr, 26);
+    let dif = e12.map((v, i) => v - e26[i]); // 快線
+    let dem = ema(dif, 9);                 // 慢線
+    let osc = dif.map((v, i) => v - dem[i]); // 柱狀體 (OSC)
+    return { osc };
 }
 
-// ================= 起漲評分 =================
-function score(close, change){
-
-    let m = macd(close);
-
-    let last = m.at(-1);
-    let prev = m.at(-2);
-
+/* ========================================================
+   📈 4. 嚴謹評分模型
+   ======================================================== */
+function evaluateScore(history) {
     let s = 0;
+    const close = history.close;
+    const price = history.currentPrice;
+    const change = history.changePercent;
 
-    // MACD翻紅
-    if(last > 0 && prev < 0) s += 40;
+    // A. 真實 MACD 柱狀體翻紅 (當日 > 0 且 前一日 < 0)
+    const { osc } = calculateMACD(close);
+    const lastOsc = osc.at(-1);
+    const prevOsc = osc.at(-2);
+    if (lastOsc > 0 && prevOsc < 0) s += 35;
 
-    // 動能
-    if(change > 2) s += 30;
-    if(change > 0) s += 10;
+    // B. 站上 20日均線 (MA20)
+    const ma20 = close.slice(-20).reduce((a, b) => a + b) / 20;
+    if (price > ma20) s += 25;
 
-    // 連續上漲
-    let up = 0;
-    for(let i=close.length-5;i<close.length;i++){
-        if(close[i] > close[i-1]) up++;
+    // C. 創 20 日新高 (與過去20天相比，不含今天)
+    const past20Days = close.slice(-21, -1); 
+    if (past20Days.length > 0) {
+        const high20 = Math.max(...past20Days);
+        if (price >= high20) s += 25;
     }
-    if(up >= 3) s += 20;
+
+    // D. 今日強勢動能
+    if (change > 2) s += 10;
+
+    // E. 近 5 日多頭轉強天數
+    let upCount = 0;
+    for (let i = close.length - 5; i < close.length; i++) {
+        if (close[i] > close[i - 1]) upCount++;
+    }
+    if (upCount >= 3) s += 20;
 
     return s;
 }
 
-// ================= UI =================
-function addCard(d){
-
-    let div = document.createElement("div");
-
-    div.className = "card " + (d.score>=70?"good":d.score>=50?"mid":"bad");
-
-    div.innerHTML = `
-        <div class="row">
-            <b>${d.id}</b>
-            <b>${d.price.toFixed(2)}</b>
-        </div>
-        <div class="small">
-            漲跌 ${d.change.toFixed(2)}% ｜ 分數 ${d.score}
-        </div>
-    `;
-
-    document.getElementById("list").prepend(div);
+/* ========================================================
+   🧾 5. UI 渲染優化
+   ======================================================== */
+function updateStatus(msg) {
+    document.getElementById("status").innerText = msg;
 }
 
-// ================= MAIN =================
-async function scan(){
+function renderResults(results) {
+    const listDiv = document.getElementById("list");
+    listDiv.innerHTML = "";
 
-    const status = document.getElementById("status");
-    const listBox = document.getElementById("list");
-
-    listBox.innerHTML = "";
-
-    status.innerText = "載入股票池...";
-
-    let all = await getAllStocks();
-
-    status.innerText = `總股票 ${all.length}，開始過濾 50元以下...`;
-
-    let low50 = [];
-
-    // ===== 第一步：先篩 50元以下 =====
-    for(let i=0;i<all.length;i++){
-
-        let id = all[i];
-
-        let q = await quote(id);
-
-        if(!q) continue;
-
-        if(q.price <= 50){
-            low50.push({id, price:q.price, change:q.change});
-        }
-
-        status.innerText = `篩選中 ${i}/${all.length} ｜ 50以下 ${low50.length}`;
-
-        await delay(30);
+    if(results.length === 0) {
+        listDiv.innerHTML = `<div class="card">暫無符合篩選條件（>= 60分）的股票標的。</div>`;
+        return;
     }
 
-    status.innerText = `進入掃盤：50元以下 ${low50.length} 檔`;
-
-    // ===== 第二步：掃起漲 =====
-    for(let i=0;i<low50.length;i++){
-
-        let s = low50[i];
-
-        let h = await history(s.id);
-
-        if(!h || h.length < 40) continue;
-
-        let sc = score(h, s.change);
-
-        if(sc >= 60){
-            addCard({
-                id:s.id,
-                price:s.price,
-                change:s.change,
-                score:sc
-            });
-        }
-
-        status.innerText = `掃盤中 ${i}/${low50.length} ｜ ${s.id}`;
-
-        await delay(80);
-    }
-
-    status.innerText = "完成（50元以下起漲股已輸出）";
+    results.forEach(d => {
+        let cls = d.score >= 80 ? "good" : (d.score >= 70 ? "mid" : "normal");
+        let card = document.createElement("div");
+        card.className = `card ${cls}`;
+        card.innerHTML = `
+            <div class="row">
+                <span class="stock-id">${d.id} <small class="market-tag">${d.market}</small></span>
+                <span class="stock-price">${d.price.toFixed(2)}</span>
+            </div>
+            <div class="row small" style="margin-top: 8px;">
+                <span>技術評分：<span class="score-badge">${d.score.toFixed(0)} 分</span></span>
+                <span class="stock-change ${d.change >= 0 ? 'up' : 'down'}">
+                    ${d.change >= 0 ? '▲' : '▼'} ${Math.abs(d.change).toFixed(2)}%
+                </span>
+            </div>
+        `;
+        listDiv.appendChild(card);
+    });
 }
 
+/* ========================================================
+   🚀 6. 主掃描控制核心程序
+   ======================================================== */
+async function runScan() {
+    const btn = document.getElementById("scanBtn");
+    const progContainer = document.getElementById("progressContainer");
+    const progBar = document.getElementById("progressBar");
+    
+    // 初始化 UI 狀態
+    btn.disabled = true;
+    progContainer.style.display = "block";
+    document.getElementById("list").innerHTML = "";
+
+    const stocks = await getAllStocks();
+    if (stocks.length === 0) {
+        btn.disabled = false;
+        progContainer.style.display = "none";
+        return;
+    }
+
+    const results = [];
+    const batchSize = 10; // 瀏覽器端每次同時發送 10 檔請求，平衡速度與安全防鎖
+
+    for (let i = 0; i < stocks.length; i += batchSize) {
+        const batch = stocks.slice(i, i + batchSize);
+        
+        // 更新進度條與文字
+        const percent = ((i / stocks.length) * 100).toFixed(1);
+        progBar.style.width = `${percent}%`;
+        updateStatus(`⏳ 全市場掃描中: ${i} / ${stocks.length} 檔 (${percent}%)`);
+
+        // 同步處理當前批次
+        await Promise.all(batch.map(async (stock) => {
+            const history = await getHistoryData(stock.symbol);
+            if (!history) return;
+
+            const score = evaluateScore(history);
+
+            if (score >= 60) {
+                results.push({
+                    id: stock.id,
+                    market: stock.market,
+                    price: history.currentPrice,
+                    change: history.changePercent,
+                    score: score
+                });
+            }
+        }));
+
+        // 排序並動態即時顯示結果，讓使用者不用傻傻等待全部跑完
+        results.sort((a, b) => b.score - a.score);
+        renderResults(results);
+
+        // 每批次強制冷卻 450 毫秒，防止 IP 遭 Yahoo 端伺服器封鎖
+        await sleep(450);
+    }
+
+    // 完成掃描
+    progBar.style.width = "100%";
+    updateStatus(`✅ 掃描完成！全市場共篩選出 ${results.length} 檔強勢多頭潛力股。`);
+    btn.disabled = false;
+}
 </script>
 
 </body>
