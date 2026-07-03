@@ -3,33 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>台股技術分析</title>
+<title>台股掃盤推薦</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 <style>
 body{background:#0b0e14;color:#e2e8f4;font-family:-apple-system}
 .header{padding:16px;background:#131720}
+button{margin-right:8px}
 .results{padding:16px}
 .card{background:#1a1f2e;margin-bottom:12px;padding:12px;border-radius:10px}
+.reco{background:#132a1f;border:1px solid #34c77b}
 </style>
 </head>
 
 <body>
 
 <div class="header">
-  <input id="codeInput" placeholder="輸入股票代號">
-  <button onclick="analyze()">分析</button>
+  <button onclick="scan()">🚀 一鍵掃盤</button>
+  <span id="status"></span>
 </div>
 
-<div id="results"></div>
+<div class="results" id="results"></div>
 
 <script>
+
+// 👉 掃盤清單（你可以自己擴充）
+const WATCH = [
+  '1101','1216','1301','1326','2002',
+  '2303','2317','2330','2344','2357',
+  '2382','2408','2412','2454',
+  '2603','2609','2610',
+  '2881','2882','2886','2891',
+  '3034','3045','3231','3481','3702'
+];
+
+
+// ===== 抓資料 =====
 async function fetchData(code){
 
-  const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20240101&stockNo=${code}`;
-
   try{
+    const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20240101&stockNo=${code}`;
     const r = await fetch(url,{
       headers:{
         'Accept':'application/json',
@@ -40,16 +54,13 @@ async function fetchData(code){
     const j = await r.json();
 
     if(j.data){
-      return j.data.map(row=>{
-        const date = row[0];
-        return {
-          date,
-          open:parseFloat(row[3]),
-          high:parseFloat(row[4]),
-          low:parseFloat(row[5]),
-          close:parseFloat(row[6])
-        };
-      });
+      return j.data.map(row=>({
+        date:row[0],
+        open:parseFloat(row[3]),
+        high:parseFloat(row[4]),
+        low:parseFloat(row[5]),
+        close:parseFloat(row[6])
+      }));
     }
   }catch(e){}
 
@@ -73,88 +84,90 @@ async function fetchData(code){
 }
 
 
-// Bollinger
+// ===== 布林 =====
 function boll(closes){
   return closes.map((_,i)=>{
     if(i<19) return {};
-    const slice = closes.slice(i-19,i+1);
-    const avg = slice.reduce((a,b)=>a+b)/20;
-    const std = Math.sqrt(slice.reduce((a,b)=>a+(b-avg)**2,0)/20);
-    return {
-      mid:avg,
-      up:avg+2*std,
-      low:avg-2*std
-    };
+    const s = closes.slice(i-19,i+1);
+    const avg = s.reduce((a,b)=>a+b)/20;
+    const std = Math.sqrt(s.reduce((a,b)=>a+(b-avg)**2,0)/20);
+    return {mid:avg,up:avg+2*std,low:avg-2*std};
   });
 }
 
-async function analyze(){
-  const code = document.getElementById('codeInput').value;
-  const data = await fetchData(code);
 
-  const closes = data.map(d=>d.close);
-  const bands = boll(closes);
-
-  const last = closes[closes.length-1];
-  const mid = bands[bands.length-1].mid;
-
-  let signal = "中性";
-
-  if(last > mid) signal = "偏多";
-  if(last < mid) signal = "偏空";
-
-  const card = document.createElement('div');
-  card.className="card";
-
-  const cid = "chart"+Date.now();
-
-  card.innerHTML = `
-    <h3>${code} (${signal})</h3>
-    <canvas id="${cid}" height="150"></canvas>
-  `;
-
-  document.getElementById('results').prepend(card);
-
-  drawChart(cid,data,bands);
-}
-
-
+// ===== 畫圖 =====
 function drawChart(id,data,bands){
-
   new Chart(document.getElementById(id),{
     type:'line',
     data:{
       labels:data.map(d=>d.date),
       datasets:[
-        {
-          label:'收盤',
-          data:data.map(d=>d.close),
-          borderWidth:1
-        },
-        {
-          label:'上軌',
-          data:bands.map(b=>b.up),
-          borderWidth:1
-        },
-        {
-          label:'中軌',
-          data:bands.map(b=>b.mid),
-          borderWidth:1
-        },
-        {
-          label:'下軌',
-          data:bands.map(b=>b.low),
-          borderWidth:1
-        }
+        {data:data.map(d=>d.close),borderWidth:1},
+        {data:bands.map(b=>b.up),borderWidth:1},
+        {data:bands.map(b=>b.mid),borderWidth:1},
+        {data:bands.map(b=>b.low),borderWidth:1}
       ]
     },
-    options:{
-      responsive:true,
-      plugins:{legend:{display:false}}
-    }
+    options:{plugins:{legend:{display:false}}}
   });
-
 }
+
+
+// ===== 掃盤 =====
+async function scan(){
+
+  const results = document.getElementById('results');
+  const status = document.getElementById('status');
+
+  results.innerHTML = '';
+  status.textContent = '掃描中...';
+
+  let recoList = [];
+
+  for(const code of WATCH){
+
+    try{
+      status.textContent = `掃描 ${code}...`;
+
+      const data = await fetchData(code);
+      const closes = data.map(d=>d.close);
+      const bands = boll(closes);
+
+      const last = closes[closes.length-1];
+      const mid = bands[bands.length-1].mid;
+
+      const isBull = last > mid;
+      const isCheap = last <= 30;
+
+      const isReco = isBull && isCheap;
+
+      if(isReco){
+        recoList.push(code);
+      }
+
+      const cid = 'c'+Math.random();
+
+      const card = document.createElement('div');
+      card.className = 'card ' + (isReco ? 'reco' : '');
+
+      card.innerHTML = `
+        <h3>${code} | ${last} ${isReco ? '🔥推薦' : ''}</h3>
+        <canvas id="${cid}" height="120"></canvas>
+      `;
+
+      results.appendChild(card);
+
+      drawChart(cid,data,bands);
+
+    }catch(e){
+      console.log(code,'失敗');
+    }
+  }
+
+  status.textContent = `完成！推薦：${recoList.join(', ') || '無'}`;
+}
+
 </script>
 
 </body>
