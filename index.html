@@ -4,396 +4,158 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>台股技術分析</title>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
 <style>
-:root{
-  --bg:#0b0e14;--surface:#131720;--card:#1a1f2e;--border:#252d3d;
-  --accent:#4f8ef7;--bull:#34c77b;--bear:#f05c5c;--warn:#f0a830;
-  --text:#e2e8f4;--muted:#7a8499;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,'Helvetica Neue',sans-serif;min-height:100vh}
-.header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px}
-.header h1{font-size:16px;font-weight:700;margin-bottom:10px}
-.search-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.code-input{background:var(--card);border:1px solid var(--border);border-radius:8px;
-  padding:9px 14px;color:var(--text);font-size:14px;font-weight:700;outline:none;
-  width:130px;letter-spacing:2px;transition:border-color .15s}
-.code-input:focus{border-color:var(--accent)}
-.code-input::placeholder{color:var(--muted);letter-spacing:0;font-weight:400}
-.btn-go{padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;
-  font-size:14px;font-weight:700;cursor:pointer;transition:opacity .15s}
-.btn-go:hover{opacity:.85}
-.btn-go:disabled{opacity:.4;cursor:not-allowed}
-.hint{font-size:11px;color:var(--muted)}
-.hint.err{color:var(--bear)}
-.hint.ok{color:var(--bull)}
-
-.results{padding:16px 20px;display:flex;flex-direction:column;gap:16px}
-
-/* card */
-.card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.card.bull{border-color:rgba(52,199,123,.35)}
-.card.bear{border-color:rgba(240,92,92,.35)}
-.card-head{padding:12px 16px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.card-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.c-code{font-size:16px;font-weight:800}
-.c-name{font-size:12px;color:var(--muted)}
-.verdict{padding:3px 10px;border-radius:5px;font-size:12px;font-weight:700}
-.v-bull{background:rgba(52,199,123,.15);color:var(--bull);border:1px solid rgba(52,199,123,.3)}
-.v-bear{background:rgba(240,92,92,.15);color:var(--bear);border:1px solid rgba(240,92,92,.3)}
-.v-neu{background:rgba(79,142,247,.1);color:var(--accent);border:1px solid rgba(79,142,247,.25)}
-.price-row{display:flex;align-items:baseline;gap:8px}
-.c-price{font-size:20px;font-weight:800}
-.c-chg{font-size:12px;font-weight:600}
-.up{color:var(--bull)} .dn{color:var(--bear)}
-
-.card-body{display:grid;grid-template-columns:1fr 200px}
-@media(max-width:580px){.card-body{grid-template-columns:1fr}}
-.chart-area{padding:10px 8px 6px;height:210px}
-.chart-area canvas{width:100%!important}
-.stats{border-left:1px solid var(--border);padding:14px;display:flex;flex-direction:column;gap:12px}
-@media(max-width:580px){.stats{border-left:none;border-top:1px solid var(--border)}}
-.s-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
-.boll-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px}
-.boll-row span:first-child{color:var(--muted);font-size:10px}
-.col-u{color:var(--warn);font-weight:700} .col-m{color:var(--accent);font-weight:700} .col-l{color:var(--warn);font-weight:700}
-.pos-track{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin:6px 0 2px}
-.pos-fill{height:100%;border-radius:2px}
-.pos-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted)}
-.sigs-list{display:flex;flex-direction:column;gap:5px}
-.sig{display:flex;gap:5px;font-size:11px}
-.sig .t{font-weight:700;color:var(--text)}
-.sig .s{color:var(--muted);font-size:10px}
-.reason{padding:10px 16px;border-top:1px solid var(--border);font-size:12px;
-  color:var(--muted);line-height:1.7;background:rgba(0,0,0,.15)}
-.reason strong{color:var(--text)}
-
-.loading-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
-  padding:28px 20px;display:flex;align-items:center;gap:14px}
-.spin{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);
-  border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* debug */
-.debug{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;
-  padding:10px 14px;font-size:11px;color:var(--muted);margin-top:8px;font-family:monospace;line-height:1.6}
-.debug .err{color:var(--bear)} .debug .ok{color:var(--bull)}
-
-/* source badge */
-.src-badge{font-size:9px;color:var(--muted);margin-left:auto;padding:2px 7px;
-  background:var(--surface);border:1px solid var(--border);border-radius:4px}
+body{background:#0b0e14;color:#e2e8f4;font-family:-apple-system}
+.header{padding:16px;background:#131720}
+.results{padding:16px}
+.card{background:#1a1f2e;margin-bottom:12px;padding:12px;border-radius:10px}
 </style>
 </head>
+
 <body>
 
 <div class="header">
-  <h1>📊 台股技術分析 — 日K × 布林通道</h1>
-  <div class="search-bar">
-    <input class="code-input" id="codeInput" placeholder="代號，如 2330"
-      maxlength="6" onkeydown="if(event.key==='Enter')analyze()">
-    <button class="btn-go" id="goBtn" onclick="analyze()">分析</button>
-    <span class="hint" id="hint">輸入台股代號按Enter或點分析</span>
-  </div>
+  <input id="codeInput" placeholder="輸入股票代號">
+  <button onclick="analyze()">分析</button>
 </div>
 
-<div class="results" id="results"></div>
+<div id="results"></div>
 
 <script>
-const KNOWN={
-  '2330':'台積電','2317':'鴻海','2454':'聯發科','2382':'廣達','2308':'台達電',
-  '2881':'富邦金','2882':'國泰金','2886':'兆豐金','2891':'中信金','2884':'玉山金',
-  '2303':'聯電','2379':'瑞昱','2357':'華碩','2395':'研華','2912':'統一超',
-  '1301':'台塑','1303':'南亞','1326':'台化','2002':'中鋼','1216':'統一',
-  '6505':'台塑化','3008':'大立光','2412':'中華電','4904':'遠傳','2408':'南亞科',
-  '6509':'金麗科','3290':'東浦','3039':'台灣碳化矽','6189':'豐藝','6743':'安格','2302':'麗正',
-  '2615':'萬海','2603':'長榮','2609':'陽明','2610':'華航','2618':'長榮航',
-  '3034':'聯詠','3711':'日月光','2337':'旺宏','2344':'華邦電','6415':'矽力-KY',
-  '8046':'南電','5871':'中租-KY','2049':'上銀','6669':'緯穎','1590':'亞德客-KY',
-};
-const TW_SET=new Set(['2330','2317','2454','2382','2308','2881','2882','2886','2891','2884',
-  '2303','2379','2357','2395','2912','1301','1303','1326','2002','1216','6505','3008',
-  '2412','4904','2408','2615','2603','2609','2610','2618','3034','3711','2337','2344',
-  '6415','8046','5871','2049','6669','1590']);
-
-let charts={};
-
-// ── Fetch: try multiple sources ──
 async function fetchData(code){
-  const isTW = TW_SET.has(code);
-  const sym  = code + (isTW ? '.TW' : '.TWO');
-  const logs = [];
 
-  // Source 1: TWSE/TPEx official (no CORS issue for listed stocks)
-  // TWSE monthly data — works without proxy for .twse.com.tw
-  if(isTW){
-    try{
-      const now = new Date();
-      const rows = [];
-      // fetch last 3 months
-      for(let m=2;m>=0;m--){
-        const d = new Date(now.getFullYear(), now.getMonth()-m, 1);
-        const dateStr = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}01`;
-        const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=${dateStr}&stockNo=${code}`;
-        const r = await fetch(url, {headers:{'Accept':'application/json'}});
-        if(!r.ok) throw new Error(`TWSE HTTP ${r.status}`);
-        const j = await r.json();
-        if(j.stat==='OK'&&j.data){
-          j.data.forEach(row=>{
-            // row: [民國日期, 成交股數, 成交金額, 開盤, 最高, 最低, 收盤, 漲跌, 筆數]
-            const [mDate,,, open, high, low, close] = row;
-            const parts = mDate.split('/');
-            const year = parseInt(parts[0])+1911;
-            const date = `${year}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
-            const parseNum = s => parseFloat(s.replace(/,/g,''));
-            rows.push({date, open:parseNum(open), high:parseNum(high), low:parseNum(low), close:parseNum(close)});
-          });
-        }
-      }
-      if(rows.length >= 20){
-        logs.push({src:'TWSE官方',ok:true,msg:`${rows.length}筆`});
-        return {data:rows, src:'TWSE官方', logs};
-      }
-    }catch(e){
-      logs.push({src:'TWSE官方',ok:false,msg:e.message});
-    }
-  }
-
-  // Source 2: TPEx for OTC stocks
-  if(!isTW){
-    try{
-      const now = new Date();
-      const rows = [];
-      for(let m=2;m>=0;m--){
-        const d = new Date(now.getFullYear(), now.getMonth()-m, 1);
-        const rocYear = d.getFullYear()-1911;
-        const dateStr = `${rocYear}/${String(d.getMonth()+1).padStart(2,'0')}/01`;
-        const url = `https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_print.php?l=zh-tw&d=${dateStr}&stkno=${code}&ajax=1`;
-        const r = await fetch(url, {headers:{'Accept':'application/json'}});
-        if(!r.ok) throw new Error(`TPEx HTTP ${r.status}`);
-        const j = await r.json();
-        if(j.aaData&&j.aaData.length){
-          j.aaData.forEach(row=>{
-            const parts = row[0].split('/');
-            const year = parseInt(parts[0])+1911;
-            const date = `${year}-${parts[1].padStart(2,'0')}-${parts[2].padStart(2,'0')}`;
-            const p = s=>parseFloat(s.replace(/,/g,'')||'0');
-            rows.push({date, open:p(row[3]), high:p(row[4]), low:p(row[5]), close:p(row[6])});
-          });
-        }
-      }
-      if(rows.length>=20){
-        logs.push({src:'TPEx官方',ok:true,msg:`${rows.length}筆`});
-        return {data:rows, src:'TPEx官方', logs};
-      }
-    }catch(e){
-      logs.push({src:'TPEx官方',ok:false,msg:e.message});
-    }
-  }
-
-  // Source 3: Yahoo Finance via multiple proxies
-  const yfURL = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=3mo`;
-  const proxies = [
-    {name:'proxy1', url:`https://corsproxy.io/?${encodeURIComponent(yfURL)}`},
-    {name:'proxy2', url:`https://api.allorigins.win/raw?url=${encodeURIComponent(yfURL)}`},
-    {name:'proxy3', url:`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(yfURL)}`},
-    {name:'direct', url:yfURL},
-  ];
-  for(const px of proxies){
-    try{
-      const r = await fetch(px.url, {headers:{Accept:'application/json'}, signal:AbortSignal.timeout(8000)});
-      if(!r.ok) throw new Error(`HTTP ${r.status}`);
-      const j = await r.json();
-      const res = j?.chart?.result?.[0];
-      if(!res) throw new Error('格式異常');
-      const ts=res.timestamp, q=res.indicators.quote[0];
-      const rows = ts.map((t,i)=>({
-        date:new Date(t*1000).toISOString().slice(0,10),
-        open:+q.open[i]?.toFixed(2)||null,
-        high:+q.high[i]?.toFixed(2)||null,
-        low: +q.low[i]?.toFixed(2)||null,
-        close:+q.close[i]?.toFixed(2)||null,
-      })).filter(d=>d.close!=null);
-      logs.push({src:px.name,ok:true,msg:`${rows.length}筆`});
-      return {data:rows, src:`Yahoo(${px.name})`, logs};
-    }catch(e){
-      logs.push({src:px.name,ok:false,msg:e.message});
-    }
-  }
-
-  throw {message:'所有資料來源均失敗', logs};
-}
-
-// ── Bollinger ──
-function boll(closes,p=20,m=2){
-  return closes.map((_,i)=>{
-    if(i<p-1)return{u:null,mid:null,l:null};
-    const sl=closes.slice(i-p+1,i+1);
-    const avg=sl.reduce((a,b)=>a+b,0)/p;
-    const std=Math.sqrt(sl.reduce((a,b)=>a+(b-avg)**2,0)/p);
-    return{u:+(avg+m*std).toFixed(2),mid:+avg.toFixed(2),l:+(avg-m*std).toFixed(2)};
-  });
-}
-
-// ── Signals ──
-function getSignals(closes,bands){
-  const sigs=[]; const n=closes.length-1;
-  if(n<5||!bands[n].u)return sigs;
-  const last=closes[n],{u,mid,l}=bands[n];
-  const p3mid=bands[n-3]?.mid||mid;
-  if(last>u*0.99)              sigs.push({ico:'⚠️',type:'bear',t:'觸及上軌',s:'短線超買，注意回落'});
-  if(last<l*1.01)              sigs.push({ico:'🟢',type:'bull',t:'觸及下軌',s:'短線超賣，留意反彈'});
-  if(last>mid&&closes[n-3]<p3mid) sigs.push({ico:'📈',type:'bull',t:'突破布林中軌',s:'多方轉強訊號'});
-  if(last<mid&&closes[n-3]>p3mid) sigs.push({ico:'📉',type:'bear',t:'跌破布林中軌',s:'空方轉強訊號'});
-  const bws=bands.filter(b=>b.u).map(b=>b.u-b.l);
-  if(bws.length>=10){
-    const avg=bws.slice(-20).reduce((a,b)=>a+b,0)/Math.min(20,bws.length),cur=bws[bws.length-1];
-    if(cur>avg*1.2)  sigs.push({ico:'🔥',type:'bull',t:'布林帶寬擴張',s:'趨勢啟動中'});
-    if(cur<avg*0.75) sigs.push({ico:'🔵',type:'neu', t:'布林帶寬收縮',s:'整理蓄力，即將變盤'});
-  }
-  const up5=closes.slice(-6).filter((c,i,a)=>i>0&&c>a[i-1]).length;
-  if(up5>=4) sigs.push({ico:'💚',type:'bull',t:'近5日連漲',s:'短線多頭格局'});
-  if(up5<=1) sigs.push({ico:'🔴',type:'bear',t:'近5日連跌',s:'短線空頭格局'});
-  const ma5=closes.slice(-5).reduce((a,b)=>a+b,0)/5;
-  if(last>mid&&ma5>mid) sigs.push({ico:'🏔',type:'bull',t:'站穩中軌之上',s:'多頭趨勢確立'});
-  if(last<mid&&ma5<mid) sigs.push({ico:'🕳',type:'bear',t:'壓在中軌之下',s:'空頭趨勢確立'});
-  return sigs;
-}
-
-function verdict(sigs,last,mid){
-  const b=sigs.filter(s=>s.type==='bull').length,br=sigs.filter(s=>s.type==='bear').length;
-  const ab=last>mid;
-  if(b>br&&ab)  return{cls:'bull',text:'📈 偏多操作',reason:`多方訊號 ${b} 個，股價站穩中軌上方，趨勢偏多，可考慮進場或持有。`};
-  if(br>b&&!ab) return{cls:'bear',text:'📉 偏空觀望',reason:`空方訊號 ${br} 個，股價壓在中軌下方，趨勢偏空，建議觀望或減碼。`};
-  if(b>br)      return{cls:'bull',text:'📈 短線偏多',reason:`多方訊號居多 (${b} vs ${br})，但需等股價站回中軌確認。`};
-  if(br>b)      return{cls:'bear',text:'📉 短線偏空',reason:`空方訊號居多 (${br} vs ${b})，多方需等待反轉訊號。`};
-  return{cls:'neu',text:'⚖️ 中性整理',reason:`多空訊號均衡，布林通道整理中，等待方向選擇後再進場。`};
-}
-
-// ── Draw ──
-function drawChart(cid,data){
-  if(charts[cid]){charts[cid].destroy();delete charts[cid];}
-  const cv=document.getElementById(cid);if(!cv)return;
-  const closes=data.map(d=>d.close),bands=boll(closes);
-  charts[cid]=new Chart(cv,{type:'bar',data:{
-    labels:data.map(d=>d.date.slice(5)),
-    datasets:[
-      {label:'K線',data:data.map(d=>[Math.min(d.open,d.close),Math.max(d.open,d.close)]),
-        backgroundColor:data.map(d=>d.close>=d.open?'rgba(52,199,123,.8)':'rgba(240,92,92,.8)'),borderWidth:.5,borderRadius:1},
-      {label:'上軌',type:'line',data:bands.map(b=>b.u),borderColor:'rgba(210,153,34,.7)',borderWidth:1,pointRadius:0,fill:false,tension:.3},
-      {label:'中軌',type:'line',data:bands.map(b=>b.mid),borderColor:'rgba(79,142,247,.85)',borderWidth:1.3,pointRadius:0,fill:false,tension:.3},
-      {label:'下軌',type:'line',data:bands.map(b=>b.l),borderColor:'rgba(210,153,34,.7)',borderWidth:1,pointRadius:0,fill:false,tension:.3},
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,animation:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:(ctx)=>{
-        if(ctx.datasetIndex===0){const d=data[ctx.dataIndex];return`O:${d.open} H:${d.high} L:${d.low} C:${d.close}`;}
-        return`${ctx.dataset.label}: ${ctx.raw?.toFixed?.(2)??ctx.raw}`;
-      }}}},
-      scales:{
-        x:{ticks:{color:'#7a8499',font:{size:9},maxRotation:0,maxTicksLimit:10},grid:{color:'rgba(255,255,255,0.03)'}},
-        y:{ticks:{color:'#7a8499',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'}}
-      }
-    }
-  });
-}
-
-// ── Main ──
-async function analyze(){
-  const inp=document.getElementById('codeInput');
-  const hint=document.getElementById('hint');
-  const btn=document.getElementById('goBtn');
-  const code=inp.value.trim().replace(/\D/g,'');
-  if(!code||code.length<4){hint.textContent='請輸入4~6位數代號';hint.className='hint err';return;}
-
-  hint.textContent='';hint.className='hint';
-  btn.disabled=true;btn.textContent='載入中…';
-  const name=KNOWN[code]||code;
-
-  // remove old + show loader
-  document.getElementById(`result-${code}`)?.remove();
-  const loader=document.createElement('div');
-  loader.id=`load-${code}`;loader.className='loading-card';
-  loader.innerHTML=`<div class="spin"></div><div style="font-size:13px;color:var(--muted)">正在載入 <strong style="color:var(--text)">${code} ${name}</strong> 資料…</div>`;
-  document.getElementById('results').prepend(loader);
+  const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20240101&stockNo=${code}`;
 
   try{
-    const {data, src, logs} = await fetchData(code);
-    const closes=data.map(d=>d.close);
-    const bands=boll(closes);
-    const last=closes[closes.length-1],prev=closes[closes.length-2];
-    const chg=+(last-prev).toFixed(2),chgp=+((last-prev)/prev*100).toFixed(2);
-    const isUp=chg>=0;
-    const{u,mid,l}=bands[bands.length-1]||{};
-    const pctMid=mid?+((last-mid)/mid*100).toFixed(2):null;
-    const sigs=getSignals(closes,bands);
-    const vd=verdict(sigs,last,mid);
-    const pct=u&&l&&u!==l?Math.max(0,Math.min(100,(last-l)/(u-l)*100)):50;
-    const barColor=pct>75?'var(--bear)':pct<25?'var(--bull)':'var(--accent)';
-    const cid=`ch-${code}`;
+    const r = await fetch(url,{
+      headers:{
+        'Accept':'application/json',
+        'Referer':'https://www.twse.com.tw/'
+      }
+    });
 
-    const card=document.createElement('div');
-    card.id=`result-${code}`;card.className=`card ${vd.cls}`;
-    card.innerHTML=`
-      <div class="card-head">
-        <div class="card-title">
-          <span class="c-code">${code}</span>
-          <span class="c-name">${name}</span>
-          <span class="verdict v-${vd.cls}">${vd.text}</span>
-          <span class="src-badge">來源：${src}</span>
-        </div>
-        <div class="price-row">
-          <span class="c-price ${isUp?'up':'dn'}">${last}</span>
-          <span class="c-chg ${isUp?'up':'dn'}">${isUp?'▲':'▼'}${Math.abs(chg)} (${Math.abs(chgp)}%)</span>
-        </div>
-      </div>
-      <div class="card-body">
-        <div class="chart-area"><canvas id="${cid}"></canvas></div>
-        <div class="stats">
-          <div>
-            <div class="s-label">布林通道 (20,2)</div>
-            <div class="boll-row"><span>上軌</span><span class="col-u">${u??'—'}</span></div>
-            <div class="boll-row"><span>中軌 MA20</span><span class="col-m">${mid??'—'}</span></div>
-            <div class="boll-row"><span>下軌</span><span class="col-l">${l??'—'}</span></div>
-            <div style="font-size:10px;color:var(--muted);margin-top:6px">
-              距中軌 <strong style="color:${pctMid>=0?'var(--bull)':'var(--bear)'}">${pctMid!=null?(pctMid>=0?'+':'')+pctMid+'%':'—'}</strong>
-            </div>
-            <div class="pos-track"><div class="pos-fill" style="width:${pct}%;background:${barColor}"></div></div>
-            <div class="pos-labels"><span>下軌</span><span>上軌</span></div>
-          </div>
-          <div>
-            <div class="s-label">技術訊號</div>
-            <div class="sigs-list">
-              ${sigs.length?sigs.map(sg=>`<div class="sig"><span>${sg.ico}</span><div><div class="t">${sg.t}</div><div class="s">${sg.s}</div></div></div>`).join('')
-                :'<div style="font-size:11px;color:var(--muted)">無明顯訊號</div>'}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="reason"><strong>操作建議：</strong>${vd.reason}</div>`;
+    const j = await r.json();
 
-    loader.replaceWith(card);
-    setTimeout(()=>drawChart(cid,data),50);
-    inp.value='';
-    hint.textContent=`${code} 分析完成（${data.length}筆K線）`;hint.className='hint ok';
-    setTimeout(()=>{hint.textContent='輸入台股代號按Enter或點分析';hint.className='hint';},3000);
+    if(j.data){
+      return j.data.map(row=>{
+        const date = row[0];
+        return {
+          date,
+          open:parseFloat(row[3]),
+          high:parseFloat(row[4]),
+          low:parseFloat(row[5]),
+          close:parseFloat(row[6])
+        };
+      });
+    }
+  }catch(e){}
 
-  }catch(e){
-    const logs=e.logs||[];
-    const debugHTML=logs.map(l=>`<div class="${l.ok?'ok':'err'}">${l.ok?'✓':'✗'} ${l.src}：${l.msg}</div>`).join('');
-    loader.innerHTML=`
-      <div style="width:100%">
-        <div style="color:var(--bear);font-size:13px;margin-bottom:8px">⚠️ ${code} 載入失敗：${e.message||e}</div>
-        <div class="debug">${debugHTML||'無詳細資訊'}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:8px">
-          💡 請確認：① 代號正確 ② 網路正常 ③ 若用Safari請改Chrome
-        </div>
-      </div>`;
-    hint.textContent=`${code} 失敗`;hint.className='hint err';
-  }
+  // fallback Yahoo
+  const yf = `https://corsproxy.io/?${encodeURIComponent(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${code}.TW?interval=1d&range=3mo`
+  )}`;
 
-  btn.disabled=false;btn.textContent='分析';
+  const r = await fetch(yf);
+  const j = await r.json();
+
+  const res = j.chart.result[0];
+
+  return res.timestamp.map((t,i)=>({
+    date:new Date(t*1000).toISOString().slice(0,10),
+    open:res.indicators.quote[0].open[i],
+    high:res.indicators.quote[0].high[i],
+    low:res.indicators.quote[0].low[i],
+    close:res.indicators.quote[0].close[i]
+  }));
+}
+
+
+// Bollinger
+function boll(closes){
+  return closes.map((_,i)=>{
+    if(i<19) return {};
+    const slice = closes.slice(i-19,i+1);
+    const avg = slice.reduce((a,b)=>a+b)/20;
+    const std = Math.sqrt(slice.reduce((a,b)=>a+(b-avg)**2,0)/20);
+    return {
+      mid:avg,
+      up:avg+2*std,
+      low:avg-2*std
+    };
+  });
+}
+
+async function analyze(){
+  const code = document.getElementById('codeInput').value;
+  const data = await fetchData(code);
+
+  const closes = data.map(d=>d.close);
+  const bands = boll(closes);
+
+  const last = closes[closes.length-1];
+  const mid = bands[bands.length-1].mid;
+
+  let signal = "中性";
+
+  if(last > mid) signal = "偏多";
+  if(last < mid) signal = "偏空";
+
+  const card = document.createElement('div');
+  card.className="card";
+
+  const cid = "chart"+Date.now();
+
+  card.innerHTML = `
+    <h3>${code} (${signal})</h3>
+    <canvas id="${cid}" height="150"></canvas>
+  `;
+
+  document.getElementById('results').prepend(card);
+
+  drawChart(cid,data,bands);
+}
+
+
+function drawChart(id,data,bands){
+
+  new Chart(document.getElementById(id),{
+    type:'line',
+    data:{
+      labels:data.map(d=>d.date),
+      datasets:[
+        {
+          label:'收盤',
+          data:data.map(d=>d.close),
+          borderWidth:1
+        },
+        {
+          label:'上軌',
+          data:bands.map(b=>b.up),
+          borderWidth:1
+        },
+        {
+          label:'中軌',
+          data:bands.map(b=>b.mid),
+          borderWidth:1
+        },
+        {
+          label:'下軌',
+          data:bands.map(b=>b.low),
+          borderWidth:1
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}}
+    }
+  });
+
 }
 </script>
+
 </body>
 </html>
