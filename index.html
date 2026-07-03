@@ -2,170 +2,185 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>台股掃盤推薦</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
+<title>全台股 AI 掃盤（MACD評分版）</title>
 <style>
-body{background:#0b0e14;color:#e2e8f4;font-family:-apple-system}
-.header{padding:16px;background:#131720}
-button{margin-right:8px}
-.results{padding:16px}
-.card{background:#1a1f2e;margin-bottom:12px;padding:12px;border-radius:10px}
-.reco{background:#132a1f;border:1px solid #34c77b}
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 20px;
+}
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background: #22c55e;
+    border: none;
+    color: white;
+    cursor: pointer;
+}
+table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+td, th {
+    padding: 8px;
+    border-bottom: 1px solid #334155;
+    text-align: center;
+}
+.good { color: #22c55e; }
+.bad { color: #ef4444; }
 </style>
 </head>
-
 <body>
 
-<div class="header">
-  <button onclick="scan()">🚀 一鍵掃盤</button>
-  <span id="status"></span>
-</div>
+<h2>📈 AI 全台股掃描（MACD評分版）</h2>
+<button onclick="scan()">開始掃描</button>
 
-<div class="results" id="results"></div>
+<table id="result">
+<thead>
+<tr>
+<th>代號</th>
+<th>價格</th>
+<th>漲幅%</th>
+<th>成交量</th>
+<th>MACD</th>
+<th>分數</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 
 <script>
 
-// 👉 掃盤清單（你可以自己擴充）
-const WATCH = [
-  '1101','1216','1301','1326','2002',
-  '2303','2317','2330','2344','2357',
-  '2382','2408','2412','2454',
-  '2603','2609','2610',
-  '2881','2882','2886','2891',
-  '3034','3045','3231','3481','3702'
-];
-
-
-// ===== 抓資料 =====
-async function fetchData(code){
-
-  try{
-    const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20240101&stockNo=${code}`;
-    const r = await fetch(url,{
-      headers:{
-        'Accept':'application/json',
-        'Referer':'https://www.twse.com.tw/'
-      }
+// 🔹 取得台股清單（簡化版）
+async function getStockList() {
+    let res = await fetch("https://api.finmindtrade.com/api/v4/data", {
+        method: "POST",
+        body: JSON.stringify({
+            dataset: "TaiwanStockInfo"
+        }),
+        headers: { "Content-Type": "application/json" }
     });
+    let data = await res.json();
+    return data.data.map(s => s.stock_id);
+}
 
-    const j = await r.json();
+// 🔹 取得即時報價（Yahoo）
+async function getQuote(id) {
+    try {
+        let res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW`);
+        let json = await res.json();
 
-    if(j.data){
-      return j.data.map(row=>({
-        date:row[0],
-        open:parseFloat(row[3]),
-        high:parseFloat(row[4]),
-        low:parseFloat(row[5]),
-        close:parseFloat(row[6])
-      }));
+        let price = json.chart.result[0].meta.regularMarketPrice;
+        let prev = json.chart.result[0].meta.previousClose;
+        let volume = json.chart.result[0].meta.regularMarketVolume;
+
+        let change = ((price - prev) / prev * 100).toFixed(2);
+
+        return { price, change, volume };
+    } catch {
+        return null;
     }
-  }catch(e){}
-
-  // fallback Yahoo
-  const yf = `https://corsproxy.io/?${encodeURIComponent(
-    `https://query1.finance.yahoo.com/v8/finance/chart/${code}.TW?interval=1d&range=3mo`
-  )}`;
-
-  const r = await fetch(yf);
-  const j = await r.json();
-
-  const res = j.chart.result[0];
-
-  return res.timestamp.map((t,i)=>({
-    date:new Date(t*1000).toISOString().slice(0,10),
-    open:res.indicators.quote[0].open[i],
-    high:res.indicators.quote[0].high[i],
-    low:res.indicators.quote[0].low[i],
-    close:res.indicators.quote[0].close[i]
-  }));
 }
 
-
-// ===== 布林 =====
-function boll(closes){
-  return closes.map((_,i)=>{
-    if(i<19) return {};
-    const s = closes.slice(i-19,i+1);
-    const avg = s.reduce((a,b)=>a+b)/20;
-    const std = Math.sqrt(s.reduce((a,b)=>a+(b-avg)**2,0)/20);
-    return {mid:avg,up:avg+2*std,low:avg-2*std};
-  });
-}
-
-
-// ===== 畫圖 =====
-function drawChart(id,data,bands){
-  new Chart(document.getElementById(id),{
-    type:'line',
-    data:{
-      labels:data.map(d=>d.date),
-      datasets:[
-        {data:data.map(d=>d.close),borderWidth:1},
-        {data:bands.map(b=>b.up),borderWidth:1},
-        {data:bands.map(b=>b.mid),borderWidth:1},
-        {data:bands.map(b=>b.low),borderWidth:1}
-      ]
-    },
-    options:{plugins:{legend:{display:false}}}
-  });
-}
-
-
-// ===== 掃盤 =====
-async function scan(){
-
-  const results = document.getElementById('results');
-  const status = document.getElementById('status');
-
-  results.innerHTML = '';
-  status.textContent = '掃描中...';
-
-  let recoList = [];
-
-  for(const code of WATCH){
-
-    try{
-      status.textContent = `掃描 ${code}...`;
-
-      const data = await fetchData(code);
-      const closes = data.map(d=>d.close);
-      const bands = boll(closes);
-
-      const last = closes[closes.length-1];
-      const mid = bands[bands.length-1].mid;
-
-      const isBull = last > mid;
-      const isCheap = last <= 30;
-
-      const isReco = isBull && isCheap;
-
-      if(isReco){
-        recoList.push(code);
-      }
-
-      const cid = 'c'+Math.random();
-
-      const card = document.createElement('div');
-      card.className = 'card ' + (isReco ? 'reco' : '');
-
-      card.innerHTML = `
-        <h3>${code} | ${last} ${isReco ? '🔥推薦' : ''}</h3>
-        <canvas id="${cid}" height="120"></canvas>
-      `;
-
-      results.appendChild(card);
-
-      drawChart(cid,data,bands);
-
-    }catch(e){
-      console.log(code,'失敗');
+// 🔹 取得歷史資料（算MACD）
+async function getHistory(id) {
+    try {
+        let res = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW?range=1mo&interval=1d`);
+        let json = await res.json();
+        return json.chart.result[0].indicators.quote[0].close;
+    } catch {
+        return null;
     }
-  }
+}
 
-  status.textContent = `完成！推薦：${recoList.join(', ') || '無'}`;
+// 🔹 計算 EMA
+function ema(data, period) {
+    let k = 2 / (period + 1);
+    let emaArr = [data[0]];
+    for (let i = 1; i < data.length; i++) {
+        emaArr.push(data[i] * k + emaArr[i - 1] * (1 - k));
+    }
+    return emaArr;
+}
+
+// 🔹 MACD
+function calcMACD(data) {
+    let ema12 = ema(data, 12);
+    let ema26 = ema(data, 26);
+    let macd = ema12.map((v, i) => v - ema26[i]);
+    return macd[macd.length - 1];
+}
+
+// 🔹 評分系統
+function scoreStock({ change, volume, macd }) {
+    let score = 0;
+
+    if (macd > 0) score += 40;
+    if (change > 0) score += 30;
+    if (volume > 1000) score += 30;
+
+    return score;
+}
+
+// 🔥 主掃描
+async function scan() {
+
+    let table = document.querySelector("#result tbody");
+    table.innerHTML = "<tr><td colspan='6'>掃描中...</td></tr>";
+
+    let list = await getStockList();
+
+    let results = [];
+
+    // 👉 控制掃描數量（避免API炸掉）
+    let sample = list.slice(0, 200);
+
+    for (let id of sample) {
+
+        let quote = await getQuote(id);
+        if (!quote) continue;
+
+        // 👉 條件：30元以下
+        if (quote.price > 30) continue;
+
+        let history = await getHistory(id);
+        if (!history) continue;
+
+        let macd = calcMACD(history);
+
+        let score = scoreStock({
+            change: quote.change,
+            volume: quote.volume,
+            macd
+        });
+
+        if (score >= 60) {
+            results.push({
+                id,
+                ...quote,
+                macd: macd.toFixed(2),
+                score
+            });
+        }
+    }
+
+    // 👉 排序（最強在前）
+    results.sort((a, b) => b.score - a.score);
+
+    // 👉 顯示
+    table.innerHTML = results.map(s => `
+        <tr>
+            <td>${s.id}</td>
+            <td>${s.price}</td>
+            <td class="${s.change > 0 ? 'good' : 'bad'}">${s.change}%</td>
+            <td>${s.volume}</td>
+            <td>${s.macd}</td>
+            <td>${s.score}</td>
+        </tr>
+    `).join("");
+
 }
 
 </script>
