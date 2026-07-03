@@ -2,63 +2,73 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>全台股掃盤（單檔HTML版）</title>
+<title>即時掃盤（Streaming版）</title>
+
 <style>
-body {
+body{
     background:#0f172a;
     color:#e2e8f0;
     font-family:Arial;
     padding:20px;
 }
-button {
+
+button{
     padding:10px 20px;
     background:#22c55e;
     border:none;
     color:white;
     cursor:pointer;
 }
-table {
-    width:100%;
-    margin-top:20px;
-    border-collapse:collapse;
+
+#status{
+    margin-top:10px;
+    font-size:14px;
+    color:#94a3b8;
 }
-td,th {
-    padding:8px;
-    border-bottom:1px solid #334155;
-    text-align:center;
+
+.card{
+    background:#1e293b;
+    padding:10px;
+    margin-top:8px;
+    border-radius:8px;
+    border-left:4px solid #334155;
 }
-.up {color:#22c55e;}
-.down {color:#ef4444;}
+
+.good{
+    border-left-color:#22c55e;
+}
+
+.bad{
+    border-left-color:#ef4444;
+}
+
+.row{
+    display:flex;
+    justify-content:space-between;
+}
+.small{
+    font-size:12px;
+    color:#94a3b8;
+}
 </style>
 </head>
+
 <body>
 
-<h2>📈 AI 掃盤（HTML單機版）</h2>
+<h2>📡 即時掃盤（邊算邊顯示）</h2>
 <button onclick="scan()">開始掃描</button>
-<div id="status"></div>
 
-<table>
-<thead>
-<tr>
-<th>代號</th>
-<th>價格</th>
-<th>漲幅%</th>
-<th>成交量</th>
-<th>MACD</th>
-<th>分數</th>
-</tr>
-</thead>
-<tbody id="data"></tbody>
-</table>
+<div id="status"></div>
+<div id="list"></div>
 
 <script>
 
-// ===== 工具 =====
+// ================= 工具 =================
 const delay = ms => new Promise(r=>setTimeout(r,ms));
 
-function ema(arr, p){
+function ema(arr,p){
     let k = 2/(p+1);
-    let out = [arr[0]];
+    let out=[arr[0]];
     for(let i=1;i<arr.length;i++){
         out.push(arr[i]*k + out[i-1]*(1-k));
     }
@@ -66,46 +76,46 @@ function ema(arr, p){
 }
 
 function macd(arr){
-    let e12 = ema(arr,12);
-    let e26 = ema(arr,26);
+    let e12=ema(arr,12);
+    let e26=ema(arr,26);
     return e12.map((v,i)=>v-e26[i]).at(-1);
 }
 
-function score({price, change, vol, macd}){
-    let s = 0;
-    if(macd > 0) s += 40;
-    if(change > 0) s += 20;
-    if(vol > 2000) s += 20;
-    if(price <= 30) s += 20;
+function score({price,change,vol,macd}){
+    let s=0;
+    if(macd>0)s+=40;
+    if(change>0)s+=20;
+    if(vol>2000)s+=20;
+    if(price<=30)s+=20;
     return s;
 }
 
-// ===== API =====
-async function getStockList(){
+// ================= API =================
+async function getList(){
     let r = await fetch("https://api.finmindtrade.com/api/v4/data",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({dataset:"TaiwanStockInfo"})
+        body:JSON.stringify({dataset:"TaiwanStockInfo"})
     });
     let j = await r.json();
-    return j.data.map(s=>s.stock_id);
+    return j.data.map(x=>x.stock_id);
 }
 
-async function getQuote(id){
+async function quote(id){
     try{
         let r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW`);
         let j = await r.json();
         let m = j.chart.result[0].meta;
 
         return {
-            price: m.regularMarketPrice,
-            vol: m.regularMarketVolume,
-            change: ((m.regularMarketPrice - m.previousClose)/m.previousClose)*100
+            price:m.regularMarketPrice,
+            vol:m.regularMarketVolume,
+            change:((m.regularMarketPrice-m.previousClose)/m.previousClose)*100
         };
     }catch{return null;}
 }
 
-async function getHistory(id){
+async function history(id){
     try{
         let r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW?range=3mo&interval=1d`);
         let j = await r.json();
@@ -113,92 +123,85 @@ async function getHistory(id){
     }catch{return null;}
 }
 
-// ===== 主掃描 =====
+// ================= UI 即時更新 =================
+function addCard(stock){
+    let div = document.createElement("div");
+    div.className = "card " + (stock.score>=60 ? "good":"bad");
+
+    div.innerHTML = `
+        <div class="row">
+            <b>${stock.id}</b>
+            <b>${stock.price}</b>
+        </div>
+        <div class="small">
+            漲跌：${stock.change.toFixed(2)}% |
+            MACD：${stock.macd.toFixed(2)} |
+            分數：${stock.score}
+        </div>
+    `;
+
+    document.getElementById("list").prepend(div);
+}
+
+// ================= 主掃描（🔥關鍵） =================
 async function scan(){
 
-    const status = document.getElementById("status");
-    const table = document.getElementById("data");
+    const list = await getList();
+    const sample = list.slice(0,300);
 
-    table.innerHTML = "";
-    status.innerText = "取得股票清單...";
+    document.getElementById("list").innerHTML="";
+    document.getElementById("status").innerText="開始掃描...";
 
-    let list = await getStockList();
+    let i=0;
 
-    // 👉 控制數量（純HTML極限）
-    let sample = list.slice(0, 300);
+    for(const id of sample){
 
-    let results = [];
+        document.getElementById("status").innerText =
+            `掃描中 ${i}/${sample.length} ｜ ${id}`;
 
-    for(let i=0;i<sample.length;i++){
+        i++;
 
-        let id = sample[i];
-        status.innerText = `掃描中 ${i}/${sample.length}`;
-
-        let quote = await Promise.race([
-            getQuote(id),
-            delay(3000).then(()=>null)
+        // 👉 並行timeout
+        let q = await Promise.race([
+            quote(id),
+            delay(2500).then(()=>null)
         ]);
 
-        if(!quote) continue;
-        if(quote.price > 30) continue;
+        if(!q) continue;
+        if(q.price > 30) continue;
 
-        let history = await Promise.race([
-            getHistory(id),
-            delay(3000).then(()=>null)
+        let h = await Promise.race([
+            history(id),
+            delay(2500).then(()=>null)
         ]);
 
-        if(!history || history.length < 30) continue;
+        if(!h || h.length<30) continue;
 
-        let m = macd(history);
+        let m = macd(h);
 
         let s = score({
-            price: quote.price,
-            change: quote.change,
-            vol: quote.vol,
-            macd: m
+            price:q.price,
+            change:q.change,
+            vol:q.vol,
+            macd:m
         });
 
-        if(s >= 60){
-            results.push({
+        if(s>=60){
+            addCard({
                 id,
-                price: quote.price,
-                change: quote.change.toFixed(2),
-                vol: quote.vol,
-                macd: m.toFixed(2),
-                score: s
+                ...q,
+                macd:m,
+                score:s
             });
         }
 
-        // 👉 每10筆更新畫面（不卡）
-        if(i % 10 === 0){
-            render(results);
-        }
-
-        if(i % 20 === 0){
-            await delay(1000);
+        // 👉 每掃10支讓UI呼吸一下
+        if(i%10===0){
+            await delay(200);
         }
     }
 
-    render(results);
-    status.innerText = "掃描完成";
-}
-
-// ===== 顯示 =====
-function render(results){
-
-    results.sort((a,b)=>b.score-a.score);
-
-    document.getElementById("data").innerHTML =
-        results.map(s=>`
-        <tr>
-            <td>${s.id}</td>
-            <td>${s.price}</td>
-            <td class="${s.change>0?'up':'down'}">${s.change}%</td>
-            <td>${s.vol}</td>
-            <td>${s.macd}</td>
-            <td>${s.score}</td>
-        </tr>
-    `).join("");
+    document.getElementById("status").innerText="掃描完成";
 }
 
 </script>
