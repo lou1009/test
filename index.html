@@ -2,170 +2,203 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>台股掃盤推薦</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
+<title>全台股掃盤（單檔HTML版）</title>
 <style>
-body{background:#0b0e14;color:#e2e8f4;font-family:-apple-system}
-.header{padding:16px;background:#131720}
-button{margin-right:8px}
-.results{padding:16px}
-.card{background:#1a1f2e;margin-bottom:12px;padding:12px;border-radius:10px}
-.reco{background:#132a1f;border:1px solid #34c77b}
+body {
+    background:#0f172a;
+    color:#e2e8f0;
+    font-family:Arial;
+    padding:20px;
+}
+button {
+    padding:10px 20px;
+    background:#22c55e;
+    border:none;
+    color:white;
+    cursor:pointer;
+}
+table {
+    width:100%;
+    margin-top:20px;
+    border-collapse:collapse;
+}
+td,th {
+    padding:8px;
+    border-bottom:1px solid #334155;
+    text-align:center;
+}
+.up {color:#22c55e;}
+.down {color:#ef4444;}
 </style>
 </head>
-
 <body>
 
-<div class="header">
-  <button onclick="scan()">🚀 一鍵掃盤</button>
-  <span id="status"></span>
-</div>
+<h2>📈 AI 掃盤（HTML單機版）</h2>
+<button onclick="scan()">開始掃描</button>
+<div id="status"></div>
 
-<div class="results" id="results"></div>
+<table>
+<thead>
+<tr>
+<th>代號</th>
+<th>價格</th>
+<th>漲幅%</th>
+<th>成交量</th>
+<th>MACD</th>
+<th>分數</th>
+</tr>
+</thead>
+<tbody id="data"></tbody>
+</table>
 
 <script>
 
-// 👉 掃盤清單（你可以自己擴充）
-const WATCH = [
-  '1101','1216','1301','1326','2002',
-  '2303','2317','2330','2344','2357',
-  '2382','2408','2412','2454',
-  '2603','2609','2610',
-  '2881','2882','2886','2891',
-  '3034','3045','3231','3481','3702'
-];
+// ===== 工具 =====
+const delay = ms => new Promise(r=>setTimeout(r,ms));
 
-
-// ===== 抓資料 =====
-async function fetchData(code){
-
-  try{
-    const url = `https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=json&date=20240101&stockNo=${code}`;
-    const r = await fetch(url,{
-      headers:{
-        'Accept':'application/json',
-        'Referer':'https://www.twse.com.tw/'
-      }
-    });
-
-    const j = await r.json();
-
-    if(j.data){
-      return j.data.map(row=>({
-        date:row[0],
-        open:parseFloat(row[3]),
-        high:parseFloat(row[4]),
-        low:parseFloat(row[5]),
-        close:parseFloat(row[6])
-      }));
+function ema(arr, p){
+    let k = 2/(p+1);
+    let out = [arr[0]];
+    for(let i=1;i<arr.length;i++){
+        out.push(arr[i]*k + out[i-1]*(1-k));
     }
-  }catch(e){}
-
-  // fallback Yahoo
-  const yf = `https://corsproxy.io/?${encodeURIComponent(
-    `https://query1.finance.yahoo.com/v8/finance/chart/${code}.TW?interval=1d&range=3mo`
-  )}`;
-
-  const r = await fetch(yf);
-  const j = await r.json();
-
-  const res = j.chart.result[0];
-
-  return res.timestamp.map((t,i)=>({
-    date:new Date(t*1000).toISOString().slice(0,10),
-    open:res.indicators.quote[0].open[i],
-    high:res.indicators.quote[0].high[i],
-    low:res.indicators.quote[0].low[i],
-    close:res.indicators.quote[0].close[i]
-  }));
+    return out;
 }
 
-
-// ===== 布林 =====
-function boll(closes){
-  return closes.map((_,i)=>{
-    if(i<19) return {};
-    const s = closes.slice(i-19,i+1);
-    const avg = s.reduce((a,b)=>a+b)/20;
-    const std = Math.sqrt(s.reduce((a,b)=>a+(b-avg)**2,0)/20);
-    return {mid:avg,up:avg+2*std,low:avg-2*std};
-  });
+function macd(arr){
+    let e12 = ema(arr,12);
+    let e26 = ema(arr,26);
+    return e12.map((v,i)=>v-e26[i]).at(-1);
 }
 
-
-// ===== 畫圖 =====
-function drawChart(id,data,bands){
-  new Chart(document.getElementById(id),{
-    type:'line',
-    data:{
-      labels:data.map(d=>d.date),
-      datasets:[
-        {data:data.map(d=>d.close),borderWidth:1},
-        {data:bands.map(b=>b.up),borderWidth:1},
-        {data:bands.map(b=>b.mid),borderWidth:1},
-        {data:bands.map(b=>b.low),borderWidth:1}
-      ]
-    },
-    options:{plugins:{legend:{display:false}}}
-  });
+function score({price, change, vol, macd}){
+    let s = 0;
+    if(macd > 0) s += 40;
+    if(change > 0) s += 20;
+    if(vol > 2000) s += 20;
+    if(price <= 30) s += 20;
+    return s;
 }
 
+// ===== API =====
+async function getStockList(){
+    let r = await fetch("https://api.finmindtrade.com/api/v4/data",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({dataset:"TaiwanStockInfo"})
+    });
+    let j = await r.json();
+    return j.data.map(s=>s.stock_id);
+}
 
-// ===== 掃盤 =====
+async function getQuote(id){
+    try{
+        let r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW`);
+        let j = await r.json();
+        let m = j.chart.result[0].meta;
+
+        return {
+            price: m.regularMarketPrice,
+            vol: m.regularMarketVolume,
+            change: ((m.regularMarketPrice - m.previousClose)/m.previousClose)*100
+        };
+    }catch{return null;}
+}
+
+async function getHistory(id){
+    try{
+        let r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW?range=3mo&interval=1d`);
+        let j = await r.json();
+        return j.chart.result[0].indicators.quote[0].close.filter(Boolean);
+    }catch{return null;}
+}
+
+// ===== 主掃描 =====
 async function scan(){
 
-  const results = document.getElementById('results');
-  const status = document.getElementById('status');
+    const status = document.getElementById("status");
+    const table = document.getElementById("data");
 
-  results.innerHTML = '';
-  status.textContent = '掃描中...';
+    table.innerHTML = "";
+    status.innerText = "取得股票清單...";
 
-  let recoList = [];
+    let list = await getStockList();
 
-  for(const code of WATCH){
+    // 👉 控制數量（純HTML極限）
+    let sample = list.slice(0, 300);
 
-    try{
-      status.textContent = `掃描 ${code}...`;
+    let results = [];
 
-      const data = await fetchData(code);
-      const closes = data.map(d=>d.close);
-      const bands = boll(closes);
+    for(let i=0;i<sample.length;i++){
 
-      const last = closes[closes.length-1];
-      const mid = bands[bands.length-1].mid;
+        let id = sample[i];
+        status.innerText = `掃描中 ${i}/${sample.length}`;
 
-      const isBull = last > mid;
-      const isCheap = last <= 30;
+        let quote = await Promise.race([
+            getQuote(id),
+            delay(3000).then(()=>null)
+        ]);
 
-      const isReco = isBull && isCheap;
+        if(!quote) continue;
+        if(quote.price > 30) continue;
 
-      if(isReco){
-        recoList.push(code);
-      }
+        let history = await Promise.race([
+            getHistory(id),
+            delay(3000).then(()=>null)
+        ]);
 
-      const cid = 'c'+Math.random();
+        if(!history || history.length < 30) continue;
 
-      const card = document.createElement('div');
-      card.className = 'card ' + (isReco ? 'reco' : '');
+        let m = macd(history);
 
-      card.innerHTML = `
-        <h3>${code} | ${last} ${isReco ? '🔥推薦' : ''}</h3>
-        <canvas id="${cid}" height="120"></canvas>
-      `;
+        let s = score({
+            price: quote.price,
+            change: quote.change,
+            vol: quote.vol,
+            macd: m
+        });
 
-      results.appendChild(card);
+        if(s >= 60){
+            results.push({
+                id,
+                price: quote.price,
+                change: quote.change.toFixed(2),
+                vol: quote.vol,
+                macd: m.toFixed(2),
+                score: s
+            });
+        }
 
-      drawChart(cid,data,bands);
+        // 👉 每10筆更新畫面（不卡）
+        if(i % 10 === 0){
+            render(results);
+        }
 
-    }catch(e){
-      console.log(code,'失敗');
+        if(i % 20 === 0){
+            await delay(1000);
+        }
     }
-  }
 
-  status.textContent = `完成！推薦：${recoList.join(', ') || '無'}`;
+    render(results);
+    status.innerText = "掃描完成";
+}
+
+// ===== 顯示 =====
+function render(results){
+
+    results.sort((a,b)=>b.score-a.score);
+
+    document.getElementById("data").innerHTML =
+        results.map(s=>`
+        <tr>
+            <td>${s.id}</td>
+            <td>${s.price}</td>
+            <td class="${s.change>0?'up':'down'}">${s.change}%</td>
+            <td>${s.vol}</td>
+            <td>${s.macd}</td>
+            <td>${s.score}</td>
+        </tr>
+    `).join("");
 }
 
 </script>
