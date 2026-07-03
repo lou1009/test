@@ -2,133 +2,117 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>台股技術掃盤 PRO</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
+<title>台股隔日推薦掃盤</title>
 <style>
-body{background:#0b0e14;color:#e2e8f4;font-family:Arial;padding:20px}
-input,button{padding:10px;border-radius:6px;border:1px solid #333}
-button{background:#4f8ef7;color:white;cursor:pointer}
-.card{background:#111827;margin-top:10px;padding:12px;border-radius:8px}
-.up{color:#34c77b}.down{color:#f05c5c}
+body{background:#0b1220;color:#e5e7eb;font-family:sans-serif;padding:20px}
+button{padding:10px 18px;background:#22c55e;border:0;color:#fff;font-weight:700;border-radius:8px}
+.card{background:#111827;margin:10px 0;padding:12px;border-radius:8px;border-left:4px solid #3b82f6}
+.good{border-left-color:#22c55e}
+.mid{border-left-color:#fbbf24}
+.small{font-size:12px;color:#94a3b8}
 </style>
 </head>
-
 <body>
 
-<h2>📊 台股掃盤 PRO（穩定版）</h2>
+<h2>📊 台股「隔日推薦掃盤」</h2>
+<button onclick="start()">開始掃描</button>
 
-<input id="code" placeholder="2330">
-<button onclick="run()">分析</button>
-
-<div id="out"></div>
+<div id="status"></div>
+<div id="list"></div>
 
 <script>
+let current = 1101;
+let running = false;
 
-const sleep = ms => new Promise(r=>setTimeout(r,ms));
+/* ===== Stooq ===== */
+async function getData(code){
+    const url = `https://stooq.com/q/d/l/?s=${code}.tw&i=d`;
+    const res = await fetch(url);
+    const txt = await res.text();
 
-/* ======================
-   ✔ 穩定資料來源（Yahoo）
-====================== */
-async function getData(id){
-  try{
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW?range=3mo&interval=1d`;
-
-    const r = await fetch(url);
-    const j = await r.json();
-
-    const res = j?.chart?.result?.[0];
-    if(!res) return null;
-
-    const close = res.indicators.quote[0].close.filter(Boolean);
-    const price = res.meta.regularMarketPrice;
-
-    return {close, price};
-
-  }catch(e){
-    return null;
-  }
+    const rows = txt.split("\n").slice(1);
+    return rows.map(r=>{
+        const [d,o,h,l,c] = r.split(",");
+        return {c:+c};
+    }).filter(x=>x.c);
 }
 
-/* ======================
-   ✔ MACD（簡化穩定版）
-====================== */
-function ema(arr, p){
-  let k = 2/(p+1);
-  let out=[arr[0]];
-  for(let i=1;i<arr.length;i++){
-    out.push(arr[i]*k + out[i-1]*(1-k));
-  }
-  return out;
+/* ===== EMA ===== */
+function ema(arr,n){
+    let k=2/(n+1),out=[arr[0]];
+    for(let i=1;i<arr.length;i++){
+        out.push(arr[i]*k+out[i-1]*(1-k));
+    }
+    return out;
 }
 
-function macd(close){
-  let dif = ema(close,12).map((v,i)=>v - ema(close,26)[i]);
-  let dea = ema(dif,9);
-  let hist = dif.map((v,i)=>v - dea[i]);
-  return hist;
+/* ===== MACD ===== */
+function macd(arr){
+    const e12=ema(arr,12);
+    const e26=ema(arr,26);
+    const dif=e12.map((v,i)=>v-e26[i]);
+    const dea=ema(dif,9);
+    return dif.map((v,i)=>v-dea[i]);
 }
 
-/* ======================
-   ✔ 評分（簡化穩定）
-====================== */
-function score(close, price){
+/* ===== 評分 ===== */
+function score(data){
+    const close=data.map(x=>x.c);
+    if(close.length<30) return 0;
 
-  let s=0;
+    let s=0;
+    const m=macd(close);
 
-  let ma5 = close.slice(-5).reduce((a,b)=>a+b)/5;
-  let ma20 = close.slice(-20).reduce((a,b)=>a+b)/20;
+    if(m.at(-1)>0 && m.at(-2)<0) s+=40;
 
-  if(price > ma5) s += 30;
-  if(price > ma20) s += 30;
+    const ma20=close.slice(-20).reduce((a,b)=>a+b)/20;
+    if(close.at(-1)>ma20) s+=30;
 
-  let h = Math.max(...close.slice(-10));
-  if(price >= h) s += 40;
+    const high20=Math.max(...close.slice(-20));
+    if(close.at(-1)>=high20) s+=30;
 
-  let hist = macd(close);
-  if(hist.at(-1) > 0 && hist.at(-2) < 0) s += 30;
-
-  return s;
+    return s;
 }
 
-/* ======================
-   ✔ UI
-====================== */
-function show(id, price, sc){
-  let div=document.createElement("div");
-  div.className="card";
-
-  div.innerHTML=`
-    <b>${id}</b><br>
-    價格：${price}<br>
-    分數：${sc}
-  `;
-
-  document.getElementById("out").prepend(div);
+/* ===== 顯示 ===== */
+function add(code,score,price){
+    const div=document.createElement("div");
+    div.className="card "+(score>=80?"good":"mid");
+    div.innerHTML=`
+        <b>${code}</b>
+        <div class="small">價格 ${price} ｜ 評分 ${score}</div>
+    `;
+    document.getElementById("list").appendChild(div);
 }
 
-/* ======================
-   ✔ 主程式
-====================== */
-async function run(){
+/* ===== 主掃描 ===== */
+async function start(){
+    if(running) return;
+    running=true;
 
-  const id = document.getElementById("code").value.trim();
+    for(let i=0;i<20;i++){
+        const code=current++;
+        document.getElementById("status").innerText=`掃描 ${code}`;
 
-  document.getElementById("out").innerHTML="";
+        try{
+            const data=await getData(code);
+            if(data.length<30) continue;
 
-  const data = await getData(id);
+            const s=score(data);
+            const price=data.at(-1).c;
 
-  if(!data){
-    alert("抓不到資料（Yahoo API）");
-    return;
-  }
+            if(s>=60){
+                add(code,s,price);
+            }
 
-  const sc = score(data.close, data.price);
+        }catch(e){}
 
-  show(id, data.price, sc);
+        await new Promise(r=>setTimeout(r,500));
+    }
+
+    running=false;
+    document.getElementById("status").innerText="本輪完成（可再按一次繼續）";
 }
-
 </script>
 
 </body>
