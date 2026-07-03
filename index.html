@@ -2,177 +2,131 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>穩定掃盤 v1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台股技術掃盤 PRO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
 <style>
-body{
-    background:#0b1220;
-    color:#e5e7eb;
-    font-family:Arial;
-    padding:20px;
-}
-button{
-    padding:10px 18px;
-    background:#22c55e;
-    border:none;
-    border-radius:6px;
-    color:white;
-    cursor:pointer;
-    font-weight:bold;
-}
-#status{margin:10px 0;color:#38bdf8;font-family:monospace;}
-.card{
-    background:#111827;
-    margin:6px 0;
-    padding:10px;
-    border-radius:8px;
-    border-left:4px solid #334155;
-}
-.good{border-left-color:#22c55e;}
-.mid{border-left-color:#fbbf24;}
-.bad{border-left-color:#ef4444;}
-.small{font-size:12px;color:#9ca3af;}
+body{background:#0b0e14;color:#e2e8f4;font-family:Arial;padding:20px}
+input,button{padding:10px;border-radius:6px;border:1px solid #333}
+button{background:#4f8ef7;color:white;cursor:pointer}
+.card{background:#111827;margin-top:10px;padding:12px;border-radius:8px}
+.up{color:#34c77b}.down{color:#f05c5c}
 </style>
 </head>
 
 <body>
 
-<h2>🚀 穩定掃盤 v1（保證可運作）</h2>
+<h2>📊 台股掃盤 PRO（穩定版）</h2>
 
-<button onclick="scan()">開始掃描</button>
-<div id="status">待命</div>
-<div id="list"></div>
+<input id="code" placeholder="2330">
+<button onclick="run()">分析</button>
+
+<div id="out"></div>
 
 <script>
 
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 
-/* =========================
-   🟢 固定全市場（先確保可跑）
-   👉 真全市場會太容易炸，先用穩定來源
-========================= */
-async function getStocks(){
-    const twse = await fetch("https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL")
-        .then(r=>r.json())
-        .catch(()=>[]);
+/* ======================
+   ✔ 穩定資料來源（Yahoo）
+====================== */
+async function getData(id){
+  try{
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW?range=3mo&interval=1d`;
 
-    return twse
-        .map(x=>x.Code)
-        .filter(x=>/^\d{4}$/.test(x))
-        .slice(0,200); // 🔥 先限制 200 檔確保會動
+    const r = await fetch(url);
+    const j = await r.json();
+
+    const res = j?.chart?.result?.[0];
+    if(!res) return null;
+
+    const close = res.indicators.quote[0].close.filter(Boolean);
+    const price = res.meta.regularMarketPrice;
+
+    return {close, price};
+
+  }catch(e){
+    return null;
+  }
 }
 
-/* =========================
-   🟡 Yahoo（不走 proxy）
-   👉 失敗就 skip
-========================= */
-async function getPrice(id){
-    try{
-        const r = await fetch(
-            `https://query1.finance.yahoo.com/v8/finance/chart/${id}.TW?range=1mo&interval=1d`
-        );
-
-        const j = await r.json();
-        const res = j?.chart?.result?.[0];
-
-        const close = res?.indicators?.quote?.[0]?.close?.filter(Boolean);
-        const price = res?.meta?.regularMarketPrice;
-
-        if(!close || !price) return null;
-
-        return {close, price};
-    }catch{
-        return null;
-    }
+/* ======================
+   ✔ MACD（簡化穩定版）
+====================== */
+function ema(arr, p){
+  let k = 2/(p+1);
+  let out=[arr[0]];
+  for(let i=1;i<arr.length;i++){
+    out.push(arr[i]*k + out[i-1]*(1-k));
+  }
+  return out;
 }
 
-/* =========================
-   📊 簡化評分（先確保穩定）
-========================= */
+function macd(close){
+  let dif = ema(close,12).map((v,i)=>v - ema(close,26)[i]);
+  let dea = ema(dif,9);
+  let hist = dif.map((v,i)=>v - dea[i]);
+  return hist;
+}
+
+/* ======================
+   ✔ 評分（簡化穩定）
+====================== */
 function score(close, price){
 
-    let s = 0;
+  let s=0;
 
-    let ma10 = close.slice(-10).reduce((a,b)=>a+b)/10;
-    let ma20 = close.slice(-20).reduce((a,b)=>a+b)/20;
+  let ma5 = close.slice(-5).reduce((a,b)=>a+b)/5;
+  let ma20 = close.slice(-20).reduce((a,b)=>a+b)/20;
 
-    let high10 = Math.max(...close.slice(-10));
+  if(price > ma5) s += 30;
+  if(price > ma20) s += 30;
 
-    if(price > ma10) s += 30;
-    if(price > ma20) s += 20;
-    if(price >= high10) s += 25;
+  let h = Math.max(...close.slice(-10));
+  if(price >= h) s += 40;
 
-    let up = 0;
-    for(let i=close.length-5;i<close.length;i++){
-        if(close[i] > close[i-1]) up++;
-    }
-    if(up >= 3) s += 25;
+  let hist = macd(close);
+  if(hist.at(-1) > 0 && hist.at(-2) < 0) s += 30;
 
-    return s;
+  return s;
 }
 
-/* =========================
-   🧾 UI
-========================= */
-function add(id,price,sc){
+/* ======================
+   ✔ UI
+====================== */
+function show(id, price, sc){
+  let div=document.createElement("div");
+  div.className="card";
 
-    let div=document.createElement("div");
+  div.innerHTML=`
+    <b>${id}</b><br>
+    價格：${price}<br>
+    分數：${sc}
+  `;
 
-    let cls =
-        sc>=80?"good":
-        sc>=60?"mid":"bad";
-
-    div.className="card "+cls;
-
-    div.innerHTML=`
-        <b>${id}</b>
-        <div class="small">
-            價格 ${price.toFixed(2)} ｜ 分數 ${sc}
-        </div>
-    `;
-
-    document.getElementById("list").prepend(div);
+  document.getElementById("out").prepend(div);
 }
 
-/* =========================
-   🚀 主掃描（保證會動）
-========================= */
-async function scan(){
+/* ======================
+   ✔ 主程式
+====================== */
+async function run(){
 
-    document.getElementById("list").innerHTML="";
-    document.getElementById("status").innerText="載入股票清單...";
+  const id = document.getElementById("code").value.trim();
 
-    const stocks = await getStocks();
+  document.getElementById("out").innerHTML="";
 
-    let ok = 0;
-    let fail = 0;
+  const data = await getData(id);
 
-    for(let i=0;i<stocks.length;i++){
+  if(!data){
+    alert("抓不到資料（Yahoo API）");
+    return;
+  }
 
-        let id = stocks[i];
+  const sc = score(data.close, data.price);
 
-        document.getElementById("status").innerText =
-        `掃描 ${i+1}/${stocks.length} | 成功:${ok} 失敗:${fail}`;
-
-        const data = await getPrice(id);
-
-        if(!data){
-            fail++;
-            continue;
-        }
-
-        const sc = score(data.close, data.price);
-
-        if(sc >= 60){
-            ok++;
-            add(id, data.price, sc);
-        }
-
-        await sleep(80); // 🔥 防卡 + 防封鎖
-    }
-
-    document.getElementById("status").innerText =
-    `完成｜有效 ${ok} 檔 / 失敗 ${fail}`;
+  show(id, data.price, sc);
 }
 
 </script>
