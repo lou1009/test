@@ -2,44 +2,73 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<title>每日台股掃盤系統</title>
+<title>台股掃盤排行榜</title>
 <style>
 body{background:#0b1220;color:#e5e7eb;font-family:sans-serif;padding:20px}
-button{padding:10px 18px;background:#22c55e;border:0;color:#fff;border-radius:8px}
-.card{background:#111827;margin:8px 0;padding:10px;border-radius:8px;border-left:4px solid #3b82f6}
-.good{border-left-color:#22c55e}
+
+button{
+  padding:10px 18px;
+  background:#22c55e;
+  border:0;
+  color:#fff;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.card{
+  background:#111827;
+  margin:8px 0;
+  padding:10px;
+  border-radius:8px;
+  border-left:4px solid #3b82f6;
+}
+
+.a{border-left-color:#22c55e}
+.b{border-left-color:#fbbf24}
+.c{border-left-color:#3b82f6}
+
 .small{font-size:12px;color:#94a3b8}
+
+.rank{
+  font-weight:800;
+  margin-right:8px;
+}
+
+.topbar{
+  margin:10px 0;
+  font-size:13px;
+  color:#94a3b8;
+}
 </style>
 </head>
 <body>
 
-<h2>📊 每日台股掃盤</h2>
+<h2>📊 台股掃盤排行榜（TOP版）</h2>
 
-<button onclick="manualScan()">手動重新掃描</button>
+<button onclick="scan()">開始掃描</button>
 
-<div id="status"></div>
+<div class="topbar" id="status">尚未掃描</div>
 <div id="list"></div>
 
 <script>
 let code = 1101;
-let results = [];
-const KEY = "daily_scan_data";
-const TIME_KEY = "daily_scan_time";
 
-/* ===== Stooq ===== */
+/* ===== 抓資料 ===== */
 async function getData(c){
     const url = `https://stooq.com/q/d/l/?s=${c}.tw&i=d`;
     const res = await fetch(url);
     const txt = await res.text();
 
     const rows = txt.split("\n").slice(1);
+
     return rows.map(r=>{
         const x = r.split(",");
         return +x[4];
     }).filter(x=>x);
 }
 
-/* ===== MACD簡化 ===== */
+/* ===== EMA ===== */
 function ema(arr,n){
     let k=2/(n+1),out=[arr[0]];
     for(let i=1;i<arr.length;i++){
@@ -48,6 +77,7 @@ function ema(arr,n){
     return out;
 }
 
+/* ===== MACD ===== */
 function macd(arr){
     const e12=ema(arr,12);
     const e26=ema(arr,26);
@@ -74,97 +104,63 @@ function score(close){
     return s;
 }
 
-/* ===== 顯示 ===== */
-function show(code,s,price){
-    const div=document.createElement("div");
-    div.className="card "+(s>=80?"good":"");
-    div.innerHTML=`
-        <b>${code}</b>
-        <div class="small">價格 ${price} ｜ 評分 ${s}</div>
-    `;
-    document.getElementById("list").prepend(div);
-}
+/* ===== 掃市場（範圍） ===== */
+async function scan(){
+    const results = [];
 
-/* ===== 掃描20支（避免卡） ===== */
-async function scanOnce(){
-    results = [];
-    for(let i=0;i<20;i++){
-        const c = code++;
-        document.getElementById("status").innerText = "掃描 " + c;
+    document.getElementById("list").innerHTML = "";
+
+    for(let i=1101;i<1300;i++){   // 先掃一段（避免爆）
+        document.getElementById("status").innerText = `掃描中：${i}`;
 
         try{
-            const data = await getData(c);
+            const data = await getData(i);
             if(data.length < 30) continue;
 
             const s = score(data);
             const price = data.at(-1);
 
-            if(s >= 60){
-                results.push({code:c,score:s,price});
-                show(c,s,price);
+            if(s > 0){
+                results.push({
+                    code:i,
+                    score:s,
+                    price
+                });
             }
+
         }catch(e){}
 
-        await new Promise(r=>setTimeout(r,200));
+        await new Promise(r=>setTimeout(r,80));
     }
 
-    saveData();
-}
+    /* ===== 排行榜排序 ===== */
+    results.sort((a,b)=>b.score - a.score);
 
-/* ===== 存資料 ===== */
-function saveData(){
-    localStorage.setItem(KEY, JSON.stringify(results));
-    localStorage.setItem(TIME_KEY, new Date().toISOString());
+    /* ===== 取 TOP 20 ===== */
+    const top = results.slice(0,20);
+
+    top.forEach((x,idx)=>{
+        let cls = "c";
+        if(x.score >= 80) cls = "a";
+        else if(x.score >= 60) cls = "b";
+
+        const div = document.createElement("div");
+        div.className = "card " + cls;
+
+        div.innerHTML = `
+            <span class="rank">#${idx+1}</span>
+            <b>${x.code}</b>
+            <div class="small">
+                價格 ${x.price} ｜ 評分 ${x.score}
+            </div>
+        `;
+
+        document.getElementById("list").appendChild(div);
+    });
+
     document.getElementById("status").innerText =
-        "更新完成：" + new Date().toLocaleString();
+        `完成｜共掃 ${results.length} 檔｜顯示TOP ${top.length}`;
 }
-
-/* ===== 載入資料 ===== */
-function loadData(){
-    const data = localStorage.getItem(KEY);
-    const time = localStorage.getItem(TIME_KEY);
-
-    if(time){
-        document.getElementById("status").innerText =
-            "上次更新：" + new Date(time).toLocaleString();
-    }
-
-    if(data){
-        const arr = JSON.parse(data);
-        arr.forEach(d=>show(d.code,d.score,d.price));
-        return true;
-    }
-    return false;
-}
-
-/* ===== 判斷是否要更新 ===== */
-function needUpdate(){
-    const t = localStorage.getItem(TIME_KEY);
-    if(!t) return true;
-
-    const last = new Date(t);
-    const now = new Date();
-
-    return last.toDateString() !== now.toDateString();
-}
-
-/* ===== 主流程 ===== */
-async function init(){
-    if(loadData() && !needUpdate()){
-        document.getElementById("status").innerText += "（已是今日最新）";
-        return;
-    }
-
-    await scanOnce();
-}
-
-/* ===== 手動 ===== */
-async function manualScan(){
-    code = 1101;
-    await scanOnce();
-}
-
-init();
 </script>
 
 </body>
