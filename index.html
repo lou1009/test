@@ -39,17 +39,21 @@
     <p>提示：每天下午 <strong>16:00 盤後資料更新後</strong> 執行最為準確。本網頁透過公開 CORS 代理讀取證交所資料。</p>
 
     <div class="notice">
-        <strong>關於「黑飛」條件的重要說明：</strong>
-        證交所公開 API 只提供「最新一天」的全市場快照，不提供整個市場的歷史多日資料。
-        因此本工具會在你每次執行「條件 4」時，把當天的收盤資料存進瀏覽器的個人儲存空間，
-        並隨著你每天使用而逐漸累積歷史。<u>五日均線與「量縮」比較，必須累積滿 5 個交易日的資料後才會是真實計算值</u>；
-        在累積足夠之前，相關欄位會顯示「資料累積中」而不是假造的數字。
-        三大法人資料（條件 5）因為證交所本身就支援依日期查詢，不受此限制。
+        <strong>關於歷史資料的說明：</strong>
+        證交所「今日快照」型的 API（如全市場收盤 STOCK_DAY_ALL）只提供最新一天資料，不含歷史。
+        <strong>條件 4（黑飛）</strong>目前仍採用「每次執行都存今天的快照，累積滿 5 個交易日才算出真實五日線」的做法，
+        在累積足夠之前會顯示「資料累積中」而不是假數字。<br>
+        <strong>條件 6（布林通道）</strong>則改用另一支支援「依日期查詢全市場資料」的 API（MI_INDEX），
+        第一次執行時會自動回補過去約 20 個交易日的全市場收盤價（存進瀏覽器本機儲存），
+        <u>不需要等好幾天，這一版就能算出真實的 20 日布林通道</u>。第一次執行因為要依序抓 20 天資料，
+        會需要 30 秒~1 分鐘左右；之後因為有快取，只需要補當天新的一天，速度會快很多。<br>
+        三大法人資料（條件 5）證交所本身就支援依日期查詢，同樣不受「只有今天」的限制。
     </div>
 
     <div class="btn-group">
         <button id="btn5" class="btn">篩選【條件 5：三大法人同買】</button>
         <button id="btn4" class="btn btn-orange">篩選【條件 4：黑飛型態(含傳產過濾)】</button>
+        <button id="btn6" class="btn" style="background-color:#2f855a;">篩選【條件 6：日K突破布林通道】</button>
         <button id="btnReset" class="btn" style="background-color:#a0aec0;">清除本機累積資料</button>
     </div>
 
@@ -93,6 +97,28 @@
                 </tr>
             </thead>
             <tbody id="body4"></tbody>
+        </table>
+    </div>
+
+    <!-- 條件6結果表格 -->
+    <div id="tab6" class="tab-content">
+        <h3>策略：日K突破 20 日布林通道</h3>
+        <p style="color:#718096; font-size:14px;">※ 上軌/下軌採 20 日均線 ± 2 倍標準差（業界常見預設值）。收盤價突破上軌視為偏多訊號，跌破下軌視為偏空訊號。</p>
+        <p id="bollingerProgress" class="progress-note"></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>代號</th>
+                    <th>名稱</th>
+                    <th>訊號</th>
+                    <th>今日收盤</th>
+                    <th>20日均線</th>
+                    <th>上軌</th>
+                    <th>下軌</th>
+                    <th>%B 位置</th>
+                </tr>
+            </thead>
+            <tbody id="body6"></tbody>
         </table>
     </div>
 </div>
@@ -155,7 +181,7 @@ async function fetchData(url, isJson = true) {
 // 修正重點：原本呼叫的 openapi.twse.com.tw/v1/t86/t86 是錯誤路徑（會 404）。
 // 正確資料來源是 www.twse.com.tw/fund/T86，且此端點支援依日期查詢（selectType=ALL 取全部股票）。
 btn5.addEventListener('click', async () => {
-    btn4.disabled = btn5.disabled = true;
+    btn4.disabled = btn5.disabled = btn6.disabled = true;
     switchTab('tab5');
     const tbody = document.getElementById('body5');
     tbody.innerHTML = '';
@@ -219,7 +245,7 @@ btn5.addEventListener('click', async () => {
     } catch (err) {
         statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
     } finally {
-        btn4.disabled = btn5.disabled = false;
+        btn4.disabled = btn5.disabled = btn6.disabled = false;
     }
 });
 
@@ -231,7 +257,7 @@ btn5.addEventListener('click', async () => {
 //    當累積滿 5 個交易日快照後，才會顯示真實計算出的五日均線位置與量縮比例；
 //    不足 5 天時，明確標示「資料累積中」，不再顯示假造的「已守穩」「量縮顯著」字樣。
 btn4.addEventListener('click', async () => {
-    btn4.disabled = btn5.disabled = true;
+    btn4.disabled = btn5.disabled = btn6.disabled = true;
     switchTab('tab4');
     const tbody = document.getElementById('body4');
     tbody.innerHTML = '';
@@ -375,21 +401,206 @@ btn4.addEventListener('click', async () => {
     } catch (err) {
         statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
     } finally {
-        btn4.disabled = btn5.disabled = false;
+        btn4.disabled = btn5.disabled = btn6.disabled = false;
+    }
+});
+
+// ==================== 策略 6：布林通道進場 ====================
+// 核心解法：MI_INDEX 這支 API 支援「依日期查詢全市場資料」（date=YYYYMMDD&type=ALL），
+// 因此可以直接回補過去 N 個交易日的全市場收盤價，不需要像黑飛那樣每天累積等待。
+// 每天抓到的資料會存進 window.storage（key: mi:YYYYMMDD），之後重複執行只需要補新的一天。
+
+const btn6 = document.getElementById('btn6');
+const bollingerProgress = document.getElementById('bollingerProgress');
+const BOLLINGER_PERIOD = 20;
+
+function formatDateKey(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}${m}${day}`;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 從 MI_INDEX 的回應中找出「個股資訊」表格（欄位順序或表格編號可能因版本略有不同，
+// 所以動態尋找含有「證券代號」與「收盤價」的 fields 陣列，而不是寫死 fields9/data9）
+function parseMiIndexAllStocks(raw) {
+    const keys = Object.keys(raw);
+    for (const key of keys) {
+        const m = key.match(/^fields(\d+)$/);
+        if (!m) continue;
+        const fields = raw[key];
+        if (!Array.isArray(fields)) continue;
+        const codeIdx = fields.indexOf('證券代號');
+        const closeIdx = fields.indexOf('收盤價');
+        const nameIdx = fields.indexOf('證券名稱');
+        if (codeIdx === -1 || closeIdx === -1) continue;
+        const dataKey = `data${m[1]}`;
+        const rows = raw[dataKey];
+        if (!Array.isArray(rows)) continue;
+
+        const result = {};
+        rows.forEach(row => {
+            const code = row[codeIdx];
+            const closeRaw = String(row[closeIdx]).replace(/,/g, '').trim();
+            const close = parseFloat(closeRaw);
+            if (code && !isNaN(close)) {
+                result[code] = { close, name: nameIdx !== -1 ? row[nameIdx] : code };
+            }
+        });
+        if (Object.keys(result).length > 0) return result;
+    }
+    return null;
+}
+
+// 取得（並快取）某一天的全市場收盤價；若當天無交易資料（假日等）回傳 null
+async function fetchTradingDayCloses(dateKey) {
+    try {
+        const cached = await window.storage.get(`mi:${dateKey}`, false);
+        if (cached && cached.value) return JSON.parse(cached.value);
+    } catch (e) {
+        // 快取不存在，繼續走網路請求
+    }
+
+    try {
+        const url = `https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=${dateKey}&type=ALL`;
+        const raw = await fetchData(url);
+        if (!raw || raw.stat !== 'OK') return null;
+        const parsed = parseMiIndexAllStocks(raw);
+        if (!parsed) return null;
+        try {
+            await window.storage.set(`mi:${dateKey}`, JSON.stringify(parsed), false);
+        } catch (e) {
+            // 儲存失敗不影響本次計算，只是下次要重新抓
+        }
+        return parsed;
+    } catch (e) {
+        return null;
+    }
+}
+
+// 找到最近一個「有交易資料」的日期，並往回收集滿 neededDays 天
+async function backfillTradingDays(neededDays, onProgress) {
+    const collected = [];
+    const cursor = new Date();
+    let guard = 0;
+    const MAX_LOOKBACK = 60; // 最多往回找 60 個日曆天，避免無限迴圈
+
+    while (collected.length < neededDays && guard < MAX_LOOKBACK) {
+        const dateKey = formatDateKey(cursor);
+        const closes = await fetchTradingDayCloses(dateKey);
+        if (closes) {
+            collected.push({ date: dateKey, closes });
+            if (onProgress) onProgress(collected.length, neededDays);
+        }
+        cursor.setDate(cursor.getDate() - 1);
+        guard++;
+        await sleep(350); // 溫和的節流，避免對代理伺服器與證交所發送過快的請求
+    }
+
+    collected.reverse(); // 由舊到新排序
+    return collected;
+}
+
+btn6.addEventListener('click', async () => {
+    btn4.disabled = btn5.disabled = btn6.disabled = true;
+    switchTab('tab6');
+    const tbody = document.getElementById('body6');
+    tbody.innerHTML = '';
+    bollingerProgress.innerHTML = '';
+
+    try {
+        statusDiv.innerHTML = `正在回補過去 ${BOLLINGER_PERIOD} 個交易日的全市場收盤價（若已有快取會很快）...`;
+
+        const days = await backfillTradingDays(BOLLINGER_PERIOD, (done, total) => {
+            bollingerProgress.innerHTML = `已取得 ${done} / ${total} 個交易日資料...`;
+        });
+
+        if (days.length < BOLLINGER_PERIOD) {
+            throw new Error(`只成功取得 ${days.length} 個交易日資料，不足 ${BOLLINGER_PERIOD} 天，可能證交所近期資料不足或連線不穩，請稍後再試一次。`);
+        }
+
+        statusDiv.innerHTML = '正在計算 20 日布林通道...';
+
+        // 整理成 code -> { name, closes: [oldest ... newest] }
+        const seriesMap = {};
+        days.forEach(day => {
+            Object.entries(day.closes).forEach(([code, info]) => {
+                if (!seriesMap[code]) seriesMap[code] = { name: info.name, closes: [] };
+                seriesMap[code].closes.push(info.close);
+                seriesMap[code].name = info.name; // 保留最新的名稱
+            });
+        });
+
+        let matchCount = 0;
+        const latestDateKey = days[days.length - 1].date;
+
+        Object.entries(seriesMap).forEach(([code, info]) => {
+            if (info.closes.length < BOLLINGER_PERIOD) return; // 資料不足 20 天，跳過（例如新上市股）
+
+            const window20 = info.closes.slice(-BOLLINGER_PERIOD);
+            const mean = window20.reduce((a, b) => a + b, 0) / BOLLINGER_PERIOD;
+            const variance = window20.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / BOLLINGER_PERIOD;
+            const std = Math.sqrt(variance);
+            const upper = mean + 2 * std;
+            const lower = mean - 2 * std;
+            const latestClose = window20[window20.length - 1];
+
+            let signal = null;
+            if (latestClose > upper) signal = 'up';
+            else if (latestClose < lower) signal = 'down';
+            if (!signal) return; // 只列出真正突破通道的標的
+
+            matchCount++;
+            const percentB = ((latestClose - lower) / (upper - lower) * 100).toFixed(1);
+            const signalHtml = signal === 'up'
+                ? '<span class="red">↑ 突破上軌(偏多)</span>'
+                : '<span class="green">↓ 跌破下軌(偏空)</span>';
+
+            tbody.insertAdjacentHTML('beforeend', `
+                <tr>
+                    <td><strong>${code}</strong></td>
+                    <td>${info.name}</td>
+                    <td>${signalHtml}</td>
+                    <td>${latestClose.toFixed(2)}</td>
+                    <td>${mean.toFixed(2)}</td>
+                    <td>${upper.toFixed(2)}</td>
+                    <td>${lower.toFixed(2)}</td>
+                    <td>${percentB}%</td>
+                </tr>
+            `);
+        });
+
+        bollingerProgress.innerHTML = `使用交易日資料範圍：${days[0].date} ~ ${latestDateKey}（共 ${days.length} 天，皆為真實計算值）`;
+        statusDiv.innerHTML = `🎉 篩選完成！今日（${latestDateKey}）共有 ${matchCount} 檔標的突破 20 日布林通道。`;
+    } catch (err) {
+        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
+    } finally {
+        btn4.disabled = btn5.disabled = btn6.disabled = false;
     }
 });
 
 // 清除本機累積的歷史快照
 btnReset.addEventListener('click', async () => {
-    if (!confirm('確定要清除所有已累積的歷史快照嗎？五日均線需要重新累積 5 個交易日。')) return;
+    if (!confirm('確定要清除所有已累積的歷史快照嗎？黑飛的五日均線需要重新累積 5 個交易日，布林通道則需要重新回補約 20 個交易日。')) return;
     try {
-        const listResult = await window.storage.list('stockday:', false);
-        const keys = (listResult && listResult.keys) ? listResult.keys : [];
+        const [stockdayList, miList] = await Promise.all([
+            window.storage.list('stockday:', false),
+            window.storage.list('mi:', false)
+        ]);
+        const keys = [
+            ...((stockdayList && stockdayList.keys) ? stockdayList.keys : []),
+            ...((miList && miList.keys) ? miList.keys : [])
+        ];
         for (const key of keys) {
             await window.storage.delete(key, false);
         }
-        statusDiv.innerHTML = `已清除 ${keys.length} 筆本機累積快照。`;
+        statusDiv.innerHTML = `已清除 ${keys.length} 筆本機累積快照（黑飛與布林通道兩種快取皆已清空）。`;
         historyStatus.innerHTML = '';
+        bollingerProgress.innerHTML = '';
     } catch (e) {
         statusDiv.innerHTML = `<span style="color:red;">清除失敗: ${e.message}</span>`;
     }
