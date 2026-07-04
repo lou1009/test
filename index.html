@@ -1,166 +1,119 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<title>台股掃盤排行榜</title>
-<style>
-body{background:#0b1220;color:#e5e7eb;font-family:sans-serif;padding:20px}
-
-button{
-  padding:10px 18px;
-  background:#22c55e;
-  border:0;
-  color:#fff;
-  border-radius:8px;
-  font-weight:700;
-  cursor:pointer;
-}
-
-.card{
-  background:#111827;
-  margin:8px 0;
-  padding:10px;
-  border-radius:8px;
-  border-left:4px solid #3b82f6;
-}
-
-.a{border-left-color:#22c55e}
-.b{border-left-color:#fbbf24}
-.c{border-left-color:#3b82f6}
-
-.small{font-size:12px;color:#94a3b8}
-
-.rank{
-  font-weight:800;
-  margin-right:8px;
-}
-
-.topbar{
-  margin:10px 0;
-  font-size:13px;
-  color:#94a3b8;
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台股籌碼策略篩選器</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h2 { color: #1a365d; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-top: 0; }
+        .btn { background-color: #3182ce; color: white; border: none; padding: 12px 24px; font-size: 16px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        .btn:hover { background-color: #2b6cb0; }
+        .btn:disabled { background-color: #cbd5e0; cursor: not-allowed; }
+        #status { margin-top: 15px; font-weight: bold; color: #4a5568; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background-color: #edf2f7; color: #2d3748; }
+        tr:nth-child(even) { background-color: #f7fafc; }
+        .positive { color: #e53e3e; font-weight: bold; } /* 台股習慣紅色代表買超/上漲 */
+    </style>
 </head>
 <body>
 
-<h2>📊 台股掃盤排行榜（TOP版）</h2>
+<div class="container">
+    <h2>台股籌碼篩選器 (三大法人同買且出量)</h2>
+    <p>說明：本工具直接調用台灣證券交易所 OpenAPI。請於<strong>台股交易日下午 16:00 後</strong>執行，方能取得最新當日數據。</p>
+    
+    <button id="runBtn" class="btn">開始分析今日籌碼</button>
+    <div id="status">準備就緒，請點擊按鈕...</div>
 
-<button onclick="scan()">開始掃描</button>
-
-<div class="topbar" id="status">尚未掃描</div>
-<div id="list"></div>
+    <table id="resultTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>股票代號</th>
+                <th>股票名稱</th>
+                <th>外資買超(張)</th>
+                <th>投信買超(張)</th>
+                <th>自營商買超(張)</th>
+                <th>三大法人合計(張)</th>
+            </tr>
+        </thead>
+        <tbody id="resultBody">
+            <!-- 篩選結果將生成在此處 -->
+        </tbody>
+    </table>
+</div>
 
 <script>
-let code = 1101;
+document.getElementById('runBtn').addEventListener('click', async () => {
+    const statusDiv = document.getElementById('status');
+    const runBtn = document.getElementById('runBtn');
+    const table = document.getElementById('resultTable');
+    const tbody = document.getElementById('resultBody');
+    
+    // 初始化介面
+    runBtn.disabled = true;
+    table.style.display = 'none';
+    tbody.innerHTML = '';
+    statusDiv.innerHTML = '正在從證交所下載三大法人進出數據 (t86)...';
 
-/* ===== 抓資料 ===== */
-async function getData(c){
-    const url = `https://stooq.com/q/d/l/?s=${c}.tw&i=d`;
-    const res = await fetch(url);
-    const txt = await res.text();
+    try {
+        // 1. 抓取三大法人買賣超日報
+        // 證交所 OpenAPI 網址 (法人買賣超)
+        const t86Url = 'https://openapi.twse.com.tw/v1/t86/t86';
+        const response = await fetch(t86Url);
+        
+        if (!response.ok) throw new Error('無法取得證交所資料，可能尚未開盤或 API 伺服器繁忙。');
+        
+        const data = await response.json();
+        statusDiv.innerHTML = `成功下載 ${data.length} 筆法人數據，正在執行邏輯篩選...`;
 
-    const rows = txt.split("\n").slice(1);
+        let matchCount = 0;
 
-    return rows.map(r=>{
-        const x = r.split(",");
-        return +x[4];
-    }).filter(x=>x);
-}
+        // 2. 遍歷並執行策略邏輯
+        data.forEach(item => {
+            // 解析各法人買賣超張數 (API 欄位為字串，需轉為整數)
+            // 欄位名稱對應：外陸資買賣超股數、投信買賣超股數、自營商買賣超股數
+            // 註：證交所 API 單位為「股」，需除以 1000 轉換為「張」
+            const foreignNet = Math.round(parseInt(item["外陸資買賣超股數(不含外資自營商)"] || 0) / 1000);
+            const investmentTrustNet = Math.round(parseInt(item["投信買賣超股數"] || 0) / 1000);
+            const dealerNet = Math.round(parseInt(item["自營商買賣超股數"] || 0) / 1000);
+            const totalNet = Math.round(parseInt(item["三大法人買賣超股數"] || 0) / 1000);
 
-/* ===== EMA ===== */
-function ema(arr,n){
-    let k=2/(n+1),out=[arr[0]];
-    for(let i=1;i<arr.length;i++){
-        out.push(arr[i]*k+out[i-1]*(1-k));
-    }
-    return out;
-}
-
-/* ===== MACD ===== */
-function macd(arr){
-    const e12=ema(arr,12);
-    const e26=ema(arr,26);
-    const dif=e12.map((v,i)=>v-e26[i]);
-    const dea=ema(dif,9);
-    return dif.map((v,i)=>v-dea[i]);
-}
-
-/* ===== 評分 ===== */
-function score(close){
-    if(close.length<30) return 0;
-
-    let s=0;
-    const m=macd(close);
-
-    if(m.at(-1)>0 && m.at(-2)<0) s+=40;
-
-    const ma20=close.slice(-20).reduce((a,b)=>a+b)/20;
-    if(close.at(-1)>ma20) s+=30;
-
-    const high20=Math.max(...close.slice(-20));
-    if(close.at(-1)>=high20) s+=30;
-
-    return s;
-}
-
-/* ===== 掃市場（範圍） ===== */
-async function scan(){
-    const results = [];
-
-    document.getElementById("list").innerHTML = "";
-
-    for(let i=1101;i<1300;i++){   // 先掃一段（避免爆）
-        document.getElementById("status").innerText = `掃描中：${i}`;
-
-        try{
-            const data = await getData(i);
-            if(data.length < 30) continue;
-
-            const s = score(data);
-            const price = data.at(-1);
-
-            if(s > 0){
-                results.push({
-                    code:i,
-                    score:s,
-                    price
-                });
+            // 【策略條件設置】：外資買超 > 100張 且 投信買超 > 100張 且 自營商買超 > 0 (三大法人同買)
+            // 可根據個人喜好調整張數門檻
+            if (foreignNet > 100 && investmentTrustNet > 100 && dealerNet > 0) {
+                matchCount++;
+                
+                // 插入表格列
+                const row = `
+                    <tr>
+                        <td>${item.Code}</td>
+                        <td>${item.Name.trim()}</td>
+                        <td class="positive">+${foreignNet.toLocaleString()}</td>
+                        <td class="positive">+${investmentTrustNet.toLocaleString()}</td>
+                        <td class="positive">+${dealerNet.toLocaleString()}</td>
+                        <td class="positive" style="background-color: #fff5f5;">+${totalNet.toLocaleString()}</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
             }
+        });
 
-        }catch(e){}
+        if (matchCount > 0) {
+            statusDiv.innerHTML = `🎉 篩選完成！今日共有 ${matchCount} 檔符合「三大法人同買」條件。`;
+            table.style.display = 'table';
+        } else {
+            statusDiv.innerHTML = '查無符合條件的股票（今天法人方向不一致或資料尚未更新）。';
+        }
 
-        await new Promise(r=>setTimeout(r,80));
+    } catch (error) {
+        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${error.message}</span>`;
+    } finally {
+        runBtn.disabled = false;
     }
-
-    /* ===== 排行榜排序 ===== */
-    results.sort((a,b)=>b.score - a.score);
-
-    /* ===== 取 TOP 20 ===== */
-    const top = results.slice(0,20);
-
-    top.forEach((x,idx)=>{
-        let cls = "c";
-        if(x.score >= 80) cls = "a";
-        else if(x.score >= 60) cls = "b";
-
-        const div = document.createElement("div");
-        div.className = "card " + cls;
-
-        div.innerHTML = `
-            <span class="rank">#${idx+1}</span>
-            <b>${x.code}</b>
-            <div class="small">
-                價格 ${x.price} ｜ 評分 ${x.score}
-            </div>
-        `;
-
-        document.getElementById("list").appendChild(div);
-    });
-
-    document.getElementById("status").innerText =
-        `完成｜共掃 ${results.length} 檔｜顯示TOP ${top.length}`;
-}
+});
 </script>
 
 </body>
