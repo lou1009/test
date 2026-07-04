@@ -15,6 +15,8 @@
         .btn-orange { background-color: #dd6b20; }
         .btn-orange:hover { background-color: #c05621; }
         #status { margin: 15px 0; padding: 12px; background: #edf2f7; border-left: 5px solid #4a5568; border-radius: 4px; font-weight: bold; }
+        .notice { margin: 15px 0; padding: 14px 16px; background: #fffaf0; border: 1px solid #f6ad55; border-left: 5px solid #dd6b20; border-radius: 4px; font-size: 14px; line-height: 1.6; color: #7b341e; }
+        .notice strong { color: #9c4221; }
         .tab-content { display: none; margin-top: 20px; }
         .active-tab { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
@@ -23,21 +25,34 @@
         tr:hover { background-color: #f7fafc; }
         .red { color: #e53e3e; font-weight: bold; }
         .green { color: #38a169; font-weight: bold; }
+        .gray { color: #a0aec0; }
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; background-color: #4a5568; }
         .badge-传产 { background-color: #805ad5; }
+        .badge-pending { background-color: #a0aec0; }
+        .progress-note { font-size: 12px; color: #718096; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>台股量化策略高級篩選器 (黑飛 / 三大法人同買)</h2>
-    <p>提示：每天下午 <strong>16:00 盤後資料更新後</strong> 執行最為準確。本網頁已內建自動繞過跨域限制功能。</p>
-    
+    <p>提示：每天下午 <strong>16:00 盤後資料更新後</strong> 執行最為準確。本網頁透過公開 CORS 代理讀取證交所資料。</p>
+
+    <div class="notice">
+        <strong>關於「黑飛」條件的重要說明：</strong>
+        證交所公開 API 只提供「最新一天」的全市場快照，不提供整個市場的歷史多日資料。
+        因此本工具會在你每次執行「條件 4」時，把當天的收盤資料存進瀏覽器的個人儲存空間，
+        並隨著你每天使用而逐漸累積歷史。<u>五日均線與「量縮」比較，必須累積滿 5 個交易日的資料後才會是真實計算值</u>；
+        在累積足夠之前，相關欄位會顯示「資料累積中」而不是假造的數字。
+        三大法人資料（條件 5）因為證交所本身就支援依日期查詢，不受此限制。
+    </div>
+
     <div class="btn-group">
         <button id="btn5" class="btn">篩選【條件 5：三大法人同買】</button>
         <button id="btn4" class="btn btn-orange">篩選【條件 4：黑飛型態(含傳產過濾)】</button>
+        <button id="btnReset" class="btn" style="background-color:#a0aec0;">清除本機累積資料</button>
     </div>
-    
+
     <div id="status">系統就緒，請選擇上方策略開始篩選...</div>
 
     <!-- 條件5結果表格 -->
@@ -60,19 +75,20 @@
 
     <!-- 條件4結果表格 -->
     <div id="tab4" class="tab-content">
-        <h3>策略：黑飛型態（昨日拉高、今日縮量回測5日線不破）</h3>
-        <p style="color:#718096; font-size:14px;">※ 系統已自動幫你為 13xx(塑膠)、14xx(紡織)、18xx(玻陶) 等「潛在轉型傳產股」加上特殊標籤。</p>
+        <h3>策略：黑飛型態（今日黑K、漲跌幅收斂）</h3>
+        <p style="color:#718096; font-size:14px;">※ 13xx(塑膠)、14xx(紡織)、18xx(玻陶)、15xx(電機) 加上「潛在轉型傳產股」標籤（純代碼規則，非資料判斷）。</p>
+        <p id="historyStatus" class="progress-note"></p>
         <table>
             <thead>
                 <tr>
                     <th>代號</th>
                     <th>名稱</th>
                     <th>類型</th>
-                    <th>昨日漲幅</th>
                     <th>今日K線</th>
-                    <th>今日成交量</th>
-                    <th>量縮比例</th>
-                    <th>五日線位置</th>
+                    <th>今日漲跌</th>
+                    <th>今日成交量(張)</th>
+                    <th>量縮比例(對比昨日)</th>
+                    <th>五日均線位置</th>
                     <th>今日收盤</th>
                 </tr>
             </thead>
@@ -89,6 +105,10 @@ let cacheStockDay = null;
 const statusDiv = document.getElementById('status');
 const btn4 = document.getElementById('btn4');
 const btn5 = document.getElementById('btn5');
+const btnReset = document.getElementById('btnReset');
+const historyStatus = document.getElementById('historyStatus');
+
+const HISTORY_DAYS_NEEDED = 5;
 
 // 切換顯示表格
 function switchTab(tabId) {
@@ -96,7 +116,7 @@ function switchTab(tabId) {
     document.getElementById(tabId).classList.add('active-tab');
 }
 
-// 輔助函式：判斷是否為你指定的傳產轉型潛力股
+// 輔助函式：判斷是否為指定的傳產轉型潛力股（純代碼規則，跟資料無關）
 function getStockType(code) {
     if (code.startsWith('13')) return '傳產-塑膠';
     if (code.startsWith('14')) return '傳產-紡織';
@@ -105,7 +125,24 @@ function getStockType(code) {
     return '一般個股';
 }
 
-// 核心抓取函式 (利用 Allorigins 代理繞過 CORS)
+// 取得民國年格式日期字串 YYYMMDD -> 西元 YYYYMMDD（用來標準化 key）
+function rocDateToKey(rocDate) {
+    // rocDate 格式如 "1150630"
+    const year = parseInt(rocDate.substring(0, rocDate.length - 4), 10) + 1911;
+    const mmdd = rocDate.substring(rocDate.length - 4);
+    return `${year}${mmdd}`;
+}
+
+// 今天日期 key（西元 YYYYMMDD），以本機日期為準，僅用作備援
+function todayKeyFallback() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}${m}${day}`;
+}
+
+// 核心抓取函式 (利用公開 CORS 代理繞過瀏覽器跨域限制)
 async function fetchData(url, isJson = true) {
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     const res = await fetch(proxyUrl);
@@ -115,27 +152,53 @@ async function fetchData(url, isJson = true) {
 }
 
 // ==================== 策略 5：三大法人同買 ====================
+// 修正重點：原本呼叫的 openapi.twse.com.tw/v1/t86/t86 是錯誤路徑（會 404）。
+// 正確資料來源是 www.twse.com.tw/fund/T86，且此端點支援依日期查詢（selectType=ALL 取全部股票）。
 btn5.addEventListener('click', async () => {
     btn4.disabled = btn5.disabled = true;
     switchTab('tab5');
     const tbody = document.getElementById('body5');
     tbody.innerHTML = '';
-    
+
     try {
         if (!cacheT86) {
             statusDiv.innerHTML = '正在讀取證交所三大法人買賣超數據...';
-            cacheT86 = await fetchData('https://openapi.twse.com.tw/v1/t86/t86');
+            const today = todayKeyFallback();
+            const url = `https://www.twse.com.tw/fund/T86?response=json&date=${today}&selectType=ALL`;
+            const raw = await fetchData(url);
+            if (!raw || raw.stat !== 'OK' || !raw.data) {
+                throw new Error('今日尚無三大法人資料（可能非交易日或資料尚未更新）');
+            }
+            // 依 fields 動態對應欄位，避免欄位順序或名稱微調時整支程式失效
+            const fields = raw.fields;
+            const idx = {
+                code: fields.indexOf('證券代號'),
+                name: fields.indexOf('證券名稱'),
+                foreign: fields.indexOf('外陸資買賣超股數(不含外資自營商)'),
+                trust: fields.indexOf('投信買賣超股數'),
+                dealer: fields.indexOf('自營商買賣超股數'),
+                total: fields.indexOf('三大法人買賣超股數')
+            };
+            cacheT86 = raw.data.map(row => ({
+                Code: row[idx.code],
+                Name: row[idx.name],
+                foreign: row[idx.foreign],
+                trust: row[idx.trust],
+                dealer: row[idx.dealer],
+                total: row[idx.total]
+            }));
         }
-        
+
         statusDiv.innerHTML = '正在運算三大法人同買邏輯...';
         let matchCount = 0;
-        
+
         cacheT86.forEach(item => {
-            const foreign = Math.round(parseInt(item["外陸資買賣超股數(不含外資自營商)"] || 0) / 1000);
-            const trust = Math.round(parseInt(item["投信買賣超股數"] || 0) / 1000);
-            const dealer = Math.round(parseInt(item["自營商買賣超股數"] || 0) / 1000);
-            const total = Math.round(parseInt(item["三大法人買賣超股數"] || 0) / 1000);
-            
+            const toShares = s => Math.round((parseInt(String(s).replace(/,/g, ''), 10) || 0) / 1000);
+            const foreign = toShares(item.foreign);
+            const trust = toShares(item.trust);
+            const dealer = toShares(item.dealer);
+            const total = toShares(item.total);
+
             // 門檻：外資>100張、投信>50張、自營商>0張 (代表共同鎖定)
             if (foreign > 100 && trust > 50 && dealer > 0) {
                 matchCount++;
@@ -151,83 +214,184 @@ btn5.addEventListener('click', async () => {
                 `);
             }
         });
-        
+
         statusDiv.innerHTML = `🎉 篩選完成！今日共有 ${matchCount} 檔符合三大法人同買。`;
     } catch (err) {
-        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}，請稍後再試。</span>`;
+        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
     } finally {
         btn4.disabled = btn5.disabled = false;
     }
 });
 
-// ==================== 策略 4：黑飛型態 (核心技術突破) ====================
+// ==================== 策略 4：黑飛型態 ====================
+// 修正重點：
+// 1. STOCK_DAY_ALL 只回傳最新一天的全市場快照，證交所不提供整個市場的多日歷史批次資料。
+// 2. 因此無法在單次呼叫中「精準」算出五日均線或量縮比例，除非累積多天的本機快照。
+// 3. 本版本改用 window.storage 把每次執行當天的收盤資料存下來，
+//    當累積滿 5 個交易日快照後，才會顯示真實計算出的五日均線位置與量縮比例；
+//    不足 5 天時，明確標示「資料累積中」，不再顯示假造的「已守穩」「量縮顯著」字樣。
 btn4.addEventListener('click', async () => {
     btn4.disabled = btn5.disabled = true;
     switchTab('tab4');
     const tbody = document.getElementById('body4');
     tbody.innerHTML = '';
-    
+
     try {
         if (!cacheStockDay) {
-            statusDiv.innerHTML = '正在透過 Proxy 讀取全台股每日收盤行情 (資料量大，請稍候 5-10 秒)...';
-            // 抓取全市場每日收盤行情
-            cacheStockDay = await fetchData('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
+            statusDiv.innerHTML = '正在透過代理讀取全台股每日收盤行情 (資料量大，請稍候 5-10 秒)...';
+            const raw = await fetchData('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
+            if (!Array.isArray(raw) || raw.length === 0) {
+                throw new Error('今日尚無收盤行情資料');
+            }
+            cacheStockDay = raw;
         }
-        
-        statusDiv.innerHTML = '正進行量價幾何型態與五日線回測運算...';
+
+        statusDiv.innerHTML = '正在儲存今日快照並讀取歷史累積資料...';
+
+        // 這批資料實際的交易日（用資料本身的日期，而非瀏覽器本機日期，避免時區/假日誤判）
+        const dataDateRoc = cacheStockDay[0].Date; // 例如 "1150630"
+        const dateKey = rocDateToKey(dataDateRoc);
+
+        // 把今天的快照（只保留計算需要的欄位，避免超過儲存限制）存入 window.storage
+        const snapshot = {};
+        cacheStockDay.forEach(item => {
+            const close = parseFloat(item.ClosingPrice);
+            const volume = Math.round(parseInt(item.TradeVolume || 0, 10) / 1000);
+            if (!isNaN(close)) {
+                snapshot[item.Code] = { c: close, v: volume };
+            }
+        });
+
+        try {
+            await window.storage.set(`stockday:${dateKey}`, JSON.stringify(snapshot), false);
+        } catch (e) {
+            console.warn('儲存今日快照失敗（不影響本次篩選結果）:', e);
+        }
+
+        // 讀取所有已累積的歷史快照 key
+        let historyKeys = [];
+        try {
+            const listResult = await window.storage.list('stockday:', false);
+            historyKeys = (listResult && listResult.keys) ? listResult.keys : [];
+        } catch (e) {
+            historyKeys = [`stockday:${dateKey}`];
+        }
+        historyKeys.sort(); // 依日期字串排序（YYYYMMDD 可直接字串排序）
+
+        // 取最近（含今天）最多 5 天的快照，且今天必須在其中
+        const recentKeys = historyKeys.slice(-HISTORY_DAYS_NEEDED);
+        const haveEnoughHistory = recentKeys.length >= HISTORY_DAYS_NEEDED && recentKeys.includes(`stockday:${dateKey}`);
+
+        historyStatus.innerHTML = haveEnoughHistory
+            ? `✅ 已累積 ${recentKeys.length} 個交易日快照，五日均線與量縮比例為真實計算值。`
+            : `⏳ 目前已累積 ${historyKeys.length} / ${HISTORY_DAYS_NEEDED} 個交易日快照。請每個交易日回來執行一次「條件 4」，累積滿 5 天後，五日均線與量縮比例才會顯示真實計算值。`;
+
+        // 若累積足夠，載入這幾天的快照供比對
+        let historySnapshots = [];
+        if (haveEnoughHistory) {
+            for (const key of recentKeys) {
+                try {
+                    const r = await window.storage.get(key, false);
+                    if (r && r.value) {
+                        historySnapshots.push({ key, data: JSON.parse(r.value) });
+                    }
+                } catch (e) {
+                    // 忽略單一天讀取失敗，仍以現有資料繼續
+                }
+            }
+        }
+
+        // 取「今天以外」最近一天的快照（用來算量縮比例）
+        let prevDaySnapshot = null;
+        if (historySnapshots.length >= 2) {
+            prevDaySnapshot = historySnapshots[historySnapshots.length - 2].data;
+        }
+
+        statusDiv.innerHTML = '正進行黑K與型態篩選...';
         let matchCount = 0;
-        
-        // 注意：證交所 API 為當日靜態快照，為了精準運算昨日與前幾日均線，
-        // 實務上最佳網頁作法是找出符合今日量縮、今日收盤 > 最低價、且屬於目標族群的標的
+
         cacheStockDay.forEach(item => {
             const code = item.Code;
             const name = item.Name.trim();
-            
-            // 轉換基本數據 (API 原始數據為字串)
+
             const close = parseFloat(item.ClosingPrice);
             const open = parseFloat(item.OpeningPrice);
-            const high = parseFloat(item.HighestPrice);
-            const low = parseFloat(item.LowestPrice);
-            const volume = Math.round(parseInt(item.TradeVolume || 0) / 1000); // 換算成張數
-            const change = parseFloat(item.Change); // 漲跌幅
-            
-            if (isNaN(close) || volume < 500) return; // 剔除流動性極差的殭屍股
-            
-            // 【模擬黑飛洗盤特徵篩選】：
-            // 1. 今日收盤低於開盤（留黑 K 洗盤視覺）
-            // 2. 今日跌幅或震盪收斂，但股價依然維持在一定強度
-            // 3. 由於 OpenAPI 無法直接跨日回溯，我們利用「今日收盤價極度接近今日最低價與均線估值」
-            // 這裡採用精準替代演算法：篩選出跌幅收斂（-2% ~ 0.5%）、量能極低、回測支撐的股票
+            const volume = Math.round(parseInt(item.TradeVolume || 0, 10) / 1000);
+            const change = parseFloat(item.Change);
+
+            if (isNaN(close) || volume < 500) return; // 剔除流動性極差或無收盤價的標的
+
             const isBlackK = close < open;
             const stockType = getStockType(code);
-            const isTargetIndustry = stockType !== '一般個股'; // 優先標記你的 13, 14, 18 傳產標的
-            
-            // 簡化模擬演算法門檻 (回測效果最接近黑飛當日尾盤特徵)
+            const isTargetIndustry = stockType !== '一般個股';
+
+            // 篩選條件：今日收黑K、漲跌幅收斂在 -2.5% ~ 0.5% 之間
             if (isBlackK && change >= -2.5 && change <= 0.5) {
                 matchCount++;
-                const typeBadge = isTargetIndustry ? `<span class="badge badge-传产">${stockType}</span>` : `<span class="badge">一般</span>`;
-                
+                const typeBadge = isTargetIndustry
+                    ? `<span class="badge badge-传产">${stockType}</span>`
+                    : `<span class="badge">一般</span>`;
+
+                // 量縮比例：只有在有前一天真實資料時才計算，否則顯示待補
+                let volumeRatioHtml = '<span class="badge-pending badge">資料累積中</span>';
+                if (prevDaySnapshot && prevDaySnapshot[code] && prevDaySnapshot[code].v > 0) {
+                    const prevVol = prevDaySnapshot[code].v;
+                    const ratio = ((volume / prevVol) * 100).toFixed(0);
+                    volumeRatioHtml = `${ratio}% <span class="progress-note">(較昨日)</span>`;
+                }
+
+                // 五日均線位置：只有在累積滿 5 天真實收盤價時才計算
+                let ma5Html = '<span class="badge-pending badge">資料累積中</span>';
+                if (haveEnoughHistory) {
+                    const closes = historySnapshots
+                        .map(snap => snap.data[code] ? snap.data[code].c : null)
+                        .filter(c => c !== null);
+                    if (closes.length === HISTORY_DAYS_NEEDED) {
+                        const ma5 = closes.reduce((a, b) => a + b, 0) / closes.length;
+                        const diffPct = (((close - ma5) / ma5) * 100).toFixed(1);
+                        const position = close >= ma5 ? '站上五日線' : '跌破五日線';
+                        const cls = close >= ma5 ? 'green' : 'red';
+                        ma5Html = `<span class="${cls}">${position} (${diffPct}%)</span>`;
+                    }
+                }
+
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr>
                         <td><strong>${code}</strong></td>
                         <td>${name}</td>
                         <td>${typeBadge}</td>
-                        <td>---</td>
-                        <td class="green">黑 K 洗盤</td>
+                        <td class="green">黑K</td>
+                        <td class="${change >= 0 ? 'green' : 'red'}">${change}%</td>
                         <td>${volume} 張</td>
-                        <td>量縮顯著</td>
-                        <td>已守穩</td>
+                        <td>${volumeRatioHtml}</td>
+                        <td>${ma5Html}</td>
                         <td>${close}</td>
                     </tr>
                 `);
             }
         });
-        
-        statusDiv.innerHTML = `🎉 篩選完成！今日共有 ${matchCount} 檔型態符合黑飛特徵。請優先觀察帶有紫標的傳產轉型股！`;
+
+        statusDiv.innerHTML = `🎉 篩選完成！今日（資料日期 ${dateKey}）共有 ${matchCount} 檔黑K且漲跌幅收斂的標的。請優先觀察帶有紫標的傳產轉型股，並留意五日均線與量縮欄位是否已累積足夠歷史資料。`;
     } catch (err) {
-        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}，可能證交所伺服器繁忙，請重試。</span>`;
+        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
     } finally {
         btn4.disabled = btn5.disabled = false;
+    }
+});
+
+// 清除本機累積的歷史快照
+btnReset.addEventListener('click', async () => {
+    if (!confirm('確定要清除所有已累積的歷史快照嗎？五日均線需要重新累積 5 個交易日。')) return;
+    try {
+        const listResult = await window.storage.list('stockday:', false);
+        const keys = (listResult && listResult.keys) ? listResult.keys : [];
+        for (const key of keys) {
+            await window.storage.delete(key, false);
+        }
+        statusDiv.innerHTML = `已清除 ${keys.length} 筆本機累積快照。`;
+        historyStatus.innerHTML = '';
+    } catch (e) {
+        statusDiv.innerHTML = `<span style="color:red;">清除失敗: ${e.message}</span>`;
     }
 });
 </script>
