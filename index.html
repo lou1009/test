@@ -3,416 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台股量化策略高級篩選器</title>
+    <title>台股量化篩選器</title>
     <style>
         body { font-family: "Microsoft JhengHei", Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { color: #0f2d59; border-bottom: 3px solid #3182ce; padding-bottom: 10px; margin-top: 0; }
-        .btn-group { margin: 20px 0; }
-        .btn { background-color: #3182ce; color: white; border: none; padding: 12px 28px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-right: 10px; transition: all 0.2s; }
+        .top-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 20px 0; }
+        .btn { background-color: #3182ce; color: white; border: none; padding: 12px 28px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
         .btn:hover { background-color: #2b6cb0; transform: translateY(-1px); }
         .btn:disabled { background-color: #cbd5e0; cursor: not-allowed; transform: none; }
-        .btn-orange { background-color: #dd6b20; }
-        .btn-orange:hover { background-color: #c05621; }
+        .btn-gray { background-color: #a0aec0; }
+        .switch-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2d3748; cursor: pointer; user-select: none; }
+        .meta-line { font-size: 13px; color: #718096; margin: 4px 0; }
         #status { margin: 15px 0; padding: 12px; background: #edf2f7; border-left: 5px solid #4a5568; border-radius: 4px; font-weight: bold; }
-        .notice { margin: 15px 0; padding: 14px 16px; background: #fffaf0; border: 1px solid #f6ad55; border-left: 5px solid #dd6b20; border-radius: 4px; font-size: 14px; line-height: 1.6; color: #7b341e; }
-        .notice strong { color: #9c4221; }
-        .tab-content { display: none; margin-top: 20px; }
-        .active-tab { display: block; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        th, td { border: 1px solid #e2e8f0; padding: 14px 12px; text-align: left; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px 10px; text-align: left; font-size: 14px; }
         th { background-color: #ebf8ff; color: #2b6cb0; font-weight: bold; }
         tr:hover { background-color: #f7fafc; }
         .red { color: #e53e3e; font-weight: bold; }
         .green { color: #38a169; font-weight: bold; }
         .gray { color: #a0aec0; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; background-color: #4a5568; }
-        .badge-传产 { background-color: #805ad5; }
-        .badge-pending { background-color: #a0aec0; }
-        .progress-note { font-size: 12px; color: #718096; }
+        .badge { display: inline-block; padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; background-color: #4a5568; margin: 2px 2px 2px 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>台股量化策略高級篩選器 (黑飛 / 三大法人同買)</h2>
-    <p>提示：每天下午 <strong>16:00 盤後資料更新後</strong> 執行最為準確。本網頁透過公開 CORS 代理讀取證交所資料。</p>
+    <h2>台股量化篩選器</h2>
 
-    <div class="notice">
-        <strong>關於歷史資料的說明：</strong>
-        證交所「今日快照」型的 API（如全市場收盤 STOCK_DAY_ALL）只提供最新一天資料，不含歷史。
-        <strong>條件 4（黑飛）</strong>目前仍採用「每次執行都存今天的快照，累積滿 5 個交易日才算出真實五日線」的做法，
-        在累積足夠之前會顯示「資料累積中」而不是假數字。<br>
-        <strong>條件 6（布林通道）</strong>則改用另一支支援「依日期查詢全市場資料」的 API（MI_INDEX），
-        第一次執行時會自動回補過去約 20 個交易日的全市場收盤價（存進瀏覽器本機儲存），
-        <u>不需要等好幾天，這一版就能算出真實的 20 日布林通道</u>。第一次執行因為要依序抓 20 天資料，
-        會需要 30 秒~1 分鐘左右；之後因為有快取，只需要補當天新的一天，速度會快很多。<br>
-        三大法人資料（條件 5）證交所本身就支援依日期查詢，同樣不受「只有今天」的限制。
+    <div class="top-bar">
+        <button id="btnRun" class="btn">🔄 立即更新分析</button>
+        <label class="switch-label">
+            <input type="checkbox" id="autoToggle">
+            自動於開盤(09:00)／收盤後(13:35) 更新（需保持此分頁開啟）
+        </label>
+        <button id="btnReset" class="btn btn-gray">清除本機累積資料</button>
     </div>
 
-    <div class="btn-group">
-        <button id="btn5" class="btn">篩選【條件 5：三大法人同買】</button>
-        <button id="btn4" class="btn btn-orange">篩選【條件 4：黑飛型態(含傳產過濾)】</button>
-        <button id="btn6" class="btn" style="background-color:#2f855a;">篩選【條件 6：日K突破布林通道】</button>
-        <button id="btnReset" class="btn" style="background-color:#a0aec0;">清除本機累積資料</button>
-    </div>
+    <div class="meta-line" id="lastUpdated">尚未更新過。</div>
+    <div class="meta-line" id="autoNote"></div>
+    <div id="status">系統就緒，請點「立即更新分析」開始...</div>
 
-    <div id="status">系統就緒，請選擇上方策略開始篩選...</div>
-
-    <!-- 條件5結果表格 -->
-    <div id="tab5" class="tab-content">
-        <h3>策略：三大法人同買且出量</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>代號</th>
-                    <th>名稱</th>
-                    <th>外資買超(張)</th>
-                    <th>投信買超(張)</th>
-                    <th>自營商買超(張)</th>
-                    <th>合計買超(張)</th>
-                </tr>
-            </thead>
-            <tbody id="body5"></tbody>
-        </table>
-    </div>
-
-    <!-- 條件4結果表格 -->
-    <div id="tab4" class="tab-content">
-        <h3>策略：黑飛型態（今日黑K、漲跌幅收斂）</h3>
-        <p style="color:#718096; font-size:14px;">※ 13xx(塑膠)、14xx(紡織)、18xx(玻陶)、15xx(電機) 加上「潛在轉型傳產股」標籤（純代碼規則，非資料判斷）。</p>
-        <p id="historyStatus" class="progress-note"></p>
-        <table>
-            <thead>
-                <tr>
-                    <th>代號</th>
-                    <th>名稱</th>
-                    <th>類型</th>
-                    <th>今日K線</th>
-                    <th>今日漲跌</th>
-                    <th>今日成交量(張)</th>
-                    <th>量縮比例(對比昨日)</th>
-                    <th>五日均線位置</th>
-                    <th>今日收盤</th>
-                </tr>
-            </thead>
-            <tbody id="body4"></tbody>
-        </table>
-    </div>
-
-    <!-- 條件6結果表格 -->
-    <div id="tab6" class="tab-content">
-        <h3>策略：日K突破 20 日布林通道</h3>
-        <p style="color:#718096; font-size:14px;">※ 上軌/下軌採 20 日均線 ± 2 倍標準差（業界常見預設值）。收盤價突破上軌視為偏多訊號，跌破下軌視為偏空訊號。</p>
-        <p id="bollingerProgress" class="progress-note"></p>
-        <table>
-            <thead>
-                <tr>
-                    <th>代號</th>
-                    <th>名稱</th>
-                    <th>訊號</th>
-                    <th>今日收盤</th>
-                    <th>20日均線</th>
-                    <th>上軌</th>
-                    <th>下軌</th>
-                    <th>%B 位置</th>
-                </tr>
-            </thead>
-            <tbody id="body6"></tbody>
-        </table>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>代號</th>
+                <th>名稱</th>
+                <th>推薦分數</th>
+                <th>符合條件</th>
+                <th>股價</th>
+                <th>漲跌幅/漲跌</th>
+                <th>成交量(張)</th>
+                <th>外資買超(張)</th>
+            </tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+    </table>
 </div>
 
 <script>
-// 全域變數緩存數據，避免重複下載
+// ==================== 全域狀態 ====================
 let cacheT86 = null;
 let cacheStockDay = null;
-
-const statusDiv = document.getElementById('status');
-const btn4 = document.getElementById('btn4');
-const btn5 = document.getElementById('btn5');
-const btnReset = document.getElementById('btnReset');
-const historyStatus = document.getElementById('historyStatus');
-
+let lastBollingerSignals = {}; // code -> 'up' | 'down'
+const BOLLINGER_PERIOD = 20;
 const HISTORY_DAYS_NEEDED = 5;
 
-// 切換顯示表格
-function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
-    document.getElementById(tabId).classList.add('active-tab');
-}
+const statusDiv = document.getElementById('status');
+const btnRun = document.getElementById('btnRun');
+const btnReset = document.getElementById('btnReset');
+const autoToggle = document.getElementById('autoToggle');
+const lastUpdatedDiv = document.getElementById('lastUpdated');
+const autoNoteDiv = document.getElementById('autoNote');
+const resultBody = document.getElementById('resultBody');
 
-// 輔助函式：判斷是否為指定的傳產轉型潛力股（純代碼規則，跟資料無關）
-function getStockType(code) {
-    if (code.startsWith('13')) return '傳產-塑膠';
-    if (code.startsWith('14')) return '傳產-紡織';
-    if (code.startsWith('18')) return '傳產-玻陶';
-    if (code.startsWith('15')) return '傳產-電機';
-    return '一般個股';
-}
-
-// 取得民國年格式日期字串 YYYMMDD -> 西元 YYYYMMDD（用來標準化 key）
-function rocDateToKey(rocDate) {
-    // rocDate 格式如 "1150630"
-    const year = parseInt(rocDate.substring(0, rocDate.length - 4), 10) + 1911;
-    const mmdd = rocDate.substring(rocDate.length - 4);
-    return `${year}${mmdd}`;
-}
-
-// 今天日期 key（西元 YYYYMMDD），以本機日期為準，僅用作備援
-function todayKeyFallback() {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}${m}${day}`;
-}
-
-// 核心抓取函式 (利用公開 CORS 代理繞過瀏覽器跨域限制)
-async function fetchData(url, isJson = true) {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error("代理伺服器連線失敗");
-    const jsonContainer = await res.json();
-    return isJson ? JSON.parse(jsonContainer.contents) : jsonContainer.contents;
-}
-
-// ==================== 策略 5：三大法人同買 ====================
-// 修正重點：原本呼叫的 openapi.twse.com.tw/v1/t86/t86 是錯誤路徑（會 404）。
-// 正確資料來源是 www.twse.com.tw/fund/T86，且此端點支援依日期查詢（selectType=ALL 取全部股票）。
-btn5.addEventListener('click', async () => {
-    btn4.disabled = btn5.disabled = btn6.disabled = true;
-    switchTab('tab5');
-    const tbody = document.getElementById('body5');
-    tbody.innerHTML = '';
-
-    try {
-        if (!cacheT86) {
-            statusDiv.innerHTML = '正在讀取證交所三大法人買賣超數據...';
-            const today = todayKeyFallback();
-            const url = `https://www.twse.com.tw/fund/T86?response=json&date=${today}&selectType=ALL`;
-            const raw = await fetchData(url);
-            if (!raw || raw.stat !== 'OK' || !raw.data) {
-                throw new Error('今日尚無三大法人資料（可能非交易日或資料尚未更新）');
-            }
-            // 依 fields 動態對應欄位，避免欄位順序或名稱微調時整支程式失效
-            const fields = raw.fields;
-            const idx = {
-                code: fields.indexOf('證券代號'),
-                name: fields.indexOf('證券名稱'),
-                foreign: fields.indexOf('外陸資買賣超股數(不含外資自營商)'),
-                trust: fields.indexOf('投信買賣超股數'),
-                dealer: fields.indexOf('自營商買賣超股數'),
-                total: fields.indexOf('三大法人買賣超股數')
-            };
-            cacheT86 = raw.data.map(row => ({
-                Code: row[idx.code],
-                Name: row[idx.name],
-                foreign: row[idx.foreign],
-                trust: row[idx.trust],
-                dealer: row[idx.dealer],
-                total: row[idx.total]
-            }));
-        }
-
-        statusDiv.innerHTML = '正在運算三大法人同買邏輯...';
-        let matchCount = 0;
-
-        cacheT86.forEach(item => {
-            const toShares = s => Math.round((parseInt(String(s).replace(/,/g, ''), 10) || 0) / 1000);
-            const foreign = toShares(item.foreign);
-            const trust = toShares(item.trust);
-            const dealer = toShares(item.dealer);
-            const total = toShares(item.total);
-
-            // 門檻：外資>100張、投信>50張、自營商>0張 (代表共同鎖定)
-            if (foreign > 100 && trust > 50 && dealer > 0) {
-                matchCount++;
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr>
-                        <td><strong>${item.Code}</strong></td>
-                        <td>${item.Name.trim()}</td>
-                        <td class="red">+${foreign}</td>
-                        <td class="red">+${trust}</td>
-                        <td class="red">+${dealer}</td>
-                        <td class="red" style="background:#fff5f5;">+${total}</td>
-                    </tr>
-                `);
-            }
-        });
-
-        statusDiv.innerHTML = `🎉 篩選完成！今日共有 ${matchCount} 檔符合三大法人同買。`;
-    } catch (err) {
-        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
-    } finally {
-        btn4.disabled = btn5.disabled = btn6.disabled = false;
-    }
-});
-
-// ==================== 策略 4：黑飛型態 ====================
-// 修正重點：
-// 1. STOCK_DAY_ALL 只回傳最新一天的全市場快照，證交所不提供整個市場的多日歷史批次資料。
-// 2. 因此無法在單次呼叫中「精準」算出五日均線或量縮比例，除非累積多天的本機快照。
-// 3. 本版本改用 window.storage 把每次執行當天的收盤資料存下來，
-//    當累積滿 5 個交易日快照後，才會顯示真實計算出的五日均線位置與量縮比例；
-//    不足 5 天時，明確標示「資料累積中」，不再顯示假造的「已守穩」「量縮顯著」字樣。
-btn4.addEventListener('click', async () => {
-    btn4.disabled = btn5.disabled = btn6.disabled = true;
-    switchTab('tab4');
-    const tbody = document.getElementById('body4');
-    tbody.innerHTML = '';
-
-    try {
-        if (!cacheStockDay) {
-            statusDiv.innerHTML = '正在透過代理讀取全台股每日收盤行情 (資料量大，請稍候 5-10 秒)...';
-            const raw = await fetchData('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
-            if (!Array.isArray(raw) || raw.length === 0) {
-                throw new Error('今日尚無收盤行情資料');
-            }
-            cacheStockDay = raw;
-        }
-
-        statusDiv.innerHTML = '正在儲存今日快照並讀取歷史累積資料...';
-
-        // 這批資料實際的交易日（用資料本身的日期，而非瀏覽器本機日期，避免時區/假日誤判）
-        const dataDateRoc = cacheStockDay[0].Date; // 例如 "1150630"
-        const dateKey = rocDateToKey(dataDateRoc);
-
-        // 把今天的快照（只保留計算需要的欄位，避免超過儲存限制）存入 window.storage
-        const snapshot = {};
-        cacheStockDay.forEach(item => {
-            const close = parseFloat(item.ClosingPrice);
-            const volume = Math.round(parseInt(item.TradeVolume || 0, 10) / 1000);
-            if (!isNaN(close)) {
-                snapshot[item.Code] = { c: close, v: volume };
-            }
-        });
-
-        try {
-            await window.storage.set(`stockday:${dateKey}`, JSON.stringify(snapshot), false);
-        } catch (e) {
-            console.warn('儲存今日快照失敗（不影響本次篩選結果）:', e);
-        }
-
-        // 讀取所有已累積的歷史快照 key
-        let historyKeys = [];
-        try {
-            const listResult = await window.storage.list('stockday:', false);
-            historyKeys = (listResult && listResult.keys) ? listResult.keys : [];
-        } catch (e) {
-            historyKeys = [`stockday:${dateKey}`];
-        }
-        historyKeys.sort(); // 依日期字串排序（YYYYMMDD 可直接字串排序）
-
-        // 取最近（含今天）最多 5 天的快照，且今天必須在其中
-        const recentKeys = historyKeys.slice(-HISTORY_DAYS_NEEDED);
-        const haveEnoughHistory = recentKeys.length >= HISTORY_DAYS_NEEDED && recentKeys.includes(`stockday:${dateKey}`);
-
-        historyStatus.innerHTML = haveEnoughHistory
-            ? `✅ 已累積 ${recentKeys.length} 個交易日快照，五日均線與量縮比例為真實計算值。`
-            : `⏳ 目前已累積 ${historyKeys.length} / ${HISTORY_DAYS_NEEDED} 個交易日快照。請每個交易日回來執行一次「條件 4」，累積滿 5 天後，五日均線與量縮比例才會顯示真實計算值。`;
-
-        // 若累積足夠，載入這幾天的快照供比對
-        let historySnapshots = [];
-        if (haveEnoughHistory) {
-            for (const key of recentKeys) {
-                try {
-                    const r = await window.storage.get(key, false);
-                    if (r && r.value) {
-                        historySnapshots.push({ key, data: JSON.parse(r.value) });
-                    }
-                } catch (e) {
-                    // 忽略單一天讀取失敗，仍以現有資料繼續
-                }
-            }
-        }
-
-        // 取「今天以外」最近一天的快照（用來算量縮比例）
-        let prevDaySnapshot = null;
-        if (historySnapshots.length >= 2) {
-            prevDaySnapshot = historySnapshots[historySnapshots.length - 2].data;
-        }
-
-        statusDiv.innerHTML = '正進行黑K與型態篩選...';
-        let matchCount = 0;
-
-        cacheStockDay.forEach(item => {
-            const code = item.Code;
-            const name = item.Name.trim();
-
-            const close = parseFloat(item.ClosingPrice);
-            const open = parseFloat(item.OpeningPrice);
-            const volume = Math.round(parseInt(item.TradeVolume || 0, 10) / 1000);
-            const change = parseFloat(item.Change);
-
-            if (isNaN(close) || volume < 500) return; // 剔除流動性極差或無收盤價的標的
-
-            const isBlackK = close < open;
-            const stockType = getStockType(code);
-            const isTargetIndustry = stockType !== '一般個股';
-
-            // 篩選條件：今日收黑K、漲跌幅收斂在 -2.5% ~ 0.5% 之間
-            if (isBlackK && change >= -2.5 && change <= 0.5) {
-                matchCount++;
-                const typeBadge = isTargetIndustry
-                    ? `<span class="badge badge-传产">${stockType}</span>`
-                    : `<span class="badge">一般</span>`;
-
-                // 量縮比例：只有在有前一天真實資料時才計算，否則顯示待補
-                let volumeRatioHtml = '<span class="badge-pending badge">資料累積中</span>';
-                if (prevDaySnapshot && prevDaySnapshot[code] && prevDaySnapshot[code].v > 0) {
-                    const prevVol = prevDaySnapshot[code].v;
-                    const ratio = ((volume / prevVol) * 100).toFixed(0);
-                    volumeRatioHtml = `${ratio}% <span class="progress-note">(較昨日)</span>`;
-                }
-
-                // 五日均線位置：只有在累積滿 5 天真實收盤價時才計算
-                let ma5Html = '<span class="badge-pending badge">資料累積中</span>';
-                if (haveEnoughHistory) {
-                    const closes = historySnapshots
-                        .map(snap => snap.data[code] ? snap.data[code].c : null)
-                        .filter(c => c !== null);
-                    if (closes.length === HISTORY_DAYS_NEEDED) {
-                        const ma5 = closes.reduce((a, b) => a + b, 0) / closes.length;
-                        const diffPct = (((close - ma5) / ma5) * 100).toFixed(1);
-                        const position = close >= ma5 ? '站上五日線' : '跌破五日線';
-                        const cls = close >= ma5 ? 'green' : 'red';
-                        ma5Html = `<span class="${cls}">${position} (${diffPct}%)</span>`;
-                    }
-                }
-
-                tbody.insertAdjacentHTML('beforeend', `
-                    <tr>
-                        <td><strong>${code}</strong></td>
-                        <td>${name}</td>
-                        <td>${typeBadge}</td>
-                        <td class="green">黑K</td>
-                        <td class="${change >= 0 ? 'green' : 'red'}">${change}%</td>
-                        <td>${volume} 張</td>
-                        <td>${volumeRatioHtml}</td>
-                        <td>${ma5Html}</td>
-                        <td>${close}</td>
-                    </tr>
-                `);
-            }
-        });
-
-        statusDiv.innerHTML = `🎉 篩選完成！今日（資料日期 ${dateKey}）共有 ${matchCount} 檔黑K且漲跌幅收斂的標的。請優先觀察帶有紫標的傳產轉型股，並留意五日均線與量縮欄位是否已累積足夠歷史資料。`;
-    } catch (err) {
-        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
-    } finally {
-        btn4.disabled = btn5.disabled = btn6.disabled = false;
-    }
-});
-
-// ==================== 策略 6：布林通道進場 ====================
-// 核心解法：MI_INDEX 這支 API 支援「依日期查詢全市場資料」（date=YYYYMMDD&type=ALL），
-// 因此可以直接回補過去 N 個交易日的全市場收盤價，不需要像黑飛那樣每天累積等待。
-// 每天抓到的資料會存進 window.storage（key: mi:YYYYMMDD），之後重複執行只需要補新的一天。
-
-const btn6 = document.getElementById('btn6');
-const bollingerProgress = document.getElementById('bollingerProgress');
-const BOLLINGER_PERIOD = 20;
+// ==================== 共用小工具 ====================
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 function formatDateKey(d) {
     const y = d.getFullYear();
@@ -421,12 +87,94 @@ function formatDateKey(d) {
     return `${y}${m}${day}`;
 }
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function todayKeyFallback() { return formatDateKey(new Date()); }
+
+// 民國年日期字串 -> 西元 YYYYMMDD
+function rocDateToKey(rocDate) {
+    const year = parseInt(rocDate.substring(0, rocDate.length - 4), 10) + 1911;
+    const mmdd = rocDate.substring(rocDate.length - 4);
+    return `${year}${mmdd}`;
 }
 
-// 從 MI_INDEX 的回應中找出「個股資訊」表格（欄位順序或表格編號可能因版本略有不同，
-// 所以動態尋找含有「證券代號」與「收盤價」的 fields 陣列，而不是寫死 fields9/data9）
+// 利用公開 CORS 代理繞過瀏覽器跨域限制
+async function fetchData(url, isJson = true) {
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error("代理伺服器連線失敗");
+    const jsonContainer = await res.json();
+    return isJson ? JSON.parse(jsonContainer.contents) : jsonContainer.contents;
+}
+
+// ==================== 資料來源 1：三大法人 T86（支援依日期查詢，無需累積） ====================
+async function ensureT86Data() {
+    if (cacheT86) return cacheT86;
+    const today = todayKeyFallback();
+    const url = `https://www.twse.com.tw/fund/T86?response=json&date=${today}&selectType=ALL`;
+    const raw = await fetchData(url);
+    if (!raw || raw.stat !== 'OK' || !raw.data) {
+        throw new Error('今日尚無三大法人資料（可能非交易日或資料尚未更新）');
+    }
+    const fields = raw.fields;
+    const idx = {
+        code: fields.indexOf('證券代號'),
+        name: fields.indexOf('證券名稱'),
+        foreign: fields.indexOf('外陸資買賣超股數(不含外資自營商)'),
+        trust: fields.indexOf('投信買賣超股數'),
+        dealer: fields.indexOf('自營商買賣超股數')
+    };
+    cacheT86 = raw.data.map(row => ({
+        Code: row[idx.code],
+        Name: row[idx.name],
+        foreign: row[idx.foreign],
+        trust: row[idx.trust],
+        dealer: row[idx.dealer]
+    }));
+    return cacheT86;
+}
+
+// ==================== 資料來源 2：全市場收盤行情 STOCK_DAY_ALL（只有最新一天快照） ====================
+async function ensureStockDayData() {
+    if (cacheStockDay) return cacheStockDay;
+    const raw = await fetchData('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
+    if (!Array.isArray(raw) || raw.length === 0) {
+        throw new Error('今日尚無收盤行情資料');
+    }
+    cacheStockDay = raw;
+    return cacheStockDay;
+}
+
+// 黑飛：把今天快照存進本機（累積滿 5 天才有真五日線，這裡僅用來輔助判斷型態，不在主表顯示均線）
+async function saveStockDaySnapshotAndCheckHeifei() {
+    const data = await ensureStockDayData();
+    const dataDateRoc = data[0].Date;
+    const dateKey = rocDateToKey(dataDateRoc);
+
+    const snapshot = {};
+    data.forEach(item => {
+        const close = parseFloat(item.ClosingPrice);
+        const volume = Math.round(parseInt(item.TradeVolume || 0, 10) / 1000);
+        if (!isNaN(close)) snapshot[item.Code] = { c: close, v: volume };
+    });
+    try { await window.storage.set(`stockday:${dateKey}`, JSON.stringify(snapshot), false); } catch (e) {}
+
+    const heifeiMatchSet = new Set();
+    const stockDayInfoMap = {};
+    data.forEach(item => {
+        const close = parseFloat(item.ClosingPrice);
+        const open = parseFloat(item.OpeningPrice);
+        const volume = Math.round(parseInt(item.TradeVolume || 0, 10) / 1000);
+        const change = parseFloat(item.Change);
+        if (isNaN(close)) return;
+        stockDayInfoMap[item.Code] = { close, change, volume, name: item.Name.trim() };
+        if (volume < 500) return;
+        const isBlackK = close < open;
+        if (isBlackK && change >= -2.5 && change <= 0.5) heifeiMatchSet.add(item.Code);
+    });
+
+    return { heifeiMatchSet, stockDayInfoMap };
+}
+
+// ==================== 資料來源 3：MI_INDEX 歷史回補（供布林通道使用，支援依日期查詢全市場資料） ====================
 function parseMiIndexAllStocks(raw) {
     const keys = Object.keys(raw);
     for (const key of keys) {
@@ -438,32 +186,25 @@ function parseMiIndexAllStocks(raw) {
         const closeIdx = fields.indexOf('收盤價');
         const nameIdx = fields.indexOf('證券名稱');
         if (codeIdx === -1 || closeIdx === -1) continue;
-        const dataKey = `data${m[1]}`;
-        const rows = raw[dataKey];
+        const rows = raw[`data${m[1]}`];
         if (!Array.isArray(rows)) continue;
 
         const result = {};
         rows.forEach(row => {
             const code = row[codeIdx];
-            const closeRaw = String(row[closeIdx]).replace(/,/g, '').trim();
-            const close = parseFloat(closeRaw);
-            if (code && !isNaN(close)) {
-                result[code] = { close, name: nameIdx !== -1 ? row[nameIdx] : code };
-            }
+            const close = parseFloat(String(row[closeIdx]).replace(/,/g, '').trim());
+            if (code && !isNaN(close)) result[code] = { close, name: nameIdx !== -1 ? row[nameIdx] : code };
         });
         if (Object.keys(result).length > 0) return result;
     }
     return null;
 }
 
-// 取得（並快取）某一天的全市場收盤價；若當天無交易資料（假日等）回傳 null
 async function fetchTradingDayCloses(dateKey) {
     try {
         const cached = await window.storage.get(`mi:${dateKey}`, false);
         if (cached && cached.value) return JSON.parse(cached.value);
-    } catch (e) {
-        // 快取不存在，繼續走網路請求
-    }
+    } catch (e) {}
 
     try {
         const url = `https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=${dateKey}&type=ALL`;
@@ -471,23 +212,18 @@ async function fetchTradingDayCloses(dateKey) {
         if (!raw || raw.stat !== 'OK') return null;
         const parsed = parseMiIndexAllStocks(raw);
         if (!parsed) return null;
-        try {
-            await window.storage.set(`mi:${dateKey}`, JSON.stringify(parsed), false);
-        } catch (e) {
-            // 儲存失敗不影響本次計算，只是下次要重新抓
-        }
+        try { await window.storage.set(`mi:${dateKey}`, JSON.stringify(parsed), false); } catch (e) {}
         return parsed;
     } catch (e) {
         return null;
     }
 }
 
-// 找到最近一個「有交易資料」的日期，並往回收集滿 neededDays 天
 async function backfillTradingDays(neededDays, onProgress) {
     const collected = [];
     const cursor = new Date();
     let guard = 0;
-    const MAX_LOOKBACK = 60; // 最多往回找 60 個日曆天，避免無限迴圈
+    const MAX_LOOKBACK = 60;
 
     while (collected.length < neededDays && guard < MAX_LOOKBACK) {
         const dateKey = formatDateKey(cursor);
@@ -498,109 +234,303 @@ async function backfillTradingDays(neededDays, onProgress) {
         }
         cursor.setDate(cursor.getDate() - 1);
         guard++;
-        await sleep(350); // 溫和的節流，避免對代理伺服器與證交所發送過快的請求
+        await sleep(300);
     }
-
-    collected.reverse(); // 由舊到新排序
+    collected.reverse();
     return collected;
 }
 
-btn6.addEventListener('click', async () => {
-    btn4.disabled = btn5.disabled = btn6.disabled = true;
-    switchTab('tab6');
-    const tbody = document.getElementById('body6');
-    tbody.innerHTML = '';
-    bollingerProgress.innerHTML = '';
+async function computeBollingerSignals() {
+    lastBollingerSignals = {};
+    const days = await backfillTradingDays(BOLLINGER_PERIOD, (done, total) => {
+        statusDiv.innerHTML = `正在回補布林通道所需的歷史收盤價 (${done}/${total})...`;
+    });
+    if (days.length < BOLLINGER_PERIOD) {
+        throw new Error(`布林通道歷史資料只取得 ${days.length}/${BOLLINGER_PERIOD} 天，暫不計算此項`);
+    }
+
+    const seriesMap = {};
+    days.forEach(day => {
+        Object.entries(day.closes).forEach(([code, info]) => {
+            if (!seriesMap[code]) seriesMap[code] = [];
+            seriesMap[code].push(info.close);
+        });
+    });
+
+    Object.entries(seriesMap).forEach(([code, closes]) => {
+        if (closes.length < BOLLINGER_PERIOD) return;
+        const w = closes.slice(-BOLLINGER_PERIOD);
+        const mean = w.reduce((a, b) => a + b, 0) / BOLLINGER_PERIOD;
+        const variance = w.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / BOLLINGER_PERIOD;
+        const std = Math.sqrt(variance);
+        const upper = mean + 2 * std;
+        const lower = mean - 2 * std;
+        const latest = w[w.length - 1];
+        if (latest > upper) lastBollingerSignals[code] = 'up';
+        else if (latest < lower) lastBollingerSignals[code] = 'down';
+    });
+}
+
+// ==================== 資料來源 4：Yahoo 股市排行（無官方 API，直接解析頁面 HTML） ====================
+function parseYahooNumber(token) {
+    if (token == null) return null;
+    let t = String(token).trim();
+    if (t === '' || t === '--') return null;
+    const isPercent = t.endsWith('%');
+    if (isPercent) t = t.slice(0, -1);
+    const isMillion = /M$/.test(t);
+    if (isMillion) t = t.slice(0, -1);
+    t = t.replace(/,/g, '');
+    let num = parseFloat(t);
+    if (isNaN(num)) return null;
+    if (isMillion) num = num * 1e6;
+    return num;
+}
+
+function parseYahooRankHtml(html, fieldNames) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const anchors = Array.from(doc.querySelectorAll('a[href*="/quote/"]'));
+    const seenCodes = new Set();
+    const rows = [];
+
+    anchors.forEach(a => {
+        const hrefMatch = (a.getAttribute('href') || '').match(/\/quote\/([A-Za-z0-9]+)\.(TW|TWO)(?:[/?]|$)/);
+        if (!hrefMatch) return;
+        const code = hrefMatch[1];
+        const market = hrefMatch[2];
+        if (seenCodes.has(code)) return;
+
+        let container = a.closest('li') || a.closest('tr') || a.parentElement?.parentElement || a.parentElement;
+        if (!container) return;
+
+        const text = container.textContent || '';
+        const tokens = text.split('\n').map(t => t.trim()).filter(t => t.length > 0 && !/^https?:\/\//.test(t));
+
+        const codeToken = `${code}.${market}`;
+        const codeTokenIdx = tokens.indexOf(codeToken);
+        let name, valueTokens;
+        if (codeTokenIdx > 0) {
+            name = tokens[codeTokenIdx - 1];
+            valueTokens = tokens.slice(codeTokenIdx + 1);
+        } else {
+            name = tokens[0];
+            valueTokens = tokens.slice(1);
+        }
+        if (!name || valueTokens.length < fieldNames.length) return;
+
+        const values = {};
+        fieldNames.forEach((fname, i) => { values[fname] = parseYahooNumber(valueTokens[i]); });
+        seenCodes.add(code);
+        rows.push({ code, market, name, ...values });
+    });
+
+    return rows;
+}
+
+async function fetchYahooRank(url, fieldNames, topN) {
+    const html = await fetchData(url, false);
+    const rows = parseYahooRankHtml(html, fieldNames);
+    if (rows.length === 0) throw new Error('無法從頁面解析出任何資料，可能是 Yahoo 頁面結構已變更');
+    return rows.slice(0, topN);
+}
+
+// ==================== 主流程：抓取全部資料來源並融合成單一推薦表 ====================
+async function runFullAnalysis() {
+    btnRun.disabled = true;
+    resultBody.innerHTML = '';
 
     try {
-        statusDiv.innerHTML = `正在回補過去 ${BOLLINGER_PERIOD} 個交易日的全市場收盤價（若已有快取會很快）...`;
+        statusDiv.innerHTML = '正在抓取 Yahoo 成交量前50 與外資買超前50...';
+        const [volumeTop50, foreignBuyTop50] = await Promise.all([
+            fetchYahooRank(
+                'https://tw.stock.yahoo.com/rank/volume',
+                ['price', 'change', 'changePct', 'high', 'low', 'spread', 'volume', 'turnover'],
+                50
+            ),
+            fetchYahooRank(
+                'https://tw.stock.yahoo.com/rank/foreign-investor-buy?exchange=TAI&period=day',
+                ['price', 'change', 'buyVol', 'sellVol', 'netBuy', 'totalVol', 'foreignHoldShares', 'foreignHoldPct'],
+                50
+            )
+        ]);
 
-        const days = await backfillTradingDays(BOLLINGER_PERIOD, (done, total) => {
-            bollingerProgress.innerHTML = `已取得 ${done} / ${total} 個交易日資料...`;
-        });
-
-        if (days.length < BOLLINGER_PERIOD) {
-            throw new Error(`只成功取得 ${days.length} 個交易日資料，不足 ${BOLLINGER_PERIOD} 天，可能證交所近期資料不足或連線不穩，請稍後再試一次。`);
+        statusDiv.innerHTML = '正在讀取三大法人買賣超資料...';
+        let t86MatchSet = new Set();
+        try {
+            const t86Data = await ensureT86Data();
+            t86Data.forEach(item => {
+                const toShares = s => Math.round((parseInt(String(s).replace(/,/g, ''), 10) || 0) / 1000);
+                const foreign = toShares(item.foreign);
+                const trust = toShares(item.trust);
+                const dealer = toShares(item.dealer);
+                if (foreign > 100 && trust > 50 && dealer > 0) t86MatchSet.add(item.Code);
+            });
+        } catch (e) {
+            console.warn('三大法人資料載入失敗，該項評分跳過:', e.message);
         }
 
-        statusDiv.innerHTML = '正在計算 20 日布林通道...';
+        statusDiv.innerHTML = '正在讀取全市場收盤行情並判斷黑飛型態...';
+        let heifeiMatchSet = new Set();
+        let stockDayInfoMap = {};
+        try {
+            const r = await saveStockDaySnapshotAndCheckHeifei();
+            heifeiMatchSet = r.heifeiMatchSet;
+            stockDayInfoMap = r.stockDayInfoMap;
+        } catch (e) {
+            console.warn('黑飛資料載入失敗，該項評分跳過:', e.message);
+        }
 
-        // 整理成 code -> { name, closes: [oldest ... newest] }
-        const seriesMap = {};
-        days.forEach(day => {
-            Object.entries(day.closes).forEach(([code, info]) => {
-                if (!seriesMap[code]) seriesMap[code] = { name: info.name, closes: [] };
-                seriesMap[code].closes.push(info.close);
-                seriesMap[code].name = info.name; // 保留最新的名稱
-            });
+        try {
+            await computeBollingerSignals();
+        } catch (e) {
+            console.warn('布林通道計算跳過:', e.message);
+        }
+
+        statusDiv.innerHTML = '正在融合各項條件並計算推薦分數...';
+
+        const volumeMap = new Map(volumeTop50.map(r => [r.code, r]));
+        const foreignMap = new Map(foreignBuyTop50.map(r => [r.code, r]));
+        const candidateCodes = new Set([...volumeMap.keys(), ...foreignMap.keys()]);
+
+        const recommendations = [];
+        candidateCodes.forEach(code => {
+            let score = 0;
+            const reasons = [];
+
+            if (volumeMap.has(code)) { score++; reasons.push('成交量前50'); }
+            if (foreignMap.has(code)) { score++; reasons.push('外資買超前50'); }
+            if (t86MatchSet.has(code)) { score++; reasons.push('三大法人同買'); }
+            if (heifeiMatchSet.has(code)) { score++; reasons.push('黑飛型態'); }
+            if (lastBollingerSignals[code] === 'up') { score++; reasons.push('突破布林上軌'); }
+            else if (lastBollingerSignals[code] === 'down') { reasons.push('跌破布林下軌(警示)'); }
+
+            const vInfo = volumeMap.get(code);
+            const fInfo = foreignMap.get(code);
+            const sInfo = stockDayInfoMap[code];
+
+            const name = (vInfo && vInfo.name) || (fInfo && fInfo.name) || (sInfo && sInfo.name) || code;
+            const price = (vInfo && vInfo.price) ?? (fInfo && fInfo.price) ?? (sInfo && sInfo.close) ?? null;
+            const changePct = vInfo ? vInfo.changePct : (sInfo ? sInfo.change : null);
+            const volume = (vInfo && vInfo.volume) ?? (sInfo && sInfo.volume * 1000) ?? null;
+            const netBuy = fInfo ? fInfo.netBuy : null;
+
+            recommendations.push({ code, name, score, reasons, price, changePct, volume, netBuy });
         });
 
-        let matchCount = 0;
-        const latestDateKey = days[days.length - 1].date;
+        recommendations.sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return (b.netBuy || 0) - (a.netBuy || 0);
+        });
 
-        Object.entries(seriesMap).forEach(([code, info]) => {
-            if (info.closes.length < BOLLINGER_PERIOD) return; // 資料不足 20 天，跳過（例如新上市股）
+        recommendations.forEach(rec => {
+            const priceHtml = rec.price != null ? rec.price.toLocaleString() : '--';
+            const changeHtml = rec.changePct != null
+                ? `<span class="${rec.changePct >= 0 ? 'red' : 'green'}">${rec.changePct}%</span>`
+                : '<span class="gray">--</span>';
+            const volumeHtml = rec.volume != null ? Math.round(rec.volume / 1000).toLocaleString() + ' 張' : '--';
+            const netBuyHtml = rec.netBuy != null
+                ? `<span class="${rec.netBuy >= 0 ? 'red' : 'green'}">${rec.netBuy.toLocaleString()}</span>`
+                : '<span class="gray">--</span>';
+            const scoreColor = rec.score >= 3 ? '#c53030' : (rec.score === 2 ? '#dd6b20' : '#4a5568');
 
-            const window20 = info.closes.slice(-BOLLINGER_PERIOD);
-            const mean = window20.reduce((a, b) => a + b, 0) / BOLLINGER_PERIOD;
-            const variance = window20.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / BOLLINGER_PERIOD;
-            const std = Math.sqrt(variance);
-            const upper = mean + 2 * std;
-            const lower = mean - 2 * std;
-            const latestClose = window20[window20.length - 1];
-
-            let signal = null;
-            if (latestClose > upper) signal = 'up';
-            else if (latestClose < lower) signal = 'down';
-            if (!signal) return; // 只列出真正突破通道的標的
-
-            matchCount++;
-            const percentB = ((latestClose - lower) / (upper - lower) * 100).toFixed(1);
-            const signalHtml = signal === 'up'
-                ? '<span class="red">↑ 突破上軌(偏多)</span>'
-                : '<span class="green">↓ 跌破下軌(偏空)</span>';
-
-            tbody.insertAdjacentHTML('beforeend', `
+            resultBody.insertAdjacentHTML('beforeend', `
                 <tr>
-                    <td><strong>${code}</strong></td>
-                    <td>${info.name}</td>
-                    <td>${signalHtml}</td>
-                    <td>${latestClose.toFixed(2)}</td>
-                    <td>${mean.toFixed(2)}</td>
-                    <td>${upper.toFixed(2)}</td>
-                    <td>${lower.toFixed(2)}</td>
-                    <td>${percentB}%</td>
+                    <td><strong>${rec.code}</strong></td>
+                    <td>${rec.name}</td>
+                    <td><strong style="color:${scoreColor};">${rec.score} 分</strong></td>
+                    <td>${rec.reasons.map(r => `<span class="badge">${r}</span>`).join(' ')}</td>
+                    <td>${priceHtml}</td>
+                    <td>${changeHtml}</td>
+                    <td>${volumeHtml}</td>
+                    <td>${netBuyHtml}</td>
                 </tr>
             `);
         });
 
-        bollingerProgress.innerHTML = `使用交易日資料範圍：${days[0].date} ~ ${latestDateKey}（共 ${days.length} 天，皆為真實計算值）`;
-        statusDiv.innerHTML = `🎉 篩選完成！今日（${latestDateKey}）共有 ${matchCount} 檔標的突破 20 日布林通道。`;
+        const highScoreCount = recommendations.filter(r => r.score >= 3).length;
+        const now = new Date();
+        lastUpdatedDiv.innerHTML = `最後更新時間：${now.toLocaleString('zh-TW')}`;
+        statusDiv.innerHTML = `🎉 更新完成！候選池共 ${recommendations.length} 檔（成交量前50 ∪ 外資買超前50），其中 ${highScoreCount} 檔符合 3 項以上條件。任一資料來源若暫時載入失敗，該項評分會自動跳過，不影響其他項目。`;
+
+        return true;
     } catch (err) {
         statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
+        return false;
     } finally {
-        btn4.disabled = btn5.disabled = btn6.disabled = false;
+        btnRun.disabled = false;
+    }
+}
+
+btnRun.addEventListener('click', () => { runFullAnalysis(); });
+
+// ==================== 自動更新（開盤 09:00 / 收盤後 13:35）====================
+// 重要限制：這是瀏覽器分頁裡的排程，只有在這個分頁保持開啟的情況下才會觸發。
+// 如果分頁被關閉或裝置睡眠，並不會有背景伺服器繼續執行——這一點無法用純前端網頁做到「真正的每日自動排程」。
+const AUTO_SLOTS = [
+    { key: 'open', hour: 9, minute: 0, label: '開盤(09:00)' },
+    { key: 'close', hour: 13, minute: 35, label: '收盤後(13:35)' }
+];
+
+async function getLastAutoRunDate(slotKey) {
+    try {
+        const r = await window.storage.get(`autorun:${slotKey}`, false);
+        return r && r.value ? r.value : null;
+    } catch (e) { return null; }
+}
+
+async function setLastAutoRunDate(slotKey, dateKey) {
+    try { await window.storage.set(`autorun:${slotKey}`, dateKey, false); } catch (e) {}
+}
+
+async function autoCheckLoop() {
+    if (!autoToggle.checked) return;
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun, 6=Sat
+    if (day === 0 || day === 6) return; // 簡單跳過週末（無法排除國定假日）
+
+    const todayKey = formatDateKey(now);
+    for (const slot of AUTO_SLOTS) {
+        const slotTime = new Date(now);
+        slotTime.setHours(slot.hour, slot.minute, 0, 0);
+        const diffMinutes = (now - slotTime) / 60000;
+        // 到達時間點之後的 10 分鐘內視為「該時段」，且今天這個時段還沒跑過
+        if (diffMinutes >= 0 && diffMinutes <= 10) {
+            const lastRun = await getLastAutoRunDate(slot.key);
+            if (lastRun !== todayKey) {
+                statusDiv.innerHTML = `⏰ 已到${slot.label}，自動觸發更新...`;
+                await setLastAutoRunDate(slot.key, todayKey);
+                await runFullAnalysis();
+            }
+        }
+    }
+}
+
+autoToggle.addEventListener('change', () => {
+    if (autoToggle.checked) {
+        autoNoteDiv.innerHTML = '自動更新已開啟：只要這個分頁保持開啟，就會在每個工作日 09:00 與 13:35 左右自動重新分析一次（週末不會觸發，國定假日無法自動排除）。';
+    } else {
+        autoNoteDiv.innerHTML = '';
     }
 });
 
-// 清除本機累積的歷史快照
+setInterval(autoCheckLoop, 60 * 1000); // 每分鐘檢查一次是否到了自動更新時間點
+
+// ==================== 清除本機累積資料 ====================
 btnReset.addEventListener('click', async () => {
-    if (!confirm('確定要清除所有已累積的歷史快照嗎？黑飛的五日均線需要重新累積 5 個交易日，布林通道則需要重新回補約 20 個交易日。')) return;
+    if (!confirm('確定要清除所有已累積的本機資料嗎？布林通道需要重新回補約 20 個交易日，自動更新的當日紀錄也會被清除。')) return;
     try {
-        const [stockdayList, miList] = await Promise.all([
+        const [stockdayList, miList, autorunList] = await Promise.all([
             window.storage.list('stockday:', false),
-            window.storage.list('mi:', false)
+            window.storage.list('mi:', false),
+            window.storage.list('autorun:', false)
         ]);
         const keys = [
             ...((stockdayList && stockdayList.keys) ? stockdayList.keys : []),
-            ...((miList && miList.keys) ? miList.keys : [])
+            ...((miList && miList.keys) ? miList.keys : []),
+            ...((autorunList && autorunList.keys) ? autorunList.keys : [])
         ];
-        for (const key of keys) {
-            await window.storage.delete(key, false);
-        }
-        statusDiv.innerHTML = `已清除 ${keys.length} 筆本機累積快照（黑飛與布林通道兩種快取皆已清空）。`;
-        historyStatus.innerHTML = '';
-        bollingerProgress.innerHTML = '';
+        for (const key of keys) { await window.storage.delete(key, false); }
+        statusDiv.innerHTML = `已清除 ${keys.length} 筆本機累積資料。`;
     } catch (e) {
         statusDiv.innerHTML = `<span style="color:red;">清除失敗: ${e.message}</span>`;
     }
