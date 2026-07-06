@@ -29,10 +29,11 @@
 <body>
 
 <div class="container">
-    <h2>台股量化篩選器</h2>
+    <h2>台股量化篩選器（成交量 + 外資買超 融合 三大法人 / 黑飛 / 布林通道）</h2>
 
     <div class="top-bar">
         <button id="btnRun" class="btn">🔄 立即更新分析</button>
+        <button id="btnDiag" class="btn" style="background-color:#805ad5;">🔍 連線自我檢測</button>
         <label class="switch-label">
             <input type="checkbox" id="autoToggle">
             自動於開盤(09:00)／收盤後(13:35) 更新（需保持此分頁開啟）
@@ -96,13 +97,45 @@ function rocDateToKey(rocDate) {
     return `${year}${mmdd}`;
 }
 
-// 利用公開 CORS 代理繞過瀏覽器跨域限制
+// 利用公開 CORS 代理繞過瀏覽器跨域限制。
+// 免費代理服務常常不穩定（例如 allorigins 常會間歇性 500 錯誤），
+// 所以這裡改成依序嘗試多個代理，其中一個失敗就換下一個，全部失敗才報錯。
+const CORS_PROXIES = [
+    {
+        name: 'allorigins',
+        build: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+        extract: async (res) => {
+            const j = await res.json();
+            return j.contents;
+        }
+    },
+    {
+        name: 'codetabs',
+        build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+        extract: async (res) => res.text()
+    },
+    {
+        name: 'corsproxy.io',
+        build: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+        extract: async (res) => res.text()
+    }
+];
+
 async function fetchData(url, isJson = true) {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const res = await fetch(proxyUrl);
-    if (!res.ok) throw new Error("代理伺服器連線失敗");
-    const jsonContainer = await res.json();
-    return isJson ? JSON.parse(jsonContainer.contents) : jsonContainer.contents;
+    let lastError = null;
+    for (const proxy of CORS_PROXIES) {
+        try {
+            const res = await fetch(proxy.build(url));
+            if (!res.ok) throw new Error(`${proxy.name} 回應狀態 ${res.status}`);
+            const text = await proxy.extract(res);
+            if (!text) throw new Error(`${proxy.name} 回傳空內容`);
+            return isJson ? JSON.parse(text) : text;
+        } catch (e) {
+            lastError = e;
+            console.warn(`代理 ${proxy.name} 失敗，嘗試下一個:`, e.message);
+        }
+    }
+    throw new Error(`所有代理伺服器都連線失敗（最後錯誤: ${lastError ? lastError.message : '未知'}）`);
 }
 
 // ==================== 資料來源 1：三大法人 T86（支援依日期查詢，無需累積） ====================
@@ -462,6 +495,49 @@ async function runFullAnalysis() {
 }
 
 btnRun.addEventListener('click', () => { runFullAnalysis(); });
+
+// ==================== 連線自我檢測 ====================
+// 用來快速判斷：如果連「完全不需要代理、公認很穩定的公開 API」都失敗，
+// 代表問題出在目前這個執行環境本身擋掉了對外連線（例如 Claude Artifact 預覽沙盒），
+// 而不是 allorigins / codetabs / corsproxy 這些代理或證交所、Yahoo 本身的問題。
+const btnDiag = document.getElementById('btnDiag');
+
+async function runDiagnostics() {
+    btnDiag.disabled = true;
+    const lines = [];
+
+    // 測試 1：完全不經代理，直接打一個公認穩定、有開放 CORS 的公開測試 API
+    try {
+        const res = await fetch('https://jsonplaceholder.typicode.com/todos/1');
+        if (res.ok) {
+            lines.push('✅ 測試1（不經代理，直連 jsonplaceholder）成功 → 這個環境「可以」對外發送請求');
+        } else {
+            lines.push(`⚠️ 測試1（不經代理，直連 jsonplaceholder）回應狀態 ${res.status}`);
+        }
+    } catch (e) {
+        lines.push(`❌ 測試1（不經代理，直連 jsonplaceholder）失敗：${e.message} → 這個執行環境本身很可能封鎖了所有對外部網站的請求（例如 Claude 預覽沙盒），請把檔案下載到電腦、用真正的瀏覽器開啟再測`);
+    }
+
+    // 測試 2~4：分別測試三個代理，看哪一個能正常運作
+    for (const proxy of CORS_PROXIES) {
+        try {
+            const testUrl = proxy.build('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
+            const res = await fetch(testUrl);
+            if (!res.ok) throw new Error(`回應狀態 ${res.status}`);
+            const text = await proxy.extract(res);
+            if (!text) throw new Error('回傳空內容');
+            JSON.parse(text);
+            lines.push(`✅ 代理「${proxy.name}」目前可正常運作`);
+        } catch (e) {
+            lines.push(`❌ 代理「${proxy.name}」目前失敗：${e.message}`);
+        }
+    }
+
+    statusDiv.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+    btnDiag.disabled = false;
+}
+
+btnDiag.addEventListener('click', () => { runDiagnostics(); });
 
 // ==================== 自動更新（開盤 09:00 / 收盤後 13:35）====================
 // 重要限制：這是瀏覽器分頁裡的排程，只有在這個分頁保持開啟的情況下才會觸發。
