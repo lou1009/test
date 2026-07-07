@@ -29,7 +29,7 @@
 <body>
 
 <div class="container">
-    <h2>台股量化篩選器（）</h2>
+    <h2>台股量化篩選</h2>
 
     <div class="top-bar">
         <button id="btnRun" class="btn">🔄 立即更新分析</button>
@@ -102,6 +102,11 @@ function rocDateToKey(rocDate) {
 // 所以這裡改成依序嘗試多個代理，其中一個失敗就換下一個，全部失敗才報錯。
 const CORS_PROXIES = [
     {
+        name: 'corsproxy.io',
+        build: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+        extract: async (res) => res.text()
+    },
+    {
         name: 'allorigins',
         build: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
         extract: async (res) => {
@@ -112,11 +117,6 @@ const CORS_PROXIES = [
     {
         name: 'codetabs',
         build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-        extract: async (res) => res.text()
-    },
-    {
-        name: 'corsproxy.io',
-        build: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
         extract: async (res) => res.text()
     }
 ];
@@ -304,138 +304,45 @@ async function computeBollingerSignals() {
     });
 }
 
-// ==================== 資料來源 4：Yahoo 股市排行（無官方 API，直接解析頁面 HTML） ====================
-function parseYahooNumber(token) {
-    if (token == null) return null;
-    let t = String(token).trim();
-    if (t === '' || t === '--') return null;
-    const isPercent = t.endsWith('%');
-    if (isPercent) t = t.slice(0, -1);
-    const isMillion = /M$/.test(t);
-    if (isMillion) t = t.slice(0, -1);
-    t = t.replace(/,/g, '');
-    let num = parseFloat(t);
-    if (isNaN(num)) return null;
-    if (isMillion) num = num * 1e6;
-    return num;
-}
-
-function parseYahooRankHtml(html, fieldNames) {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-
-    // 第一步：從所有連結中找出「代號＋市場別」清單，並保留在頁面上出現的順序（就是排名順序）
-    const anchors = Array.from(doc.querySelectorAll('a[href*="/quote/"]'));
-    const codeList = [];
-    const seenCodes = new Set();
-    anchors.forEach(a => {
-        const hrefMatch = (a.getAttribute('href') || '').match(/\/quote\/([A-Za-z0-9]+)\.(TW|TWO)(?:[/?]|$)/);
-        if (!hrefMatch) return;
-        const code = hrefMatch[1];
-        const market = hrefMatch[2];
-        if (seenCodes.has(code)) return;
-        seenCodes.add(code);
-        codeList.push({ code, market });
-    });
-
-    // 第二步：把整份文件拆成「葉節點文字」陣列——只取沒有子元素、且本身有文字的最小節點，
-    // 這樣每個欄位（股價、漲跌、成交量...）會各自變成陣列中獨立的一個項目，
-    // 不會像直接用 textContent 那樣把整列文字黏在一起、沒有分隔符號。
-    const allNodes = doc.body.querySelectorAll('*');
-    const leafTokens = [];
-    allNodes.forEach(node => {
-        if (node.children.length > 0) return; // 只要葉節點
-        const t = (node.textContent || '').trim();
-        if (!t) return;
-        if (/^https?:\/\//.test(t)) return; // 排除純網址文字
-        leafTokens.push(t);
-    });
-
-    // 第三步：依序（用游標往後找，避免同樣文字重複出現時對錯行）在葉節點陣列中定位每個代號，
-    // 抓出它前面的名稱與後面緊接著的 N 個數值欄位
-    const rows = [];
-    let cursor = 0;
-    codeList.forEach(({ code, market }) => {
-        const codeToken = `${code}.${market}`;
-        const idx = leafTokens.indexOf(codeToken, cursor);
-        if (idx === -1 || idx === 0) return; // 找不到，或找不到前面的名稱欄位，跳過這筆
-
-        const name = leafTokens[idx - 1];
-        const values = leafTokens.slice(idx + 1, idx + 1 + fieldNames.length);
-        if (values.length < fieldNames.length) return;
-
-        const parsed = {};
-        fieldNames.forEach((fname, i) => { parsed[fname] = parseYahooNumber(values[i]); });
-
-        rows.push({ code, market, name, ...parsed });
-        cursor = idx + 1; // 下一筆從這裡繼續往後找，維持順序正確
-    });
-
-    return rows;
-}
-
-async function fetchYahooRank(url, fieldNames, topN) {
-    const html = await fetchData(url, false);
-    const rows = parseYahooRankHtml(html, fieldNames);
-    if (rows.length === 0) {
-        // 診斷資訊：讓錯誤訊息直接說明抓回來的內容長什麼樣子，避免用猜的
-        const len = html.length;
-        const quoteLinkCount = (html.match(/\/quote\//g) || []).length;
-        const looksBlocked = /captcha|unusual traffic|Just a moment|驗證|robot/i.test(html);
-        const looksLikeApp = /__NEXT_DATA__|window\.__INITIAL_STATE__/.test(html);
-        throw new Error(
-            `無法解析出資料（頁面長度 ${len} 字元，/quote/ 連結出現 ${quoteLinkCount} 次` +
-            (looksBlocked ? '，疑似被反爬蟲機制擋下' : '') +
-            (looksLikeApp ? '，頁面資料可能包在 JS 變數(__NEXT_DATA__)中而非一般連結' : '') +
-            `）`
-        );
-    }
-    return rows.slice(0, topN);
-}
-
 // ==================== 主流程：抓取全部資料來源並融合成單一推薦表 ====================
 async function runFullAnalysis() {
     btnRun.disabled = true;
     resultBody.innerHTML = '';
 
     try {
-        statusDiv.innerHTML = '正在抓取 Yahoo 成交量前50 與外資買超前50...';
-        const [volumeTop50, foreignBuyTop50] = await Promise.all([
-            fetchYahooRank(
-                'https://tw.stock.yahoo.com/rank/volume',
-                ['price', 'change', 'changePct', 'high', 'low', 'spread', 'volume', 'turnover'],
-                50
-            ),
-            fetchYahooRank(
-                'https://tw.stock.yahoo.com/rank/foreign-investor-buy?exchange=TAI&period=day',
-                ['price', 'change', 'buyVol', 'sellVol', 'netBuy', 'totalVol', 'foreignHoldShares', 'foreignHoldPct'],
-                50
-            )
-        ]);
-
         statusDiv.innerHTML = '正在讀取三大法人買賣超資料...';
         let t86MatchSet = new Set();
+        let foreignBuyList = []; // 用來排出「外資買超前50」
         try {
             const t86Data = await ensureT86Data();
+            const toShares = s => Math.round((parseInt(String(s).replace(/,/g, ''), 10) || 0) / 1000);
             t86Data.forEach(item => {
-                const toShares = s => Math.round((parseInt(String(s).replace(/,/g, ''), 10) || 0) / 1000);
                 const foreign = toShares(item.foreign);
                 const trust = toShares(item.trust);
                 const dealer = toShares(item.dealer);
                 if (foreign > 100 && trust > 50 && dealer > 0) t86MatchSet.add(item.Code);
+                foreignBuyList.push({ code: item.Code, name: item.Name.trim(), netBuy: foreign });
             });
+            foreignBuyList.sort((a, b) => b.netBuy - a.netBuy);
+            foreignBuyList = foreignBuyList.slice(0, 50);
         } catch (e) {
             console.warn('三大法人資料載入失敗，該項評分跳過:', e.message);
         }
 
-        statusDiv.innerHTML = '正在讀取全市場收盤行情並判斷黑飛型態...';
+        statusDiv.innerHTML = '正在讀取全市場收盤行情、排序成交量並判斷黑飛型態...';
         let heifeiMatchSet = new Set();
         let stockDayInfoMap = {};
+        let volumeTopList = []; // 用來排出「成交量前50」
         try {
             const r = await saveStockDaySnapshotAndCheckHeifei();
             heifeiMatchSet = r.heifeiMatchSet;
             stockDayInfoMap = r.stockDayInfoMap;
+            volumeTopList = Object.entries(stockDayInfoMap)
+                .map(([code, info]) => ({ code, ...info }))
+                .sort((a, b) => b.volume - a.volume)
+                .slice(0, 50);
         } catch (e) {
-            console.warn('黑飛資料載入失敗，該項評分跳過:', e.message);
+            console.warn('收盤行情資料載入失敗，成交量排行與黑飛評分跳過:', e.message);
         }
 
         try {
@@ -446,8 +353,8 @@ async function runFullAnalysis() {
 
         statusDiv.innerHTML = '正在融合各項條件並計算推薦分數...';
 
-        const volumeMap = new Map(volumeTop50.map(r => [r.code, r]));
-        const foreignMap = new Map(foreignBuyTop50.map(r => [r.code, r]));
+        const volumeMap = new Map(volumeTopList.map(r => [r.code, r]));
+        const foreignMap = new Map(foreignBuyList.map(r => [r.code, r]));
         const candidateCodes = new Set([...volumeMap.keys(), ...foreignMap.keys()]);
 
         const recommendations = [];
@@ -462,15 +369,15 @@ async function runFullAnalysis() {
             if (lastBollingerSignals[code] === 'up') { score++; reasons.push('突破布林上軌'); }
             else if (lastBollingerSignals[code] === 'down') { reasons.push('跌破布林下軌(警示)'); }
 
-            const vInfo = volumeMap.get(code);
-            const fInfo = foreignMap.get(code);
+            const vInfo = volumeMap.get(code); // { code, close, change, volume, name }
+            const fInfo = foreignMap.get(code); // { code, name, netBuy }
             const sInfo = stockDayInfoMap[code];
 
             const name = (vInfo && vInfo.name) || (fInfo && fInfo.name) || (sInfo && sInfo.name) || code;
-            const price = (vInfo && vInfo.price) ?? (fInfo && fInfo.price) ?? (sInfo && sInfo.close) ?? null;
-            const changePct = vInfo ? vInfo.changePct : (sInfo ? sInfo.change : null);
-            const volume = (vInfo && vInfo.volume) ?? (sInfo && sInfo.volume * 1000) ?? null;
-            const netBuy = fInfo ? fInfo.netBuy : null;
+            const price = (vInfo && vInfo.close) ?? (sInfo && sInfo.close) ?? null;
+            const changePct = (vInfo && vInfo.change) ?? (sInfo && sInfo.change) ?? null;
+            const volume = (vInfo && vInfo.volume) ?? (sInfo && sInfo.volume) ?? null; // 單位：張
+            const netBuy = fInfo ? fInfo.netBuy : null; // 單位：張
 
             recommendations.push({ code, name, score, reasons, price, changePct, volume, netBuy });
         });
@@ -485,7 +392,7 @@ async function runFullAnalysis() {
             const changeHtml = rec.changePct != null
                 ? `<span class="${rec.changePct >= 0 ? 'red' : 'green'}">${rec.changePct}%</span>`
                 : '<span class="gray">--</span>';
-            const volumeHtml = rec.volume != null ? Math.round(rec.volume / 1000).toLocaleString() + ' 張' : '--';
+            const volumeHtml = rec.volume != null ? Math.round(rec.volume).toLocaleString() + ' 張' : '--';
             const netBuyHtml = rec.netBuy != null
                 ? `<span class="${rec.netBuy >= 0 ? 'red' : 'green'}">${rec.netBuy.toLocaleString()}</span>`
                 : '<span class="gray">--</span>';
