@@ -29,7 +29,7 @@
 <body>
 
 <div class="container">
-    <h2>台股量化篩選器（成交量 + 外資買超 融合 三大法人 / 黑飛 / 布林通道）</h2>
+    <h2>台股量化篩選器（）</h2>
 
     <div class="top-bar">
         <button id="btnRun" class="btn">🔄 立即更新分析</button>
@@ -322,39 +322,52 @@ function parseYahooNumber(token) {
 
 function parseYahooRankHtml(html, fieldNames) {
     const doc = new DOMParser().parseFromString(html, 'text/html');
-    const anchors = Array.from(doc.querySelectorAll('a[href*="/quote/"]'));
-    const seenCodes = new Set();
-    const rows = [];
 
+    // 第一步：從所有連結中找出「代號＋市場別」清單，並保留在頁面上出現的順序（就是排名順序）
+    const anchors = Array.from(doc.querySelectorAll('a[href*="/quote/"]'));
+    const codeList = [];
+    const seenCodes = new Set();
     anchors.forEach(a => {
         const hrefMatch = (a.getAttribute('href') || '').match(/\/quote\/([A-Za-z0-9]+)\.(TW|TWO)(?:[/?]|$)/);
         if (!hrefMatch) return;
         const code = hrefMatch[1];
         const market = hrefMatch[2];
         if (seenCodes.has(code)) return;
-
-        let container = a.closest('li') || a.closest('tr') || a.parentElement?.parentElement || a.parentElement;
-        if (!container) return;
-
-        const text = container.textContent || '';
-        const tokens = text.split('\n').map(t => t.trim()).filter(t => t.length > 0 && !/^https?:\/\//.test(t));
-
-        const codeToken = `${code}.${market}`;
-        const codeTokenIdx = tokens.indexOf(codeToken);
-        let name, valueTokens;
-        if (codeTokenIdx > 0) {
-            name = tokens[codeTokenIdx - 1];
-            valueTokens = tokens.slice(codeTokenIdx + 1);
-        } else {
-            name = tokens[0];
-            valueTokens = tokens.slice(1);
-        }
-        if (!name || valueTokens.length < fieldNames.length) return;
-
-        const values = {};
-        fieldNames.forEach((fname, i) => { values[fname] = parseYahooNumber(valueTokens[i]); });
         seenCodes.add(code);
-        rows.push({ code, market, name, ...values });
+        codeList.push({ code, market });
+    });
+
+    // 第二步：把整份文件拆成「葉節點文字」陣列——只取沒有子元素、且本身有文字的最小節點，
+    // 這樣每個欄位（股價、漲跌、成交量...）會各自變成陣列中獨立的一個項目，
+    // 不會像直接用 textContent 那樣把整列文字黏在一起、沒有分隔符號。
+    const allNodes = doc.body.querySelectorAll('*');
+    const leafTokens = [];
+    allNodes.forEach(node => {
+        if (node.children.length > 0) return; // 只要葉節點
+        const t = (node.textContent || '').trim();
+        if (!t) return;
+        if (/^https?:\/\//.test(t)) return; // 排除純網址文字
+        leafTokens.push(t);
+    });
+
+    // 第三步：依序（用游標往後找，避免同樣文字重複出現時對錯行）在葉節點陣列中定位每個代號，
+    // 抓出它前面的名稱與後面緊接著的 N 個數值欄位
+    const rows = [];
+    let cursor = 0;
+    codeList.forEach(({ code, market }) => {
+        const codeToken = `${code}.${market}`;
+        const idx = leafTokens.indexOf(codeToken, cursor);
+        if (idx === -1 || idx === 0) return; // 找不到，或找不到前面的名稱欄位，跳過這筆
+
+        const name = leafTokens[idx - 1];
+        const values = leafTokens.slice(idx + 1, idx + 1 + fieldNames.length);
+        if (values.length < fieldNames.length) return;
+
+        const parsed = {};
+        fieldNames.forEach((fname, i) => { parsed[fname] = parseYahooNumber(values[i]); });
+
+        rows.push({ code, market, name, ...parsed });
+        cursor = idx + 1; // 下一筆從這裡繼續往後找，維持順序正確
     });
 
     return rows;
