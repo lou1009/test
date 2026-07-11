@@ -1,549 +1,351 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台股量化篩選器</title>
-    <style>
-        body { font-family: "Microsoft JhengHei", Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h2 { color: #0f2d59; border-bottom: 3px solid #3182ce; padding-bottom: 10px; margin-top: 0; }
-        .top-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 20px 0; }
-        .btn { background-color: #3182ce; color: white; border: none; padding: 12px 28px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
-        .btn:hover { background-color: #2b6cb0; transform: translateY(-1px); }
-        .btn:disabled { background-color: #cbd5e0; cursor: not-allowed; transform: none; }
-        .btn-gray { background-color: #a0aec0; }
-        .switch-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #2d3748; cursor: pointer; user-select: none; }
-        .meta-line { font-size: 13px; color: #718096; margin: 4px 0; }
-        #status { margin: 15px 0; padding: 12px; background: #edf2f7; border-left: 5px solid #4a5568; border-radius: 4px; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
-        th, td { border: 1px solid #e2e8f0; padding: 12px 10px; text-align: left; font-size: 14px; }
-        th { background-color: #ebf8ff; color: #2b6cb0; font-weight: bold; }
-        tr:hover { background-color: #f7fafc; }
-        .red { color: #e53e3e; font-weight: bold; }
-        .green { color: #38a169; font-weight: bold; }
-        .gray { color: #a0aec0; }
-        .badge { display: inline-block; padding: 3px 7px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; background-color: #4a5568; margin: 2px 2px 2px 0; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>台股盤後行情 · 即時彙整</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0a0d0f;
+    --bg-panel: #10151a;
+    --bg-row-alt: #0d1216;
+    --line: #1e2830;
+    --text: #dfe6eb;
+    --text-dim: #6b7d88;
+    --up: #00d97e;
+    --up-dim: #0a3d2a;
+    --down: #ff4d4d;
+    --down-dim: #401414;
+    --amber: #ffb020;
+    --flat: #8a99a3;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Noto Sans TC','IBM Plex Mono',monospace;
+    min-height:100vh;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  header{
+    padding:28px 24px 18px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:10;
+    background:rgba(10,13,15,0.92);
+    backdrop-filter:blur(8px);
+  }
+  .titlebar{
+    display:flex; align-items:baseline; justify-content:space-between;
+    flex-wrap:wrap; gap:12px;
+    max-width:1200px; margin:0 auto;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:22px; font-weight:700; letter-spacing:0.3px;
+    margin:0; color:#fff;
+  }
+  h1 span{color:var(--amber); font-weight:500; font-size:14px; margin-left:10px; letter-spacing:1px;}
+  .status{
+    font-size:12px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace;
+  }
+  .status b{color:var(--text);}
+  .controls{
+    max-width:1200px; margin:16px auto 0;
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  }
+  input[type=text]{
+    flex:1; min-width:180px;
+    background:var(--bg-panel); border:1px solid var(--line); color:var(--text);
+    padding:10px 14px; border-radius:6px; font-size:14px;
+    font-family:'IBM Plex Mono',monospace;
+    outline:none;
+  }
+  input[type=text]:focus{border-color:var(--amber);}
+  button{
+    background:var(--bg-panel); border:1px solid var(--line); color:var(--text);
+    padding:10px 16px; border-radius:6px; font-size:13px; cursor:pointer;
+    font-family:'IBM Plex Mono',monospace;
+    transition:border-color .15s;
+  }
+  button:hover{border-color:var(--amber); color:var(--amber);}
+  button.primary{background:var(--amber); color:#1a1200; border-color:var(--amber); font-weight:600;}
+  button.primary:hover{filter:brightness(1.08);}
+  .pricefilter{
+    display:flex; align-items:center; gap:6px;
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:6px;
+    padding:9px 14px; font-size:13px; color:var(--text-dim); cursor:pointer;
+    white-space:nowrap;
+  }
+  .pricefilter input[type=checkbox]{accent-color:var(--amber); width:14px; height:14px; cursor:pointer;}
+  .capinput{
+    width:48px; background:var(--bg); border:1px solid var(--line); color:var(--amber);
+    padding:4px 6px; border-radius:4px; text-align:center; font-size:13px;
+  }
+  .capinput:focus{outline:none; border-color:var(--amber);}
+
+  /* market pulse bar - signature element */
+  .pulse-wrap{max-width:1200px; margin:16px auto 0;}
+  .pulse-label{display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); margin-bottom:5px;}
+  .pulse-bar{height:8px; border-radius:4px; overflow:hidden; display:flex; background:var(--line);}
+  .pulse-up{background:var(--up); transition:width .6s ease;}
+  .pulse-down{background:var(--down); transition:width .6s ease;}
+  .pulse-flat{background:var(--flat); transition:width .6s ease;}
+
+  main{max-width:1200px; margin:0 auto; padding:20px 24px 60px;}
+  .tablewrap{border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  thead th{
+    text-align:right; padding:10px 14px; background:var(--bg-panel);
+    color:var(--text-dim); font-weight:500; font-size:11px;
+    letter-spacing:0.5px; cursor:pointer; user-select:none;
+    border-bottom:1px solid var(--line);
+    white-space:nowrap;
+  }
+  thead th:first-child, thead th:nth-child(2){text-align:left;}
+  thead th:hover{color:var(--amber);}
+  thead th.active{color:var(--amber);}
+  thead th .arrow{font-size:9px; margin-left:3px;}
+  tbody td{
+    padding:9px 14px; text-align:right; font-family:'IBM Plex Mono',monospace;
+    border-bottom:1px solid var(--line); white-space:nowrap;
+  }
+  tbody td:first-child, tbody td:nth-child(2){text-align:left; font-family:'Noto Sans TC',sans-serif;}
+  tbody tr:nth-child(even){background:var(--bg-row-alt);}
+  tbody tr:hover{background:#152128;}
+  .code{color:var(--text-dim);}
+  .name{color:#fff; font-weight:500;}
+  .up{color:var(--up);}
+  .down{color:var(--down);}
+  .flat{color:var(--flat);}
+  .badge{
+    display:inline-block; padding:1px 6px; border-radius:3px; font-size:11px;
+  }
+  .badge.up{background:var(--up-dim);}
+  .badge.down{background:var(--down-dim);}
+  .empty, .loading, .errbox{
+    text-align:center; padding:60px 20px; color:var(--text-dim); font-size:14px;
+  }
+  .errbox{color:var(--down);}
+  .errbox a{color:var(--amber);}
+  .spinner{
+    width:22px; height:22px; border:2px solid var(--line); border-top-color:var(--amber);
+    border-radius:50%; margin:0 auto 14px; animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+  footer{text-align:center; color:var(--text-dim); font-size:11px; padding:0 24px 40px;}
+  ::selection{background:var(--amber); color:#000;}
+  @media (max-width:640px){
+    thead th, tbody td{padding:8px 8px; font-size:12px;}
+    h1{font-size:18px;}
+  }
+</style>
 </head>
 <body>
 
-<div class="container">
-    <h2>台股量化篩選</h2>
+<header>
+  <div class="titlebar">
+    <h1>台股盤後行情<span>TWSE · 全市場彙整</span></h1>
+    <div class="status"><span id="status">連線中…</span> <span id="poolCount" class="mono" style="color:var(--amber);"></span></div>
+  </div>
+  <div class="controls">
+    <input type="text" id="search" placeholder="搜尋股票代號或名稱，例如 2330 或 台積電">
+    <label class="pricefilter">
+      <input type="checkbox" id="priceFilterToggle" checked>
+      收盤價 ≤ <input type="text" id="priceCap" class="capinput mono" value="40">元
+    </label>
+    <button class="primary" id="refreshBtn">重新抓取最新資料</button>
+  </div>
+  <div class="pulse-wrap">
+    <div class="pulse-label"><span id="pulseUpLabel">上漲 —</span><span id="pulseDownLabel">下跌 —</span></div>
+    <div class="pulse-bar"><div class="pulse-up" id="pulseUp" style="width:0%"></div><div class="pulse-flat" id="pulseFlat" style="width:0%"></div><div class="pulse-down" id="pulseDown" style="width:0%"></div></div>
+  </div>
+</header>
 
-    <div class="top-bar">
-        <button id="btnRun" class="btn">🔄 立即更新分析</button>
-        <button id="btnDiag" class="btn" style="background-color:#805ad5;">🔍 連線自我檢測</button>
-        <label class="switch-label">
-            <input type="checkbox" id="autoToggle">
-            自動於開盤(09:00)／收盤後(13:35) 更新（需保持此分頁開啟）
-        </label>
-        <button id="btnReset" class="btn btn-gray">清除本機累積資料</button>
-    </div>
-
-    <div class="meta-line" id="lastUpdated">尚未更新過。</div>
-    <div class="meta-line" id="autoNote"></div>
-    <div id="status">系統就緒，請點「立即更新分析」開始...</div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>代號</th>
-                <th>名稱</th>
-                <th>推薦分數</th>
-                <th>符合條件</th>
-                <th>股價</th>
-                <th>漲跌幅/漲跌</th>
-                <th>成交量(張)</th>
-                <th>外資買超(張)</th>
-            </tr>
-        </thead>
-        <tbody id="resultBody"></tbody>
+<main>
+  <div class="tablewrap">
+    <table id="table" style="display:none;">
+      <thead>
+        <tr>
+          <th data-key="Code">代號</th>
+          <th data-key="Name">名稱</th>
+          <th data-key="ClosingPrice">收盤價</th>
+          <th data-key="Change">漲跌</th>
+          <th data-key="ChangePct">漲跌%</th>
+          <th data-key="OpeningPrice">開盤</th>
+          <th data-key="HighestPrice">最高</th>
+          <th data-key="LowestPrice">最低</th>
+          <th data-key="TradeVolume">成交量(股)</th>
+          <th data-key="Transaction">筆數</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
     </table>
-</div>
+    <div class="loading" id="loading"><div class="spinner"></div>正在向證交所 OpenAPI 抓取全市場資料…</div>
+  </div>
+</main>
+
+<footer>資料來源：台灣證券交易所 OpenAPI (openapi.twse.com.tw)，為最近一個交易日之盤後資料，非即時報價。</footer>
 
 <script>
-// ==================== 全域狀態 ====================
-let cacheT86 = null;
-let cacheStockDay = null;
-let lastBollingerSignals = {}; // code -> 'up' | 'down'
-const BOLLINGER_PERIOD = 20;
-const HISTORY_DAYS_NEEDED = 5;
+const API = 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL';
+let rawData = [];
+let sortKey = 'TradeVolume';
+let sortDir = -1;
 
-const statusDiv = document.getElementById('status');
-const btnRun = document.getElementById('btnRun');
-const btnReset = document.getElementById('btnReset');
-const autoToggle = document.getElementById('autoToggle');
-const lastUpdatedDiv = document.getElementById('lastUpdated');
-const autoNoteDiv = document.getElementById('autoNote');
-const resultBody = document.getElementById('resultBody');
-
-// ==================== 共用小工具 ====================
-function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-function formatDateKey(d) {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}${m}${day}`;
+function fmtNum(n){
+  const v = Number(n);
+  if(isNaN(v)) return '—';
+  return v.toLocaleString('en-US');
+}
+function fmtPrice(n){
+  const v = Number(n);
+  if(isNaN(v) || v===0) return '—';
+  return v.toFixed(2);
 }
 
-function todayKeyFallback() { return formatDateKey(new Date()); }
-
-// 民國年日期字串 -> 西元 YYYYMMDD
-function rocDateToKey(rocDate) {
-    const year = parseInt(rocDate.substring(0, rocDate.length - 4), 10) + 1911;
-    const mmdd = rocDate.substring(rocDate.length - 4);
-    return `${year}${mmdd}`;
+function render(list){
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  if(list.length===0){
+    tbody.innerHTML = '<tr><td colspan="10" class="empty">找不到符合的股票</td></tr>';
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  list.forEach(d=>{
+    const chg = Number(d.Change);
+    const cls = chg>0?'up':(chg<0?'down':'flat');
+    const sign = chg>0?'+':'';
+    const pct = d._pct;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="code">${d.Code}</td>
+      <td class="name">${d.Name}</td>
+      <td class="${cls}">${fmtPrice(d.ClosingPrice)}</td>
+      <td class="${cls}"><span class="badge ${cls}">${sign}${fmtPrice(Math.abs(chg))}</span></td>
+      <td class="${cls}">${sign}${pct.toFixed(2)}%</td>
+      <td>${fmtPrice(d.OpeningPrice)}</td>
+      <td>${fmtPrice(d.HighestPrice)}</td>
+      <td>${fmtPrice(d.LowestPrice)}</td>
+      <td>${fmtNum(d.TradeVolume)}</td>
+      <td>${fmtNum(d.Transaction)}</td>
+    `;
+    frag.appendChild(tr);
+  });
+  tbody.appendChild(frag);
 }
 
-// 利用公開 CORS 代理繞過瀏覽器跨域限制。
-// 免費代理服務常常不穩定（例如 allorigins 常會間歇性 500 錯誤），
-// 所以這裡改成依序嘗試多個代理，其中一個失敗就換下一個，全部失敗才報錯。
-const CORS_PROXIES = [
-    {
-        name: 'corsproxy.io',
-        build: (url) => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-        extract: async (res) => res.text()
-    },
-    {
-        name: 'allorigins',
-        build: (url) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
-        extract: async (res) => {
-            const j = await res.json();
-            return j.contents;
-        }
-    },
-    {
-        name: 'codetabs',
-        build: (url) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-        extract: async (res) => res.text()
+function applySort(list){
+  return [...list].sort((a,b)=>{
+    let av = a[sortKey], bv = b[sortKey];
+    if(sortKey==='Code' || sortKey==='Name'){
+      return sortDir * String(av).localeCompare(String(bv), 'zh-Hant');
     }
-];
-
-async function fetchData(url, isJson = true) {
-    let lastError = null;
-    for (const proxy of CORS_PROXIES) {
-        try {
-            const res = await fetch(proxy.build(url));
-            if (!res.ok) throw new Error(`${proxy.name} 回應狀態 ${res.status}`);
-            const text = await proxy.extract(res);
-            if (!text) throw new Error(`${proxy.name} 回傳空內容`);
-            return isJson ? JSON.parse(text) : text;
-        } catch (e) {
-            lastError = e;
-            console.warn(`代理 ${proxy.name} 失敗，嘗試下一個:`, e.message);
-        }
-    }
-    throw new Error(`所有代理伺服器都連線失敗（最後錯誤: ${lastError ? lastError.message : '未知'}）`);
+    av = Number(av)||0; bv = Number(bv)||0;
+    return sortDir * (av - bv);
+  });
 }
 
-// ==================== 資料來源 1：三大法人 T86（支援依日期查詢，無需累積） ====================
-async function ensureT86Data() {
-    if (cacheT86) return cacheT86;
-    const today = todayKeyFallback();
-    const url = `https://www.twse.com.tw/fund/T86?response=json&date=${today}&selectType=ALL`;
-    const raw = await fetchData(url);
-    if (!raw || raw.stat !== 'OK' || !raw.data) {
-        throw new Error('今日尚無三大法人資料（可能非交易日或資料尚未更新）');
-    }
-    const fields = raw.fields;
-    const idx = {
-        code: fields.indexOf('證券代號'),
-        name: fields.indexOf('證券名稱'),
-        foreign: fields.indexOf('外陸資買賣超股數(不含外資自營商)'),
-        trust: fields.indexOf('投信買賣超股數'),
-        dealer: fields.indexOf('自營商買賣超股數')
-    };
-    cacheT86 = raw.data.map(row => ({
-        Code: row[idx.code],
-        Name: row[idx.name],
-        foreign: row[idx.foreign],
-        trust: row[idx.trust],
-        dealer: row[idx.dealer]
-    }));
-    return cacheT86;
+function applyFilter(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const priceOn = document.getElementById('priceFilterToggle').checked;
+  const cap = Number(document.getElementById('priceCap').value) || Infinity;
+  let list = rawData;
+  if(q){
+    list = list.filter(d => d.Code.toLowerCase().includes(q) || d.Name.toLowerCase().includes(q));
+  }
+  if(priceOn){
+    list = list.filter(d => Number(d.ClosingPrice) > 0 && Number(d.ClosingPrice) <= cap);
+  }
+  const countLabel = document.getElementById('poolCount');
+  if(countLabel) countLabel.textContent = `· 篩選後 ${list.length} 檔`;
+  render(applySort(list));
+  updatePulse();
 }
 
-// ==================== 資料來源 2：全市場收盤行情 STOCK_DAY_ALL（只有最新一天快照） ====================
-async function ensureStockDayData() {
-    if (cacheStockDay) return cacheStockDay;
-    const raw = await fetchData('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
-    if (!Array.isArray(raw) || raw.length === 0) {
-        throw new Error('今日尚無收盤行情資料');
-    }
-    cacheStockDay = raw;
-    return cacheStockDay;
+function currentPool(){
+  const priceOn = document.getElementById('priceFilterToggle').checked;
+  const cap = Number(document.getElementById('priceCap').value) || Infinity;
+  return priceOn ? rawData.filter(d => Number(d.ClosingPrice) > 0 && Number(d.ClosingPrice) <= cap) : rawData;
 }
 
-// 黑飛：把今天快照存進本機（累積滿 5 天才有真五日線，這裡僅用來輔助判斷型態，不在主表顯示均線）
-async function saveStockDaySnapshotAndCheckHeifei() {
-    const data = await ensureStockDayData();
-    const dataDateRoc = data[0].Date;
-    const dateKey = rocDateToKey(dataDateRoc);
+function updatePulse(){
+  const pool = currentPool();
+  const up = pool.filter(d=>Number(d.Change)>0).length;
+  const down = pool.filter(d=>Number(d.Change)<0).length;
+  const flat = pool.length - up - down;
+  const total = pool.length || 1;
+  document.getElementById('pulseUp').style.width = (up/total*100)+'%';
+  document.getElementById('pulseFlat').style.width = (flat/total*100)+'%';
+  document.getElementById('pulseDown').style.width = (down/total*100)+'%';
+  document.getElementById('pulseUpLabel').textContent = `上漲 ${up}`;
+  document.getElementById('pulseDownLabel').textContent = `下跌 ${down}`;
+}
 
-    const snapshot = {};
-    data.forEach(item => {
-        const close = parseFloat(item.ClosingPrice);
-        const volume = Math.round(parseInt(item.TradeVolume || 0, 10) / 1000);
-        if (!isNaN(close)) snapshot[item.Code] = { c: close, v: volume };
+function updateSortHeaders(){
+  document.querySelectorAll('thead th').forEach(th=>{
+    th.classList.toggle('active', th.dataset.key===sortKey);
+    th.querySelector('.arrow')?.remove();
+    if(th.dataset.key===sortKey){
+      const a = document.createElement('span');
+      a.className='arrow';
+      a.textContent = sortDir===1?'▲':'▼';
+      th.appendChild(a);
+    }
+  });
+}
+
+async function loadData(){
+  const loading = document.getElementById('loading');
+  const table = document.getElementById('table');
+  const status = document.getElementById('status');
+  loading.style.display='block';
+  loading.innerHTML = '<div class="spinner"></div>正在向證交所 OpenAPI 抓取全市場資料…';
+  table.style.display='none';
+  status.textContent = '連線中…';
+  try{
+    const res = await fetch(API, {cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json = await res.json();
+    rawData = json.filter(d => d.Code && d.ClosingPrice).map(d=>{
+      const close = Number(d.ClosingPrice)||0;
+      const chg = Number(d.Change)||0;
+      const base = close - chg;
+      d._pct = base!==0 ? (chg/base*100) : 0;
+      return d;
     });
-    try { await window.storage.set(`stockday:${dateKey}`, JSON.stringify(snapshot), false); } catch (e) {}
-
-    const heifeiMatchSet = new Set();
-    const stockDayInfoMap = {};
-    data.forEach(item => {
-        const close = parseFloat(item.ClosingPrice);
-        const open = parseFloat(item.OpeningPrice);
-        const volume = Math.round(parseInt(item.TradeVolume || 0, 10) / 1000);
-        const change = parseFloat(item.Change);
-        if (isNaN(close)) return;
-        stockDayInfoMap[item.Code] = { close, change, volume, name: item.Name.trim() };
-        if (volume < 500) return;
-        const isBlackK = close < open;
-        if (isBlackK && change >= -2.5 && change <= 0.5) heifeiMatchSet.add(item.Code);
-    });
-
-    return { heifeiMatchSet, stockDayInfoMap };
-}
-
-// ==================== 資料來源 3：MI_INDEX 歷史回補（供布林通道使用，支援依日期查詢全市場資料） ====================
-function parseMiIndexAllStocks(raw) {
-    const keys = Object.keys(raw);
-    for (const key of keys) {
-        const m = key.match(/^fields(\d+)$/);
-        if (!m) continue;
-        const fields = raw[key];
-        if (!Array.isArray(fields)) continue;
-        const codeIdx = fields.indexOf('證券代號');
-        const closeIdx = fields.indexOf('收盤價');
-        const nameIdx = fields.indexOf('證券名稱');
-        if (codeIdx === -1 || closeIdx === -1) continue;
-        const rows = raw[`data${m[1]}`];
-        if (!Array.isArray(rows)) continue;
-
-        const result = {};
-        rows.forEach(row => {
-            const code = row[codeIdx];
-            const close = parseFloat(String(row[closeIdx]).replace(/,/g, '').trim());
-            if (code && !isNaN(close)) result[code] = { close, name: nameIdx !== -1 ? row[nameIdx] : code };
-        });
-        if (Object.keys(result).length > 0) return result;
-    }
-    return null;
-}
-
-async function fetchTradingDayCloses(dateKey) {
-    try {
-        const cached = await window.storage.get(`mi:${dateKey}`, false);
-        if (cached && cached.value) return JSON.parse(cached.value);
-    } catch (e) {}
-
-    try {
-        const url = `https://www.twse.com.tw/exchangeReport/MI_INDEX?response=json&date=${dateKey}&type=ALL`;
-        const raw = await fetchData(url);
-        if (!raw || raw.stat !== 'OK') return null;
-        const parsed = parseMiIndexAllStocks(raw);
-        if (!parsed) return null;
-        try { await window.storage.set(`mi:${dateKey}`, JSON.stringify(parsed), false); } catch (e) {}
-        return parsed;
-    } catch (e) {
-        return null;
-    }
-}
-
-async function backfillTradingDays(neededDays, onProgress) {
-    const collected = [];
-    const cursor = new Date();
-    let guard = 0;
-    const MAX_LOOKBACK = 60;
-
-    while (collected.length < neededDays && guard < MAX_LOOKBACK) {
-        const dateKey = formatDateKey(cursor);
-        const closes = await fetchTradingDayCloses(dateKey);
-        if (closes) {
-            collected.push({ date: dateKey, closes });
-            if (onProgress) onProgress(collected.length, neededDays);
-        }
-        cursor.setDate(cursor.getDate() - 1);
-        guard++;
-        await sleep(300);
-    }
-    collected.reverse();
-    return collected;
-}
-
-async function computeBollingerSignals() {
-    lastBollingerSignals = {};
-    const days = await backfillTradingDays(BOLLINGER_PERIOD, (done, total) => {
-        statusDiv.innerHTML = `正在回補布林通道所需的歷史收盤價 (${done}/${total})...`;
-    });
-    if (days.length < BOLLINGER_PERIOD) {
-        throw new Error(`布林通道歷史資料只取得 ${days.length}/${BOLLINGER_PERIOD} 天，暫不計算此項`);
-    }
-
-    const seriesMap = {};
-    days.forEach(day => {
-        Object.entries(day.closes).forEach(([code, info]) => {
-            if (!seriesMap[code]) seriesMap[code] = [];
-            seriesMap[code].push(info.close);
-        });
-    });
-
-    Object.entries(seriesMap).forEach(([code, closes]) => {
-        if (closes.length < BOLLINGER_PERIOD) return;
-        const w = closes.slice(-BOLLINGER_PERIOD);
-        const mean = w.reduce((a, b) => a + b, 0) / BOLLINGER_PERIOD;
-        const variance = w.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / BOLLINGER_PERIOD;
-        const std = Math.sqrt(variance);
-        const upper = mean + 2 * std;
-        const lower = mean - 2 * std;
-        const latest = w[w.length - 1];
-        if (latest > upper) lastBollingerSignals[code] = 'up';
-        else if (latest < lower) lastBollingerSignals[code] = 'down';
-    });
-}
-
-// ==================== 主流程：抓取全部資料來源並融合成單一推薦表 ====================
-async function runFullAnalysis() {
-    btnRun.disabled = true;
-    resultBody.innerHTML = '';
-
-    try {
-        statusDiv.innerHTML = '正在讀取三大法人買賣超資料...';
-        let t86MatchSet = new Set();
-        let foreignBuyList = []; // 用來排出「外資買超前50」
-        try {
-            const t86Data = await ensureT86Data();
-            const toShares = s => Math.round((parseInt(String(s).replace(/,/g, ''), 10) || 0) / 1000);
-            t86Data.forEach(item => {
-                const foreign = toShares(item.foreign);
-                const trust = toShares(item.trust);
-                const dealer = toShares(item.dealer);
-                if (foreign > 100 && trust > 50 && dealer > 0) t86MatchSet.add(item.Code);
-                foreignBuyList.push({ code: item.Code, name: item.Name.trim(), netBuy: foreign });
-            });
-            foreignBuyList.sort((a, b) => b.netBuy - a.netBuy);
-            foreignBuyList = foreignBuyList.slice(0, 50);
-        } catch (e) {
-            console.warn('三大法人資料載入失敗，該項評分跳過:', e.message);
-        }
-
-        statusDiv.innerHTML = '正在讀取全市場收盤行情、排序成交量並判斷黑飛型態...';
-        let heifeiMatchSet = new Set();
-        let stockDayInfoMap = {};
-        let volumeTopList = []; // 用來排出「成交量前50」
-        try {
-            const r = await saveStockDaySnapshotAndCheckHeifei();
-            heifeiMatchSet = r.heifeiMatchSet;
-            stockDayInfoMap = r.stockDayInfoMap;
-            volumeTopList = Object.entries(stockDayInfoMap)
-                .map(([code, info]) => ({ code, ...info }))
-                .sort((a, b) => b.volume - a.volume)
-                .slice(0, 50);
-        } catch (e) {
-            console.warn('收盤行情資料載入失敗，成交量排行與黑飛評分跳過:', e.message);
-        }
-
-        try {
-            await computeBollingerSignals();
-        } catch (e) {
-            console.warn('布林通道計算跳過:', e.message);
-        }
-
-        statusDiv.innerHTML = '正在融合各項條件並計算推薦分數...';
-
-        const volumeMap = new Map(volumeTopList.map(r => [r.code, r]));
-        const foreignMap = new Map(foreignBuyList.map(r => [r.code, r]));
-        const candidateCodes = new Set([...volumeMap.keys(), ...foreignMap.keys()]);
-
-        const recommendations = [];
-        candidateCodes.forEach(code => {
-            let score = 0;
-            const reasons = [];
-
-            if (volumeMap.has(code)) { score++; reasons.push('成交量前50'); }
-            if (foreignMap.has(code)) { score++; reasons.push('外資買超前50'); }
-            if (t86MatchSet.has(code)) { score++; reasons.push('三大法人同買'); }
-            if (heifeiMatchSet.has(code)) { score++; reasons.push('黑飛型態'); }
-            if (lastBollingerSignals[code] === 'up') { score++; reasons.push('突破布林上軌'); }
-            else if (lastBollingerSignals[code] === 'down') { reasons.push('跌破布林下軌(警示)'); }
-
-            const vInfo = volumeMap.get(code); // { code, close, change, volume, name }
-            const fInfo = foreignMap.get(code); // { code, name, netBuy }
-            const sInfo = stockDayInfoMap[code];
-
-            const name = (vInfo && vInfo.name) || (fInfo && fInfo.name) || (sInfo && sInfo.name) || code;
-            const price = (vInfo && vInfo.close) ?? (sInfo && sInfo.close) ?? null;
-            const changePct = (vInfo && vInfo.change) ?? (sInfo && sInfo.change) ?? null;
-            const volume = (vInfo && vInfo.volume) ?? (sInfo && sInfo.volume) ?? null; // 單位：張
-            const netBuy = fInfo ? fInfo.netBuy : null; // 單位：張
-
-            recommendations.push({ code, name, score, reasons, price, changePct, volume, netBuy });
-        });
-
-        recommendations.sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return (b.netBuy || 0) - (a.netBuy || 0);
-        });
-
-        recommendations.forEach(rec => {
-            const priceHtml = rec.price != null ? rec.price.toLocaleString() : '--';
-            const changeHtml = rec.changePct != null
-                ? `<span class="${rec.changePct >= 0 ? 'red' : 'green'}">${rec.changePct}%</span>`
-                : '<span class="gray">--</span>';
-            const volumeHtml = rec.volume != null ? Math.round(rec.volume).toLocaleString() + ' 張' : '--';
-            const netBuyHtml = rec.netBuy != null
-                ? `<span class="${rec.netBuy >= 0 ? 'red' : 'green'}">${rec.netBuy.toLocaleString()}</span>`
-                : '<span class="gray">--</span>';
-            const scoreColor = rec.score >= 3 ? '#c53030' : (rec.score === 2 ? '#dd6b20' : '#4a5568');
-
-            resultBody.insertAdjacentHTML('beforeend', `
-                <tr>
-                    <td><strong>${rec.code}</strong></td>
-                    <td>${rec.name}</td>
-                    <td><strong style="color:${scoreColor};">${rec.score} 分</strong></td>
-                    <td>${rec.reasons.map(r => `<span class="badge">${r}</span>`).join(' ')}</td>
-                    <td>${priceHtml}</td>
-                    <td>${changeHtml}</td>
-                    <td>${volumeHtml}</td>
-                    <td>${netBuyHtml}</td>
-                </tr>
-            `);
-        });
-
-        const highScoreCount = recommendations.filter(r => r.score >= 3).length;
-        const now = new Date();
-        lastUpdatedDiv.innerHTML = `最後更新時間：${now.toLocaleString('zh-TW')}`;
-        statusDiv.innerHTML = `🎉 更新完成！候選池共 ${recommendations.length} 檔（成交量前50 ∪ 外資買超前50），其中 ${highScoreCount} 檔符合 3 項以上條件。任一資料來源若暫時載入失敗，該項評分會自動跳過，不影響其他項目。`;
-
-        return true;
-    } catch (err) {
-        statusDiv.innerHTML = `<span style="color:red;">錯誤: ${err.message}</span>`;
-        return false;
-    } finally {
-        btnRun.disabled = false;
-    }
-}
-
-btnRun.addEventListener('click', () => { runFullAnalysis(); });
-
-// ==================== 連線自我檢測 ====================
-// 用來快速判斷：如果連「完全不需要代理、公認很穩定的公開 API」都失敗，
-// 代表問題出在目前這個執行環境本身擋掉了對外連線（例如 Claude Artifact 預覽沙盒），
-// 而不是 allorigins / codetabs / corsproxy 這些代理或證交所、Yahoo 本身的問題。
-const btnDiag = document.getElementById('btnDiag');
-
-async function runDiagnostics() {
-    btnDiag.disabled = true;
-    const lines = [];
-
-    // 測試 1：完全不經代理，直接打一個公認穩定、有開放 CORS 的公開測試 API
-    try {
-        const res = await fetch('https://jsonplaceholder.typicode.com/todos/1');
-        if (res.ok) {
-            lines.push('✅ 測試1（不經代理，直連 jsonplaceholder）成功 → 這個環境「可以」對外發送請求');
-        } else {
-            lines.push(`⚠️ 測試1（不經代理，直連 jsonplaceholder）回應狀態 ${res.status}`);
-        }
-    } catch (e) {
-        lines.push(`❌ 測試1（不經代理，直連 jsonplaceholder）失敗：${e.message} → 這個執行環境本身很可能封鎖了所有對外部網站的請求（例如 Claude 預覽沙盒），請把檔案下載到電腦、用真正的瀏覽器開啟再測`);
-    }
-
-    // 測試 2~4：分別測試三個代理，看哪一個能正常運作
-    for (const proxy of CORS_PROXIES) {
-        try {
-            const testUrl = proxy.build('https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL');
-            const res = await fetch(testUrl);
-            if (!res.ok) throw new Error(`回應狀態 ${res.status}`);
-            const text = await proxy.extract(res);
-            if (!text) throw new Error('回傳空內容');
-            JSON.parse(text);
-            lines.push(`✅ 代理「${proxy.name}」目前可正常運作`);
-        } catch (e) {
-            lines.push(`❌ 代理「${proxy.name}」目前失敗：${e.message}`);
-        }
-    }
-
-    statusDiv.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
-    btnDiag.disabled = false;
-}
-
-btnDiag.addEventListener('click', () => { runDiagnostics(); });
-
-// ==================== 自動更新（開盤 09:00 / 收盤後 13:35）====================
-// 重要限制：這是瀏覽器分頁裡的排程，只有在這個分頁保持開啟的情況下才會觸發。
-// 如果分頁被關閉或裝置睡眠，並不會有背景伺服器繼續執行——這一點無法用純前端網頁做到「真正的每日自動排程」。
-const AUTO_SLOTS = [
-    { key: 'open', hour: 9, minute: 0, label: '開盤(09:00)' },
-    { key: 'close', hour: 13, minute: 35, label: '收盤後(13:35)' }
-];
-
-async function getLastAutoRunDate(slotKey) {
-    try {
-        const r = await window.storage.get(`autorun:${slotKey}`, false);
-        return r && r.value ? r.value : null;
-    } catch (e) { return null; }
-}
-
-async function setLastAutoRunDate(slotKey, dateKey) {
-    try { await window.storage.set(`autorun:${slotKey}`, dateKey, false); } catch (e) {}
-}
-
-async function autoCheckLoop() {
-    if (!autoToggle.checked) return;
+    sortKey='TradeVolume'; sortDir=-1;
+    updateSortHeaders();
+    applyFilter();
+    updatePulse();
+    loading.style.display='none';
+    table.style.display='table';
     const now = new Date();
-    const day = now.getDay(); // 0=Sun, 6=Sat
-    if (day === 0 || day === 6) return; // 簡單跳過週末（無法排除國定假日）
-
-    const todayKey = formatDateKey(now);
-    for (const slot of AUTO_SLOTS) {
-        const slotTime = new Date(now);
-        slotTime.setHours(slot.hour, slot.minute, 0, 0);
-        const diffMinutes = (now - slotTime) / 60000;
-        // 到達時間點之後的 10 分鐘內視為「該時段」，且今天這個時段還沒跑過
-        if (diffMinutes >= 0 && diffMinutes <= 10) {
-            const lastRun = await getLastAutoRunDate(slot.key);
-            if (lastRun !== todayKey) {
-                statusDiv.innerHTML = `⏰ 已到${slot.label}，自動觸發更新...`;
-                await setLastAutoRunDate(slot.key, todayKey);
-                await runFullAnalysis();
-            }
-        }
-    }
+    status.innerHTML = `共 <b>${rawData.length}</b> 檔　更新於 <b>${now.toLocaleTimeString('zh-TW')}</b>`;
+  }catch(err){
+    loading.innerHTML = `<div class="errbox">抓取失敗：${err.message}<br><br>
+      可能原因：瀏覽器封鎖跨網域請求，或證交所 API 暫時無回應。<br>
+      可直接開啟 <a href="${API}" target="_blank">${API}</a> 確認資料是否可存取，或稍後按「重新抓取」再試一次。</div>`;
+    status.textContent = '抓取失敗';
+  }
 }
 
-autoToggle.addEventListener('change', () => {
-    if (autoToggle.checked) {
-        autoNoteDiv.innerHTML = '自動更新已開啟：只要這個分頁保持開啟，就會在每個工作日 09:00 與 13:35 左右自動重新分析一次（週末不會觸發，國定假日無法自動排除）。';
-    } else {
-        autoNoteDiv.innerHTML = '';
-    }
+document.getElementById('refreshBtn').addEventListener('click', loadData);
+document.getElementById('search').addEventListener('input', applyFilter);
+document.getElementById('priceFilterToggle').addEventListener('change', applyFilter);
+document.getElementById('priceCap').addEventListener('input', applyFilter);
+document.querySelectorAll('thead th').forEach(th=>{
+  th.addEventListener('click', ()=>{
+    const key = th.dataset.key;
+    if(sortKey===key){ sortDir *= -1; } else { sortKey = key; sortDir = -1; }
+    updateSortHeaders();
+    applyFilter();
+  });
 });
 
-setInterval(autoCheckLoop, 60 * 1000); // 每分鐘檢查一次是否到了自動更新時間點
-
-// ==================== 清除本機累積資料 ====================
-btnReset.addEventListener('click', async () => {
-    if (!confirm('確定要清除所有已累積的本機資料嗎？布林通道需要重新回補約 20 個交易日，自動更新的當日紀錄也會被清除。')) return;
-    try {
-        const [stockdayList, miList, autorunList] = await Promise.all([
-            window.storage.list('stockday:', false),
-            window.storage.list('mi:', false),
-            window.storage.list('autorun:', false)
-        ]);
-        const keys = [
-            ...((stockdayList && stockdayList.keys) ? stockdayList.keys : []),
-            ...((miList && miList.keys) ? miList.keys : []),
-            ...((autorunList && autorunList.keys) ? autorunList.keys : [])
-        ];
-        for (const key of keys) { await window.storage.delete(key, false); }
-        statusDiv.innerHTML = `已清除 ${keys.length} 筆本機累積資料。`;
-    } catch (e) {
-        statusDiv.innerHTML = `<span style="color:red;">清除失敗: ${e.message}</span>`;
-    }
-});
+loadData();
 </script>
-
 </body>
 </html>
