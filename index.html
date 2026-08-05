@@ -1,351 +1,915 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>台股盤後行情 · 即時彙整</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg: #0a0d0f;
-    --bg-panel: #10151a;
-    --bg-row-alt: #0d1216;
-    --line: #1e2830;
-    --text: #dfe6eb;
-    --text-dim: #6b7d88;
-    --up: #00d97e;
-    --up-dim: #0a3d2a;
-    --down: #ff4d4d;
-    --down-dim: #401414;
-    --amber: #ffb020;
-    --flat: #8a99a3;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
-  body{
-    background:var(--bg);
-    color:var(--text);
-    font-family:'Noto Sans TC','IBM Plex Mono',monospace;
-    min-height:100vh;
-  }
-  .mono{font-family:'IBM Plex Mono',monospace;}
-  header{
-    padding:28px 24px 18px;
-    border-bottom:1px solid var(--line);
-    position:sticky; top:0; z-index:10;
-    background:rgba(10,13,15,0.92);
-    backdrop-filter:blur(8px);
-  }
-  .titlebar{
-    display:flex; align-items:baseline; justify-content:space-between;
-    flex-wrap:wrap; gap:12px;
-    max-width:1200px; margin:0 auto;
-  }
-  h1{
-    font-family:'Space Grotesk',sans-serif;
-    font-size:22px; font-weight:700; letter-spacing:0.3px;
-    margin:0; color:#fff;
-  }
-  h1 span{color:var(--amber); font-weight:500; font-size:14px; margin-left:10px; letter-spacing:1px;}
-  .status{
-    font-size:12px; color:var(--text-dim); font-family:'IBM Plex Mono',monospace;
-  }
-  .status b{color:var(--text);}
-  .controls{
-    max-width:1200px; margin:16px auto 0;
-    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-  }
-  input[type=text]{
-    flex:1; min-width:180px;
-    background:var(--bg-panel); border:1px solid var(--line); color:var(--text);
-    padding:10px 14px; border-radius:6px; font-size:14px;
-    font-family:'IBM Plex Mono',monospace;
-    outline:none;
-  }
-  input[type=text]:focus{border-color:var(--amber);}
-  button{
-    background:var(--bg-panel); border:1px solid var(--line); color:var(--text);
-    padding:10px 16px; border-radius:6px; font-size:13px; cursor:pointer;
-    font-family:'IBM Plex Mono',monospace;
-    transition:border-color .15s;
-  }
-  button:hover{border-color:var(--amber); color:var(--amber);}
-  button.primary{background:var(--amber); color:#1a1200; border-color:var(--amber); font-weight:600;}
-  button.primary:hover{filter:brightness(1.08);}
-  .pricefilter{
-    display:flex; align-items:center; gap:6px;
-    background:var(--bg-panel); border:1px solid var(--line); border-radius:6px;
-    padding:9px 14px; font-size:13px; color:var(--text-dim); cursor:pointer;
-    white-space:nowrap;
-  }
-  .pricefilter input[type=checkbox]{accent-color:var(--amber); width:14px; height:14px; cursor:pointer;}
-  .capinput{
-    width:48px; background:var(--bg); border:1px solid var(--line); color:var(--amber);
-    padding:4px 6px; border-radius:4px; text-align:center; font-size:13px;
-  }
-  .capinput:focus{outline:none; border-color:var(--amber);}
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Home, Trophy, ListChecks, User, Coins, Flame, Clock, X, Check,
+  ChevronRight, Sparkles, Crown, Gift, TrendingUp, TrendingDown, Search
+} from "lucide-react";
 
-  /* market pulse bar - signature element */
-  .pulse-wrap{max-width:1200px; margin:16px auto 0;}
-  .pulse-label{display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); margin-bottom:5px;}
-  .pulse-bar{height:8px; border-radius:4px; overflow:hidden; display:flex; background:var(--line);}
-  .pulse-up{background:var(--up); transition:width .6s ease;}
-  .pulse-down{background:var(--down); transition:width .6s ease;}
-  .pulse-flat{background:var(--flat); transition:width .6s ease;}
+/* ------------------------------------------------------------------ */
+/*  DATA                                                               */
+/* ------------------------------------------------------------------ */
 
-  main{max-width:1200px; margin:0 auto; padding:20px 24px 60px;}
-  .tablewrap{border:1px solid var(--line); border-radius:8px; overflow:hidden;}
-  table{width:100%; border-collapse:collapse; font-size:13px;}
-  thead th{
-    text-align:right; padding:10px 14px; background:var(--bg-panel);
-    color:var(--text-dim); font-weight:500; font-size:11px;
-    letter-spacing:0.5px; cursor:pointer; user-select:none;
-    border-bottom:1px solid var(--line);
-    white-space:nowrap;
-  }
-  thead th:first-child, thead th:nth-child(2){text-align:left;}
-  thead th:hover{color:var(--amber);}
-  thead th.active{color:var(--amber);}
-  thead th .arrow{font-size:9px; margin-left:3px;}
-  tbody td{
-    padding:9px 14px; text-align:right; font-family:'IBM Plex Mono',monospace;
-    border-bottom:1px solid var(--line); white-space:nowrap;
-  }
-  tbody td:first-child, tbody td:nth-child(2){text-align:left; font-family:'Noto Sans TC',sans-serif;}
-  tbody tr:nth-child(even){background:var(--bg-row-alt);}
-  tbody tr:hover{background:#152128;}
-  .code{color:var(--text-dim);}
-  .name{color:#fff; font-weight:500;}
-  .up{color:var(--up);}
-  .down{color:var(--down);}
-  .flat{color:var(--flat);}
-  .badge{
-    display:inline-block; padding:1px 6px; border-radius:3px; font-size:11px;
-  }
-  .badge.up{background:var(--up-dim);}
-  .badge.down{background:var(--down-dim);}
-  .empty, .loading, .errbox{
-    text-align:center; padding:60px 20px; color:var(--text-dim); font-size:14px;
-  }
-  .errbox{color:var(--down);}
-  .errbox a{color:var(--amber);}
-  .spinner{
-    width:22px; height:22px; border:2px solid var(--line); border-top-color:var(--amber);
-    border-radius:50%; margin:0 auto 14px; animation:spin 0.8s linear infinite;
-  }
-  @keyframes spin{to{transform:rotate(360deg);}}
-  footer{text-align:center; color:var(--text-dim); font-size:11px; padding:0 24px 40px;}
-  ::selection{background:var(--amber); color:#000;}
-  @media (max-width:640px){
-    thead th, tbody td{padding:8px 8px; font-size:12px;}
-    h1{font-size:18px;}
-  }
-</style>
-</head>
-<body>
+const CATEGORIES = [
+  { id: "all", label: "全部" },
+  { id: "sports", label: "體育" },
+  { id: "finance", label: "財金" },
+  { id: "tech", label: "科技" },
+  { id: "ent", label: "娛樂" },
+  { id: "politics", label: "政治" },
+];
 
-<header>
-  <div class="titlebar">
-    <h1>台股盤後行情<span>TWSE · 全市場彙整</span></h1>
-    <div class="status"><span id="status">連線中…</span> <span id="poolCount" class="mono" style="color:var(--amber);"></span></div>
-  </div>
-  <div class="controls">
-    <input type="text" id="search" placeholder="搜尋股票代號或名稱，例如 2330 或 台積電">
-    <label class="pricefilter">
-      <input type="checkbox" id="priceFilterToggle" checked>
-      收盤價 ≤ <input type="text" id="priceCap" class="capinput mono" value="40">元
-    </label>
-    <button class="primary" id="refreshBtn">重新抓取最新資料</button>
-  </div>
-  <div class="pulse-wrap">
-    <div class="pulse-label"><span id="pulseUpLabel">上漲 —</span><span id="pulseDownLabel">下跌 —</span></div>
-    <div class="pulse-bar"><div class="pulse-up" id="pulseUp" style="width:0%"></div><div class="pulse-flat" id="pulseFlat" style="width:0%"></div><div class="pulse-down" id="pulseDown" style="width:0%"></div></div>
-  </div>
-</header>
+const INITIAL_MARKETS = [
+  {
+    id: "m1", category: "tech", emoji: "📱", hot: true,
+    title: "iPhone 18 Pro 會在 9/9 發表？",
+    subtitle: "2026 蘋果秋季發表會日期預測",
+    yesPct: 58, volume: 128400, endsIn: "3 天",
+  },
+  {
+    id: "m2", category: "finance", emoji: "📈", hot: false,
+    title: "台股年底前挑戰 25,000 點？",
+    subtitle: "加權指數里程碑",
+    yesPct: 41, volume: 89600, endsIn: "142 天",
+  },
+  {
+    id: "m3", category: "finance", emoji: "🏦", hot: true,
+    title: "美聯儲 9 月是否降息？",
+    subtitle: "FOMC 利率決策",
+    yesPct: 72, volume: 156200, endsIn: "18 天",
+  },
+  {
+    id: "m4", category: "sports", emoji: "⚾", hot: true,
+    title: "中華隊拿下 12 強賽冠軍？",
+    subtitle: "世界棒球 12 強錦標賽",
+    yesPct: 34, volume: 203100, endsIn: "9 天",
+  },
+  {
+    id: "m5", category: "sports", emoji: "🏀", hot: false,
+    title: "湖人晉級西區冠軍賽？",
+    subtitle: "NBA 季後賽",
+    yesPct: 47, volume: 98700, endsIn: "61 天",
+  },
+  {
+    id: "m6", category: "sports", emoji: "🏅", hot: false,
+    title: "台灣男籃打進奧運？",
+    subtitle: "資格賽最終名單",
+    yesPct: 22, volume: 45300, endsIn: "204 天",
+  },
+  {
+    id: "m7", category: "ent", emoji: "🎬", hot: false,
+    title: "金馬獎最佳影片由台灣片奪下？",
+    subtitle: "第 63 屆金馬獎",
+    yesPct: 55, volume: 34200, endsIn: "76 天",
+  },
+  {
+    id: "m8", category: "politics", emoji: "🏛️", hot: false,
+    title: "下屆行政院長是否留任？",
+    subtitle: "內閣人事動向",
+    yesPct: 63, volume: 67100, endsIn: "30 天",
+  },
+  {
+    id: "m9", category: "tech", emoji: "🤖", hot: false,
+    title: "GPT-6 是否於今年發表？",
+    subtitle: "AI 模型發表時程",
+    yesPct: 29, volume: 112400, endsIn: "50 天",
+  },
+];
 
-<main>
-  <div class="tablewrap">
-    <table id="table" style="display:none;">
-      <thead>
-        <tr>
-          <th data-key="Code">代號</th>
-          <th data-key="Name">名稱</th>
-          <th data-key="ClosingPrice">收盤價</th>
-          <th data-key="Change">漲跌</th>
-          <th data-key="ChangePct">漲跌%</th>
-          <th data-key="OpeningPrice">開盤</th>
-          <th data-key="HighestPrice">最高</th>
-          <th data-key="LowestPrice">最低</th>
-          <th data-key="TradeVolume">成交量(股)</th>
-          <th data-key="Transaction">筆數</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
-    <div class="loading" id="loading"><div class="spinner"></div>正在向證交所 OpenAPI 抓取全市場資料…</div>
-  </div>
-</main>
+const LEADERBOARD = [
+  { rank: 1, name: "占卜師阿凱", avatar: "🔮", tokens: 482300, change: "up" },
+  { rank: 2, name: "神算子", avatar: "🧙", tokens: 451900, change: "up" },
+  { rank: 3, name: "財金小天后", avatar: "👑", tokens: 439200, change: "down" },
+  { rank: 4, name: "球評阿仁", avatar: "🏀", tokens: 388100, change: "up" },
+  { rank: 5, name: "夜市預言家", avatar: "🌙", tokens: 356700, change: "same" },
+  { rank: 6, name: "指數獵人", avatar: "📊", tokens: 331500, change: "down" },
+  { rank: 7, name: "K線忍者", avatar: "🥷", tokens: 298800, change: "up" },
+  { rank: 8, name: "棒球通", avatar: "⚾", tokens: 271200, change: "same" },
+  { rank: 9, name: "電影咖", avatar: "🎞️", tokens: 254600, change: "down" },
+  { rank: 10, name: "政經觀察員", avatar: "🗞️", tokens: 238900, change: "up" },
+];
 
-<footer>資料來源：台灣證券交易所 OpenAPI (openapi.twse.com.tw)，為最近一個交易日之盤後資料，非即時報價。</footer>
+const INITIAL_QUESTS = [
+  { id: "q1", title: "完成 3 場預測下注", progress: 2, target: 3, reward: 200, claimed: false },
+  { id: "q2", title: "單筆下注滿 500 代幣", progress: 1, target: 1, reward: 150, claimed: false },
+  { id: "q3", title: "每日登入誰是神預測", progress: 1, target: 1, reward: 50, claimed: true },
+  { id: "q4", title: "在「財金」分類下注一次", progress: 0, target: 1, reward: 100, claimed: false },
+  { id: "q5", title: "邀請一位好友加入", progress: 0, target: 1, reward: 300, claimed: false },
+];
 
-<script>
-const API = 'https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL';
-let rawData = [];
-let sortKey = 'TradeVolume';
-let sortDir = -1;
+const STREAK_DAYS = ["一", "二", "三", "四", "五", "六", "日"];
+const STREAK_DONE = [true, true, true, true, false, false, false];
 
-function fmtNum(n){
-  const v = Number(n);
-  if(isNaN(v)) return '—';
-  return v.toLocaleString('en-US');
-}
-function fmtPrice(n){
-  const v = Number(n);
-  if(isNaN(v) || v===0) return '—';
-  return v.toFixed(2);
+/* ------------------------------------------------------------------ */
+/*  THEME TOKENS                                                       */
+/* ------------------------------------------------------------------ */
+
+const C = {
+  bg0: "#0D0819",
+  bg1: "#150E2A",
+  surface: "#1E1638",
+  surfaceHi: "#291E4A",
+  border: "rgba(197, 178, 255, 0.14)",
+  gold: "#F3B84E",
+  goldBright: "#FFD97A",
+  violet: "#9C6BFF",
+  magenta: "#FF5FD1",
+  yes: "#3ADFA0",
+  no: "#FF6B7A",
+  textPrimary: "#F4EFFF",
+  textSecondary: "#B3A6DB",
+  textMuted: "#736695",
+};
+
+const numFmt = (n) => n.toLocaleString("zh-TW");
+
+/* ------------------------------------------------------------------ */
+/*  ORACLE DIAL — signature gauge element                              */
+/* ------------------------------------------------------------------ */
+
+function OracleDial({ yesPct, size = 92 }) {
+  const r = 46;
+  const cx = 60, cy = 60;
+  const arcLen = Math.PI * r; // semicircle length
+  const progLen = (yesPct / 100) * arcLen;
+  const needleDeg = (yesPct - 50) * 1.8;
+
+  return (
+    <div style={{ width: size, height: size * 0.66, position: "relative" }}>
+      <svg viewBox="0 0 120 72" width="100%" height="100%">
+        <defs>
+          <linearGradient id={`dialGrad-${yesPct}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={C.no} />
+            <stop offset="50%" stopColor={C.gold} />
+            <stop offset="100%" stopColor={C.yes} />
+          </linearGradient>
+        </defs>
+        {/* track */}
+        <path
+          d={`M 10 ${cy} A ${r} ${r} 0 0 1 110 ${cy}`}
+          fill="none"
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth="8"
+          strokeLinecap="round"
+        />
+        {/* progress */}
+        <path
+          d={`M 10 ${cy} A ${r} ${r} 0 0 1 110 ${cy}`}
+          fill="none"
+          stroke={`url(#dialGrad-${yesPct})`}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={`${progLen} ${arcLen}`}
+          style={{ transition: "stroke-dasharray 0.5s ease" }}
+        />
+        {/* needle */}
+        <g style={{ transition: "transform 0.5s ease" }} transform={`rotate(${needleDeg} ${cx} ${cy})`}>
+          <line x1={cx} y1={cy} x2={cx} y2={cy - 34} stroke={C.goldBright} strokeWidth="2.5" strokeLinecap="round" />
+          <circle cx={cx} cy={cy} r="4.5" fill={C.goldBright} />
+        </g>
+      </svg>
+      <div
+        style={{
+          position: "absolute", left: 0, right: 0, bottom: 0,
+          textAlign: "center", fontFamily: "'Chakra Petch', sans-serif",
+        }}
+      >
+        <span style={{ fontSize: 18, fontWeight: 700, color: C.textPrimary }}>{yesPct}%</span>
+      </div>
+    </div>
+  );
 }
 
-function render(list){
-  const tbody = document.getElementById('tbody');
-  tbody.innerHTML = '';
-  if(list.length===0){
-    tbody.innerHTML = '<tr><td colspan="10" class="empty">找不到符合的股票</td></tr>';
-    return;
-  }
-  const frag = document.createDocumentFragment();
-  list.forEach(d=>{
-    const chg = Number(d.Change);
-    const cls = chg>0?'up':(chg<0?'down':'flat');
-    const sign = chg>0?'+':'';
-    const pct = d._pct;
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td class="code">${d.Code}</td>
-      <td class="name">${d.Name}</td>
-      <td class="${cls}">${fmtPrice(d.ClosingPrice)}</td>
-      <td class="${cls}"><span class="badge ${cls}">${sign}${fmtPrice(Math.abs(chg))}</span></td>
-      <td class="${cls}">${sign}${pct.toFixed(2)}%</td>
-      <td>${fmtPrice(d.OpeningPrice)}</td>
-      <td>${fmtPrice(d.HighestPrice)}</td>
-      <td>${fmtPrice(d.LowestPrice)}</td>
-      <td>${fmtNum(d.TradeVolume)}</td>
-      <td>${fmtNum(d.Transaction)}</td>
-    `;
-    frag.appendChild(tr);
-  });
-  tbody.appendChild(frag);
+/* ------------------------------------------------------------------ */
+/*  MARKET CARD                                                        */
+/* ------------------------------------------------------------------ */
+
+function MarketCard({ market, onBet, large }) {
+  return (
+    <div
+      style={{
+        background: large
+          ? `linear-gradient(135deg, ${C.surfaceHi}, ${C.surface})`
+          : C.surface,
+        border: `1px solid ${large ? "rgba(243,184,78,0.35)" : C.border}`,
+        borderRadius: 18,
+        padding: 14,
+        boxShadow: large ? "0 0 24px rgba(243,184,78,0.12)" : "none",
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start gap-2" style={{ minWidth: 0 }}>
+          <div
+            style={{
+              width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 19, background: "rgba(255,255,255,0.06)",
+            }}
+          >
+            {market.emoji}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div className="flex items-center gap-1.5">
+              {market.hot && (
+                <span
+                  style={{
+                    fontSize: 10, fontWeight: 700, color: C.bg0,
+                    background: `linear-gradient(90deg, ${C.gold}, ${C.magenta})`,
+                    borderRadius: 999, padding: "1px 6px",
+                  }}
+                >
+                  熱門
+                </span>
+              )}
+              <span style={{ fontSize: 11, color: C.textMuted }}>
+                {CATEGORIES.find((c) => c.id === market.category)?.label}
+              </span>
+            </div>
+            <div
+              style={{
+                fontSize: 14.5, fontWeight: 700, color: C.textPrimary, marginTop: 2,
+                overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box",
+                WebkitLineClamp: 2, WebkitBoxOrient: "vertical", lineHeight: 1.3,
+              }}
+            >
+              {market.title}
+            </div>
+          </div>
+        </div>
+        <OracleDial yesPct={market.yesPct} size={72} />
+      </div>
+
+      <div className="flex items-center justify-between mt-2" style={{ fontSize: 11, color: C.textMuted }}>
+        <span>代幣量 {numFmt(market.volume)}</span>
+        <span className="flex items-center gap-1">
+          <Clock size={11} /> 剩 {market.endsIn}
+        </span>
+      </div>
+
+      <div className="flex gap-2 mt-3">
+        <button
+          onClick={() => onBet(market, "YES")}
+          style={{
+            flex: 1, background: "rgba(58,223,160,0.14)", color: C.yes,
+            border: `1px solid rgba(58,223,160,0.4)`, borderRadius: 12,
+            padding: "8px 0", fontWeight: 700, fontSize: 13,
+          }}
+        >
+          YES {market.yesPct}%
+        </button>
+        <button
+          onClick={() => onBet(market, "NO")}
+          style={{
+            flex: 1, background: "rgba(255,107,122,0.14)", color: C.no,
+            border: `1px solid rgba(255,107,122,0.4)`, borderRadius: 12,
+            padding: "8px 0", fontWeight: 700, fontSize: 13,
+          }}
+        >
+          NO {100 - market.yesPct}%
+        </button>
+      </div>
+    </div>
+  );
 }
 
-function applySort(list){
-  return [...list].sort((a,b)=>{
-    let av = a[sortKey], bv = b[sortKey];
-    if(sortKey==='Code' || sortKey==='Name'){
-      return sortDir * String(av).localeCompare(String(bv), 'zh-Hant');
-    }
-    av = Number(av)||0; bv = Number(bv)||0;
-    return sortDir * (av - bv);
-  });
-}
+/* ------------------------------------------------------------------ */
+/*  LOBBY                                                               */
+/* ------------------------------------------------------------------ */
 
-function applyFilter(){
-  const q = document.getElementById('search').value.trim().toLowerCase();
-  const priceOn = document.getElementById('priceFilterToggle').checked;
-  const cap = Number(document.getElementById('priceCap').value) || Infinity;
-  let list = rawData;
-  if(q){
-    list = list.filter(d => d.Code.toLowerCase().includes(q) || d.Name.toLowerCase().includes(q));
-  }
-  if(priceOn){
-    list = list.filter(d => Number(d.ClosingPrice) > 0 && Number(d.ClosingPrice) <= cap);
-  }
-  const countLabel = document.getElementById('poolCount');
-  if(countLabel) countLabel.textContent = `· 篩選後 ${list.length} 檔`;
-  render(applySort(list));
-  updatePulse();
-}
+function Lobby({ markets, onBet }) {
+  const [cat, setCat] = useState("all");
+  const [query, setQuery] = useState("");
 
-function currentPool(){
-  const priceOn = document.getElementById('priceFilterToggle').checked;
-  const cap = Number(document.getElementById('priceCap').value) || Infinity;
-  return priceOn ? rawData.filter(d => Number(d.ClosingPrice) > 0 && Number(d.ClosingPrice) <= cap) : rawData;
-}
-
-function updatePulse(){
-  const pool = currentPool();
-  const up = pool.filter(d=>Number(d.Change)>0).length;
-  const down = pool.filter(d=>Number(d.Change)<0).length;
-  const flat = pool.length - up - down;
-  const total = pool.length || 1;
-  document.getElementById('pulseUp').style.width = (up/total*100)+'%';
-  document.getElementById('pulseFlat').style.width = (flat/total*100)+'%';
-  document.getElementById('pulseDown').style.width = (down/total*100)+'%';
-  document.getElementById('pulseUpLabel').textContent = `上漲 ${up}`;
-  document.getElementById('pulseDownLabel').textContent = `下跌 ${down}`;
-}
-
-function updateSortHeaders(){
-  document.querySelectorAll('thead th').forEach(th=>{
-    th.classList.toggle('active', th.dataset.key===sortKey);
-    th.querySelector('.arrow')?.remove();
-    if(th.dataset.key===sortKey){
-      const a = document.createElement('span');
-      a.className='arrow';
-      a.textContent = sortDir===1?'▲':'▼';
-      th.appendChild(a);
-    }
-  });
-}
-
-async function loadData(){
-  const loading = document.getElementById('loading');
-  const table = document.getElementById('table');
-  const status = document.getElementById('status');
-  loading.style.display='block';
-  loading.innerHTML = '<div class="spinner"></div>正在向證交所 OpenAPI 抓取全市場資料…';
-  table.style.display='none';
-  status.textContent = '連線中…';
-  try{
-    const res = await fetch(API, {cache:'no-store'});
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const json = await res.json();
-    rawData = json.filter(d => d.Code && d.ClosingPrice).map(d=>{
-      const close = Number(d.ClosingPrice)||0;
-      const chg = Number(d.Change)||0;
-      const base = close - chg;
-      d._pct = base!==0 ? (chg/base*100) : 0;
-      return d;
+  const featured = markets.find((m) => m.hot);
+  const filtered = useMemo(() => {
+    return markets.filter((m) => {
+      const catOk = cat === "all" || m.category === cat;
+      const qOk = query.trim() === "" || m.title.includes(query.trim());
+      return catOk && qOk;
     });
-    sortKey='TradeVolume'; sortDir=-1;
-    updateSortHeaders();
-    applyFilter();
-    updatePulse();
-    loading.style.display='none';
-    table.style.display='table';
-    const now = new Date();
-    status.innerHTML = `共 <b>${rawData.length}</b> 檔　更新於 <b>${now.toLocaleTimeString('zh-TW')}</b>`;
-  }catch(err){
-    loading.innerHTML = `<div class="errbox">抓取失敗：${err.message}<br><br>
-      可能原因：瀏覽器封鎖跨網域請求，或證交所 API 暫時無回應。<br>
-      可直接開啟 <a href="${API}" target="_blank">${API}</a> 確認資料是否可存取，或稍後按「重新抓取」再試一次。</div>`;
-    status.textContent = '抓取失敗';
-  }
+  }, [markets, cat, query]);
+
+  return (
+    <div className="px-4 pb-4">
+      {/* search */}
+      <div
+        className="flex items-center gap-2 mt-3 mb-3"
+        style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "9px 12px" }}
+      >
+        <Search size={15} color={C.textMuted} />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="搜尋預測盤口"
+          style={{ background: "transparent", border: "none", outline: "none", color: C.textPrimary, fontSize: 13, width: "100%" }}
+        />
+      </div>
+
+      {/* category chips */}
+      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+        {CATEGORIES.map((c) => {
+          const active = cat === c.id;
+          return (
+            <button
+              key={c.id}
+              onClick={() => setCat(c.id)}
+              style={{
+                flexShrink: 0, fontSize: 12.5, fontWeight: 600, padding: "7px 14px",
+                borderRadius: 999, whiteSpace: "nowrap",
+                background: active ? `linear-gradient(90deg, ${C.gold}, ${C.magenta})` : C.surface,
+                color: active ? C.bg0 : C.textSecondary,
+                border: `1px solid ${active ? "transparent" : C.border}`,
+              }}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* featured */}
+      {cat === "all" && query === "" && featured && (
+        <div className="mt-4">
+          <div className="flex items-center gap-1.5 mb-2" style={{ color: C.gold, fontSize: 12.5, fontWeight: 700 }}>
+            <Sparkles size={13} /> 今日神諭焦點
+          </div>
+          <MarketCard market={featured} onBet={onBet} large />
+        </div>
+      )}
+
+      {/* list */}
+      <div className="mt-4">
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: C.textSecondary, marginBottom: 8 }}>
+          全部盤口 · {filtered.length}
+        </div>
+        <div className="flex flex-col gap-3">
+          {filtered.map((m) => (
+            <MarketCard key={m.id} market={m} onBet={onBet} />
+          ))}
+          {filtered.length === 0 && (
+            <div style={{ textAlign: "center", color: C.textMuted, fontSize: 13, padding: "30px 0" }}>
+              找不到符合的盤口，換個分類看看吧
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
-document.getElementById('refreshBtn').addEventListener('click', loadData);
-document.getElementById('search').addEventListener('input', applyFilter);
-document.getElementById('priceFilterToggle').addEventListener('change', applyFilter);
-document.getElementById('priceCap').addEventListener('input', applyFilter);
-document.querySelectorAll('thead th').forEach(th=>{
-  th.addEventListener('click', ()=>{
-    const key = th.dataset.key;
-    if(sortKey===key){ sortDir *= -1; } else { sortKey = key; sortDir = -1; }
-    updateSortHeaders();
-    applyFilter();
-  });
-});
+/* ------------------------------------------------------------------ */
+/*  LEADERBOARD                                                        */
+/* ------------------------------------------------------------------ */
 
-loadData();
-</script>
-</body>
-</html>
+function Leaderboard({ myRank }) {
+  const podium = LEADERBOARD.slice(0, 3);
+  const rest = LEADERBOARD.slice(3);
+  const order = [podium[1], podium[0], podium[2]]; // 2nd,1st,3rd for podium layout
+  const heights = [64, 86, 52];
+  const medalColor = ["#C9CFE0", C.gold, "#D08A54"];
+
+  return (
+    <div className="px-4 pb-4">
+      <div className="mt-4 mb-2" style={{ fontSize: 17, fontWeight: 800, color: C.textPrimary }}>
+        神預測排行榜
+      </div>
+      <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 16 }}>本週代幣累積排名</div>
+
+      {/* podium */}
+      <div className="flex items-end justify-center gap-3">
+        {order.map((p, i) => (
+          <div key={p.rank} className="flex flex-col items-center" style={{ width: 92 }}>
+            {p.rank === 1 && <Crown size={18} color={C.gold} style={{ marginBottom: 2 }} />}
+            <div
+              style={{
+                width: 52, height: 52, borderRadius: "50%", fontSize: 24,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: C.surfaceHi, border: `2px solid ${medalColor[i]}`,
+              }}
+            >
+              {p.avatar}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary, marginTop: 6, textAlign: "center" }}>
+              {p.name}
+            </div>
+            <div style={{ fontSize: 11, color: C.gold, fontFamily: "'Chakra Petch', sans-serif" }}>
+              {numFmt(p.tokens)}
+            </div>
+            <div
+              style={{
+                width: "100%", height: heights[i], marginTop: 8, borderRadius: "10px 10px 0 0",
+                background: `linear-gradient(180deg, ${medalColor[i]}55, ${medalColor[i]}11)`,
+                border: `1px solid ${medalColor[i]}66`, borderBottom: "none",
+                display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: 6,
+              }}
+            >
+              <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontWeight: 800, color: medalColor[i], fontSize: 18 }}>
+                {p.rank}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* rest list */}
+      <div className="flex flex-col gap-2 mt-6">
+        {rest.map((p) => (
+          <div
+            key={p.rank}
+            className="flex items-center gap-3"
+            style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 12px" }}
+          >
+            <span style={{ width: 20, textAlign: "center", fontFamily: "'Chakra Petch', sans-serif", fontWeight: 700, color: C.textMuted }}>
+              {p.rank}
+            </span>
+            <span style={{ fontSize: 20 }}>{p.avatar}</span>
+            <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: C.textPrimary }}>{p.name}</span>
+            {p.change === "up" && <TrendingUp size={13} color={C.yes} />}
+            {p.change === "down" && <TrendingDown size={13} color={C.no} />}
+            <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontWeight: 700, color: C.gold, fontSize: 13 }}>
+              {numFmt(p.tokens)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* my rank sticky */}
+      <div
+        className="flex items-center gap-3 mt-4"
+        style={{
+          background: `linear-gradient(90deg, rgba(243,184,78,0.16), rgba(255,95,209,0.1))`,
+          border: `1px solid rgba(243,184,78,0.4)`, borderRadius: 14, padding: "10px 12px",
+        }}
+      >
+        <span style={{ width: 20, textAlign: "center", fontFamily: "'Chakra Petch', sans-serif", fontWeight: 700, color: C.gold }}>
+          {myRank}
+        </span>
+        <span style={{ fontSize: 20 }}>🧑‍🚀</span>
+        <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700, color: C.textPrimary }}>你</span>
+        <span style={{ fontFamily: "'Chakra Petch', sans-serif", fontWeight: 700, color: C.gold, fontSize: 13 }}>
+          12,500
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  QUESTS                                                             */
+/* ------------------------------------------------------------------ */
+
+function Quests({ quests, onClaim }) {
+  return (
+    <div className="px-4 pb-4">
+      <div className="mt-4 mb-1" style={{ fontSize: 17, fontWeight: 800, color: C.textPrimary }}>
+        每日任務
+      </div>
+      <div style={{ fontSize: 12, color: C.textMuted, marginBottom: 14 }}>每天 00:00 重置，完成任務領代幣</div>
+
+      {/* streak */}
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: "14px 16px", marginBottom: 16 }}>
+        <div className="flex items-center gap-1.5 mb-3">
+          <Flame size={15} color={C.gold} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.textPrimary }}>連續登入 4 天</span>
+        </div>
+        <div className="flex justify-between">
+          {STREAK_DAYS.map((d, i) => (
+            <div key={d} className="flex flex-col items-center gap-1">
+              <div
+                style={{
+                  width: 28, height: 28, borderRadius: "50%",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: STREAK_DONE[i] ? `linear-gradient(135deg, ${C.gold}, ${C.magenta})` : "rgba(255,255,255,0.06)",
+                  border: STREAK_DONE[i] ? "none" : `1px solid ${C.border}`,
+                }}
+              >
+                {STREAK_DONE[i] ? <Flame size={13} color={C.bg0} /> : null}
+              </div>
+              <span style={{ fontSize: 10, color: C.textMuted }}>{d}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* quest list */}
+      <div className="flex flex-col gap-3">
+        {quests.map((q) => {
+          const done = q.progress >= q.target;
+          return (
+            <div key={q.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: 14 }}>
+              <div className="flex items-center justify-between mb-2">
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: C.textPrimary }}>{q.title}</span>
+                <span className="flex items-center gap-1" style={{ fontSize: 12.5, fontWeight: 700, color: C.gold, fontFamily: "'Chakra Petch', sans-serif" }}>
+                  <Coins size={12} /> +{q.reward}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div style={{ flex: 1, height: 7, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      width: `${Math.min(100, (q.progress / q.target) * 100)}%`, height: "100%",
+                      background: done ? `linear-gradient(90deg, ${C.yes}, ${C.gold})` : `linear-gradient(90deg, ${C.violet}, ${C.magenta})`,
+                      transition: "width 0.4s ease",
+                    }}
+                  />
+                </div>
+                <span style={{ fontSize: 11, color: C.textMuted, fontFamily: "'Chakra Petch', sans-serif" }}>
+                  {q.progress}/{q.target}
+                </span>
+                {q.claimed ? (
+                  <span style={{ fontSize: 11.5, color: C.textMuted, display: "flex", alignItems: "center", gap: 3 }}>
+                    <Check size={12} /> 已領取
+                  </span>
+                ) : (
+                  <button
+                    disabled={!done}
+                    onClick={() => onClaim(q.id)}
+                    style={{
+                      fontSize: 11.5, fontWeight: 700, padding: "5px 12px", borderRadius: 999, flexShrink: 0,
+                      background: done ? `linear-gradient(90deg, ${C.gold}, ${C.magenta})` : "rgba(255,255,255,0.06)",
+                      color: done ? C.bg0 : C.textMuted,
+                      border: done ? "none" : `1px solid ${C.border}`,
+                    }}
+                  >
+                    領取
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  PROFILE                                                             */
+/* ------------------------------------------------------------------ */
+
+function Profile({ tokens, bets, markets }) {
+  const winRate = 58;
+  return (
+    <div className="px-4 pb-4">
+      <div className="flex flex-col items-center mt-6 mb-5">
+        <div
+          style={{
+            width: 76, height: 76, borderRadius: "50%", fontSize: 34,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: `linear-gradient(135deg, ${C.surfaceHi}, ${C.surface})`,
+            border: `2px solid ${C.gold}`,
+          }}
+        >
+          🧑‍🚀
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary, marginTop: 8 }}>神預測見習生</div>
+        <span style={{ fontSize: 11, fontWeight: 700, color: C.bg0, background: C.gold, borderRadius: 999, padding: "2px 10px", marginTop: 4 }}>
+          Lv.7 占卜學徒
+        </span>
+      </div>
+
+      <div
+        className="flex items-center justify-center gap-2"
+        style={{
+          background: `linear-gradient(135deg, rgba(243,184,78,0.16), rgba(156,107,255,0.12))`,
+          border: `1px solid rgba(243,184,78,0.35)`, borderRadius: 18, padding: "18px 0", marginBottom: 14,
+        }}
+      >
+        <Coins size={22} color={C.gold} />
+        <span style={{ fontSize: 28, fontWeight: 800, color: C.textPrimary, fontFamily: "'Chakra Petch', sans-serif" }}>
+          {numFmt(tokens)}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 mb-5">
+        {[
+          { label: "勝率", value: `${winRate}%` },
+          { label: "總場次", value: bets.length + 24 },
+          { label: "最佳連勝", value: "6" },
+        ].map((s) => (
+          <div key={s.label} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "12px 0", textAlign: "center" }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: C.gold, fontFamily: "'Chakra Petch', sans-serif" }}>{s.value}</div>
+            <div style={{ fontSize: 11, color: C.textMuted, marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.textSecondary, marginBottom: 8 }}>近期下注紀錄</div>
+      <div className="flex flex-col gap-2">
+        {bets.length === 0 && (
+          <div style={{ textAlign: "center", color: C.textMuted, fontSize: 13, padding: "24px 0", background: C.surface, borderRadius: 14, border: `1px solid ${C.border}` }}>
+            尚無下注紀錄，去大廳看看熱門預測吧！
+          </div>
+        )}
+        {[...bets].reverse().map((b, i) => {
+          const m = markets.find((mk) => mk.id === b.marketId);
+          return (
+            <div key={i} className="flex items-center gap-3" style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "10px 12px" }}>
+              <span style={{ fontSize: 18 }}>{m?.emoji}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: C.textPrimary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {m?.title}
+                </div>
+                <div style={{ fontSize: 11, color: C.textMuted }}>
+                  {b.side} · {numFmt(b.amount)} 代幣
+                </div>
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: C.violet, background: "rgba(156,107,255,0.14)", borderRadius: 999, padding: "3px 9px" }}>
+                待開獎
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  BET SHEET                                                          */
+/* ------------------------------------------------------------------ */
+
+function BetSheet({ market, side, tokens, onClose, onConfirm }) {
+  const [betSide, setBetSide] = useState(side);
+  const [amount, setAmount] = useState(100);
+
+  useEffect(() => setBetSide(side), [side, market]);
+
+  if (!market) return null;
+  const pct = betSide === "YES" ? market.yesPct : 100 - market.yesPct;
+  const payout = amount > 0 ? Math.round(amount * (100 / pct)) : 0;
+  const quickAmounts = [100, 500, 1000];
+
+  return (
+    <div
+      style={{ position: "absolute", inset: 0, zIndex: 40, display: "flex", alignItems: "flex-end" }}
+    >
+      <div style={{ position: "absolute", inset: 0, background: "rgba(8,5,16,0.72)" }} onClick={onClose} />
+      <div
+        style={{
+          position: "relative", width: "100%", background: C.bg1,
+          borderRadius: "22px 22px 0 0", padding: "10px 18px 22px",
+          border: `1px solid ${C.border}`, borderBottom: "none",
+        }}
+      >
+        <div style={{ width: 36, height: 4, borderRadius: 999, background: C.border, margin: "4px auto 14px" }} />
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2" style={{ maxWidth: "85%" }}>
+            <span style={{ fontSize: 20 }}>{market.emoji}</span>
+            <span style={{ fontSize: 14.5, fontWeight: 700, color: C.textPrimary, lineHeight: 1.3 }}>{market.title}</span>
+          </div>
+          <button onClick={onClose}><X size={18} color={C.textMuted} /></button>
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => setBetSide("YES")}
+            style={{
+              flex: 1, padding: "10px 0", borderRadius: 12, fontWeight: 800, fontSize: 14,
+              background: betSide === "YES" ? "rgba(58,223,160,0.2)" : "transparent",
+              border: `1.5px solid ${betSide === "YES" ? C.yes : C.border}`,
+              color: betSide === "YES" ? C.yes : C.textMuted,
+            }}
+          >
+            YES {market.yesPct}%
+          </button>
+          <button
+            onClick={() => setBetSide("NO")}
+            style={{
+              flex: 1, padding: "10px 0", borderRadius: 12, fontWeight: 800, fontSize: 14,
+              background: betSide === "NO" ? "rgba(255,107,122,0.2)" : "transparent",
+              border: `1.5px solid ${betSide === "NO" ? C.no : C.border}`,
+              color: betSide === "NO" ? C.no : C.textMuted,
+            }}
+          >
+            NO {100 - market.yesPct}%
+          </button>
+        </div>
+
+        <div style={{ fontSize: 12, color: C.textMuted, margin: "16px 0 8px" }}>下注代幣數</div>
+        <div
+          className="flex items-center justify-between"
+          style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "12px 14px" }}
+        >
+          <div className="flex items-center gap-2">
+            <Coins size={16} color={C.gold} />
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(Math.max(0, Number(e.target.value)))}
+              style={{ background: "transparent", border: "none", outline: "none", color: C.textPrimary, fontSize: 20, fontWeight: 800, width: 110, fontFamily: "'Chakra Petch', sans-serif" }}
+            />
+          </div>
+          <span style={{ fontSize: 11, color: C.textMuted }}>持有 {numFmt(tokens)}</span>
+        </div>
+
+        <div className="flex gap-2 mt-2">
+          {quickAmounts.map((a) => (
+            <button
+              key={a}
+              onClick={() => setAmount(a)}
+              style={{ flex: 1, padding: "7px 0", borderRadius: 10, fontSize: 12.5, fontWeight: 600, background: "rgba(255,255,255,0.06)", color: C.textSecondary, border: `1px solid ${C.border}` }}
+            >
+              {a}
+            </button>
+          ))}
+          <button
+            onClick={() => setAmount(tokens)}
+            style={{ flex: 1, padding: "7px 0", borderRadius: 10, fontSize: 12.5, fontWeight: 700, background: "rgba(243,184,78,0.14)", color: C.gold, border: `1px solid rgba(243,184,78,0.4)` }}
+          >
+            全部
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between mt-4" style={{ fontSize: 12.5, color: C.textSecondary }}>
+          <span>預估可得（含本金）</span>
+          <span style={{ color: C.gold, fontWeight: 800, fontFamily: "'Chakra Petch', sans-serif", fontSize: 15 }}>
+            {numFmt(payout)}
+          </span>
+        </div>
+
+        <button
+          disabled={amount <= 0 || amount > tokens}
+          onClick={() => onConfirm({ marketId: market.id, side: betSide, amount })}
+          style={{
+            width: "100%", marginTop: 14, padding: "13px 0", borderRadius: 14, fontSize: 15, fontWeight: 800,
+            background: amount > 0 && amount <= tokens ? `linear-gradient(90deg, ${C.gold}, ${C.magenta})` : "rgba(255,255,255,0.08)",
+            color: amount > 0 && amount <= tokens ? C.bg0 : C.textMuted,
+            border: "none",
+          }}
+        >
+          確認下注
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  BOTTOM NAV + HEADER                                                 */
+/* ------------------------------------------------------------------ */
+
+function BottomNav({ tab, setTab }) {
+  const items = [
+    { id: "lobby", label: "大廳", icon: Home },
+    { id: "leaderboard", label: "排行榜", icon: Trophy },
+    { id: "quests", label: "任務", icon: ListChecks },
+    { id: "profile", label: "我的", icon: User },
+  ];
+  return (
+    <div
+      style={{
+        position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 30,
+        background: "rgba(13,8,25,0.92)", backdropFilter: "blur(10px)",
+        borderTop: `1px solid ${C.border}`, display: "flex", padding: "8px 6px calc(8px + env(safe-area-inset-bottom))",
+      }}
+    >
+      {items.map((it) => {
+        const active = tab === it.id;
+        const Icon = it.icon;
+        return (
+          <button
+            key={it.id}
+            onClick={() => setTab(it.id)}
+            className="flex flex-col items-center gap-1"
+            style={{ flex: 1, padding: "4px 0", background: "transparent", border: "none" }}
+          >
+            <Icon size={20} color={active ? C.gold : C.textMuted} strokeWidth={active ? 2.4 : 2} />
+            <span style={{ fontSize: 10.5, fontWeight: active ? 700 : 500, color: active ? C.gold : C.textMuted }}>
+              {it.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Header({ tokens, streak }) {
+  return (
+    <div
+      style={{
+        position: "sticky", top: 0, zIndex: 20, background: "rgba(13,8,25,0.92)",
+        backdropFilter: "blur(10px)", borderBottom: `1px solid ${C.border}`,
+      }}
+      className="flex items-center justify-between px-4 py-3"
+    >
+      <div className="flex items-center gap-1.5">
+        <Sparkles size={17} color={C.gold} />
+        <span
+          style={{
+            fontSize: 16, fontWeight: 800, letterSpacing: 0.5,
+            backgroundImage: `linear-gradient(90deg, ${C.goldBright}, ${C.magenta})`,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          }}
+        >
+          誰是神預測
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1" style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 999, padding: "5px 10px" }}>
+          <Flame size={13} color={C.gold} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: C.textSecondary, fontFamily: "'Chakra Petch', sans-serif" }}>{streak}</span>
+        </div>
+        <div className="flex items-center gap-1" style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 999, padding: "5px 10px" }}>
+          <Coins size={13} color={C.gold} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: C.gold, fontFamily: "'Chakra Petch', sans-serif" }}>{numFmt(tokens)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  APP                                                                 */
+/* ------------------------------------------------------------------ */
+
+export default function App() {
+  const [tab, setTab] = useState("lobby");
+  const [tokens, setTokens] = useState(12500);
+  const [markets] = useState(INITIAL_MARKETS);
+  const [quests, setQuests] = useState(INITIAL_QUESTS);
+  const [bets, setBets] = useState([]);
+  const [betTarget, setBetTarget] = useState(null); // {market, side}
+  const [toast, setToast] = useState("");
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 2200);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const openBet = (market, side) => setBetTarget({ market, side });
+  const closeBet = () => setBetTarget(null);
+
+  const confirmBet = ({ marketId, side, amount }) => {
+    if (amount <= 0 || amount > tokens) return;
+    setTokens((t) => t - amount);
+    setBets((b) => [...b, { marketId, side, amount }]);
+    setBetTarget(null);
+    setToast("下注成功，靜候神諭揭曉！");
+  };
+
+  const claimQuest = (id) => {
+    setQuests((qs) =>
+      qs.map((q) => {
+        if (q.id === id && q.progress >= q.target && !q.claimed) {
+          setTokens((t) => t + q.reward);
+          setToast(`已領取 ${q.reward} 代幣！`);
+          return { ...q, claimed: true };
+        }
+        return q;
+      })
+    );
+  };
+
+  return (
+    <div style={{ height: "100dvh", background: `radial-gradient(circle at 50% -10%, #241a44, ${C.bg0} 55%)`, display: "flex", justifyContent: "center", fontFamily: "'Noto Sans TC', sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Chakra+Petch:wght@600;700&display=swap');
+        * { box-sizing: border-box; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        div::-webkit-scrollbar { display: none; }
+      `}</style>
+
+      <div
+        style={{
+          width: "100%", maxWidth: 430, height: "100dvh", position: "relative",
+          background: C.bg0, overflow: "hidden", display: "flex", flexDirection: "column",
+        }}
+      >
+        <Header tokens={tokens} streak={4} />
+
+        <div style={{ flex: 1, overflowY: "auto", paddingBottom: 78 }}>
+          {tab === "lobby" && <Lobby markets={markets} onBet={openBet} />}
+          {tab === "leaderboard" && <Leaderboard myRank={23} />}
+          {tab === "quests" && <Quests quests={quests} onClaim={claimQuest} />}
+          {tab === "profile" && <Profile tokens={tokens} bets={bets} markets={markets} />}
+        </div>
+
+        <BottomNav tab={tab} setTab={setTab} />
+
+        {betTarget && (
+          <BetSheet
+            market={betTarget.market}
+            side={betTarget.side}
+            tokens={tokens}
+            onClose={closeBet}
+            onConfirm={confirmBet}
+          />
+        )}
+
+        {toast && (
+          <div
+            style={{
+              position: "absolute", top: 66, left: "50%", transform: "translateX(-50%)", zIndex: 50,
+              background: C.surfaceHi, border: `1px solid ${C.gold}`, color: C.textPrimary,
+              padding: "9px 18px", borderRadius: 999, fontSize: 12.5, fontWeight: 700,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.4)", whiteSpace: "nowrap",
+            }}
+          >
+            {toast}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
