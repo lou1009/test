@@ -1,754 +1,401 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>誰是神預測</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>手搖 — 台灣飲料店入口</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg0:#0D0819; --bg1:#150E2A; --surface:#1E1638; --surfaceHi:#291E4A;
-    --border:rgba(197,178,255,0.14); --gold:#F3B84E; --goldBright:#FFD97A;
-    --violet:#9C6BFF; --magenta:#FF5FD1; --yes:#3ADFA0; --no:#FF6B7A;
-    --textPrimary:#F4EFFF; --textSecondary:#B3A6DB; --textMuted:#736695;
+  :root{
+    --bg: #f2f5ec;
+    --bg-panel: #ffffff;
+    --tea-green: #2f4a3a;
+    --tea-green-soft: #4c6e57;
+    --amber: #c9832e;
+    --amber-soft: #e3a857;
+    --ink: #2a2f28;
+    --muted: #6c7768;
+    --line: #dfe6d6;
   }
-  * { box-sizing: border-box; }
-  html, body { margin:0; padding:0; height:100%; background:var(--bg0); font-family:'Noto Sans TC', sans-serif; }
-  input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
-  #stage::-webkit-scrollbar, .scroll-area::-webkit-scrollbar { display:none; }
-  .num { font-family:'Chakra Petch', sans-serif; }
-  .row { display:flex; align-items:center; }
-  .col { display:flex; flex-direction:column; }
-  .between { justify-content:space-between; }
-  .center { justify-content:center; }
-  .g1{gap:4px} .g2{gap:8px} .g3{gap:12px}
-  .wrap { min-width:0; }
-  .ellipsis { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .clamp2 { overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-  button { cursor:pointer; font-family:inherit; }
-  #outer {
-    height:100dvh; display:flex; justify-content:center;
-    background: radial-gradient(circle at 50% -10%, #241a44, var(--bg0) 55%);
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
   }
-  #phone {
-    width:100%; max-width:430px; height:100dvh; position:relative;
-    background:var(--bg0); overflow:hidden; display:flex; flex-direction:column;
+  body{
+    background-image:
+      linear-gradient(160deg, #f7f2d9 0%, #eef4d6 30%, #e2eec2 60%, #d3e8b8 100%),
+      radial-gradient(circle at 6% 10%, rgba(201,131,46,0.06) 0, transparent 40%),
+      radial-gradient(circle at 94% 85%, rgba(47,74,58,0.06) 0, transparent 45%);
+    background-attachment: fixed;
   }
-  #header {
-    position:sticky; top:0; z-index:20; background:rgba(13,8,25,0.92);
-    backdrop-filter:blur(10px); border-bottom:1px solid var(--border);
-    padding:12px 16px; flex-shrink:0;
+
+  .pearls{
+    position: fixed; inset:0; pointer-events:none; z-index:0; opacity:0.55;
+    background-image:
+      radial-gradient(circle, rgba(47,74,58,0.09) 5px, transparent 5.5px),
+      radial-gradient(circle, rgba(201,131,46,0.10) 4px, transparent 4.5px);
+    background-size: 220px 220px, 340px 340px;
+    background-position: 20px 60px, 160px 260px;
   }
-  .pill { background:var(--surface); border:1px solid var(--border); border-radius:999px; padding:5px 10px; }
-  .scroll-area { flex:1; overflow-y:auto; padding-bottom:78px; }
-  #bottomnav {
-    position:absolute; bottom:0; left:0; right:0; z-index:30;
-    background:rgba(13,8,25,0.92); backdrop-filter:blur(10px);
-    border-top:1px solid var(--border); display:flex;
-    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+
+  .wrap{ position: relative; z-index:1; max-width: 1000px; margin: 0 auto; padding: 0 24px 80px; }
+
+  header.hero{
+    padding: 72px 0 40px;
+    text-align: center;
   }
-  .navbtn { flex:1; padding:4px 0; background:transparent; border:none; display:flex; flex-direction:column; align-items:center; gap:2px; }
-  .card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:14px; }
-  .chip { flex-shrink:0; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:999px; white-space:nowrap; border:1px solid var(--border); background:var(--surface); color:var(--textSecondary); }
-  .chip.active { background:linear-gradient(90deg, var(--gold), var(--magenta)); color:var(--bg0); border-color:transparent; }
-  .betbtn { flex:1; border-radius:12px; padding:8px 0; font-weight:700; font-size:13px; border:1px solid; }
-  .questbar { flex:1; height:7px; border-radius:999px; background:rgba(255,255,255,0.08); overflow:hidden; }
-  .overlay { position:absolute; inset:0; z-index:40; display:flex; align-items:flex-end; }
-  .sheet { position:relative; width:100%; background:var(--bg1); border-radius:22px 22px 0 0; padding:10px 18px 22px; border:1px solid var(--border); border-bottom:none; }
-  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.25; } }
+  .eyebrow-mark{
+    display:inline-block;
+    font-family:'Noto Serif TC', serif;
+    font-size: 14px;
+    letter-spacing: 0.4em;
+    color: var(--amber);
+    border: 1px solid var(--line);
+    background: var(--bg-panel);
+    padding: 6px 18px;
+    border-radius: 999px;
+    margin-bottom: 28px;
+  }
+  h1{
+    font-family:'Noto Serif TC', serif;
+    font-weight: 700;
+    font-size: clamp(40px, 8vw, 68px);
+    margin: 0 0 18px;
+    letter-spacing: 0.06em;
+    color: var(--tea-green);
+  }
+  h1 .accent{ color: var(--amber); }
+  .tagline{
+    max-width: 480px; margin: 0 auto;
+    color: var(--muted);
+    font-size: 16px;
+    letter-spacing: 0.04em;
+  }
+
+  .divider{
+    display:flex; align-items:center; gap:14px;
+    margin: 48px 0 40px;
+    color: var(--tea-green-soft);
+    font-size: 13px;
+  }
+  .divider::before, .divider::after{
+    content:""; flex:1; height:1px; background: var(--line);
+  }
+
+  section.group{ margin-bottom: 56px; }
+  .group-title{
+    font-family:'Noto Serif TC', serif;
+    font-size: 22px;
+    color: var(--tea-green);
+    margin: 0 0 6px;
+  }
+  .group-desc{
+    font-size: 14px;
+    color: var(--muted);
+    margin: 0 0 26px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px;
+  }
+
+  a.card{
+    display:flex; flex-direction:column; justify-content: space-between;
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 22px 22px 18px;
+    text-decoration:none;
+    color: inherit;
+    min-height: 138px;
+    box-shadow: 0 1px 2px rgba(47,74,58,0.04);
+    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  }
+  a.card:hover{
+    border-color: var(--amber-soft);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 22px rgba(47,74,58,0.08);
+  }
+  a.card:focus-visible{
+    outline: 2px solid var(--amber);
+    outline-offset: 3px;
+  }
+  .card-name{
+    font-family:'Noto Serif TC', serif;
+    font-weight: 600;
+    font-size: 19px;
+    color: var(--tea-green);
+  }
+  .card-en{
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .card-desc{
+    font-size: 13.5px;
+    color: var(--muted);
+    margin-top: 14px;
+  }
+  .card-url{
+    font-size: 12px;
+    color: var(--amber);
+    margin-top: 16px;
+    letter-spacing: 0.02em;
+  }
+  a.card:hover .card-url{ color: #a8681e; }
+
+  footer{
+    text-align:center;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+  footer p{ margin: 6px 0; }
+
+  @media (prefers-reduced-motion: reduce){
+    a.card{ transition: none; }
+  }
+
+  @keyframes riseIn{
+    from{ opacity:0; transform: translateY(14px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  header.hero{ animation: riseIn 0.7s ease both; }
 </style>
 </head>
 <body>
-<div id="outer"><div id="phone">
-  <header id="header"></header>
-  <div id="tabContent" class="scroll-area"></div>
-  <nav id="bottomnav"></nav>
-  <div id="betSheetRoot"></div>
-  <div id="toastRoot"></div>
-</div></div>
+<div class="pearls"></div>
+<div class="wrap">
 
-<script>
-/* ---------------------------------------------------------------- */
-/* DATA                                                               */
-/* ---------------------------------------------------------------- */
-const CATEGORIES = [
-  { id:"all", label:"全部" }, { id:"sports", label:"體育" },
-  { id:"finance", label:"財金" }, { id:"tech", label:"科技" },
-  { id:"ent", label:"娛樂" }, { id:"politics", label:"政治" },
-];
+  <header class="hero">
+    <span class="eyebrow-mark">台 灣 ・ 手 搖</span>
+    <h1>一杯好茶<br>從這裡<span class="accent">開始</span></h1>
+    <p class="tagline">精選台灣具代表性的手搖飲品牌，點擊卡片直達官方網站。</p>
+  </header>
 
-const MARKETS = [
-  { id:"m1", category:"tech", emoji:"📱", hot:true, title:"iPhone 18 Pro 會在 9/9 發表？", yesPct:58, volume:128400, endsIn:"3 天" },
-  { id:"m2", category:"finance", emoji:"📈", hot:false, title:"台股年底前挑戰 25,000 點？", yesPct:41, volume:89600, endsIn:"142 天" },
-  { id:"m3", category:"finance", emoji:"🏦", hot:true, title:"美聯儲 9 月是否降息？", yesPct:72, volume:156200, endsIn:"18 天" },
-  { id:"m4", category:"sports", emoji:"⚾", hot:true, title:"中華隊拿下 12 強賽冠軍？", yesPct:34, volume:203100, endsIn:"9 天" },
-  { id:"m5", category:"sports", emoji:"🏀", hot:false, title:"湖人晉級西區冠軍賽？", yesPct:47, volume:98700, endsIn:"61 天" },
-  { id:"m6", category:"sports", emoji:"🏅", hot:false, title:"台灣男籃打進奧運？", yesPct:22, volume:45300, endsIn:"204 天" },
-  { id:"m7", category:"ent", emoji:"🎬", hot:false, title:"金馬獎最佳影片由台灣片奪下？", yesPct:55, volume:34200, endsIn:"76 天" },
-  { id:"m8", category:"politics", emoji:"🏛️", hot:false, title:"下屆行政院長是否留任？", yesPct:63, volume:67100, endsIn:"30 天" },
-  { id:"m9", category:"tech", emoji:"🤖", hot:false, title:"GPT-6 是否於今年發表？", yesPct:29, volume:112400, endsIn:"50 天" },
-];
+  <div class="divider">泡茶・搖飲・封杯</div>
 
-const LEADERBOARD = [
-  { rank:1, name:"占卜師阿凱", avatar:"🔮", tokens:482300, change:"up" },
-  { rank:2, name:"神算子", avatar:"🧙", tokens:451900, change:"up" },
-  { rank:3, name:"財金小天后", avatar:"👑", tokens:439200, change:"down" },
-  { rank:4, name:"球評阿仁", avatar:"🏀", tokens:388100, change:"up" },
-  { rank:5, name:"夜市預言家", avatar:"🌙", tokens:356700, change:"same" },
-  { rank:6, name:"指數獵人", avatar:"📊", tokens:331500, change:"down" },
-  { rank:7, name:"K線忍者", avatar:"🥷", tokens:298800, change:"up" },
-  { rank:8, name:"棒球通", avatar:"⚾", tokens:271200, change:"same" },
-  { rank:9, name:"電影咖", avatar:"🎞️", tokens:254600, change:"down" },
-  { rank:10, name:"政經觀察員", avatar:"🗞️", tokens:238900, change:"up" },
-];
-
-const STREAK_DAYS = ["一","二","三","四","五","六","日"];
-const STREAK_DONE = [true,true,true,true,false,false,false];
-
-const TRADE_NAMES = ["占卜師阿凱","神算子","財金小天后","球評阿仁","夜市預言家","指數獵人","K線忍者","棒球通","電影咖","政經觀察員","匿名玩家","新手占卜生"];
-const TRADE_AVATARS = ["🔮","🧙","👑","🏀","🌙","📊","🥷","⚾","🎞️","🗞️","🕵️","🐣"];
-function randomTrader() {
-  const i = Math.floor(Math.random() * TRADE_NAMES.length);
-  return { name: TRADE_NAMES[i], avatar: TRADE_AVATARS[i] };
-}
-const live = {}; // per-market real-time matching state: { pct, history[], trades[], intervalId }
-
-/* ---------------------------------------------------------------- */
-/* STATE                                                              */
-/* ---------------------------------------------------------------- */
-const state = {
-  tab: "lobby",
-  tokens: 12500,
-  cat: "all",
-  query: "",
-  quests: [
-    { id:"q1", title:"完成 3 場預測下注", progress:2, target:3, reward:200, claimed:false },
-    { id:"q2", title:"單筆下注滿 500 代幣", progress:1, target:1, reward:150, claimed:false },
-    { id:"q3", title:"每日登入誰是神預測", progress:1, target:1, reward:50, claimed:true },
-    { id:"q4", title:"在「財金」分類下注一次", progress:0, target:1, reward:100, claimed:false },
-    { id:"q5", title:"邀請一位好友加入", progress:0, target:1, reward:300, claimed:false },
-  ],
-  bets: [],
-  betTarget: null,   // { marketId, side }
-  betAmount: 100,
-  detailMarketId: null,
-};
-
-const fmt = (n) => n.toLocaleString("zh-TW");
-let dialSeq = 0;
-
-/* ---------------------------------------------------------------- */
-/* ORACLE DIAL (signature gauge)                                      */
-/* ---------------------------------------------------------------- */
-function oracleDial(yesPct, size) {
-  size = size || 92;
-  const id = "dg" + (dialSeq++);
-  const r = 46, cx = 60, cy = 60;
-  const arcLen = Math.PI * r;
-  const progLen = (yesPct / 100) * arcLen;
-  const needleDeg = (yesPct - 50) * 1.8;
-  return `
-  <div style="width:${size}px;height:${size*0.66}px;position:relative;">
-    <svg viewBox="0 0 120 72" width="100%" height="100%">
-      <defs>
-        <linearGradient id="${id}" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="var(--no)" />
-          <stop offset="50%" stop-color="var(--gold)" />
-          <stop offset="100%" stop-color="var(--yes)" />
-        </linearGradient>
-      </defs>
-      <path d="M 10 ${cy} A ${r} ${r} 0 0 1 110 ${cy}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8" stroke-linecap="round" />
-      <path d="M 10 ${cy} A ${r} ${r} 0 0 1 110 ${cy}" fill="none" stroke="url(#${id})" stroke-width="8" stroke-linecap="round"
-            stroke-dasharray="${progLen} ${arcLen}" />
-      <g transform="rotate(${needleDeg} ${cx} ${cy})">
-        <line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy-34}" stroke="var(--goldBright)" stroke-width="2.5" stroke-linecap="round" />
-        <circle cx="${cx}" cy="${cy}" r="4.5" fill="var(--goldBright)" />
-      </g>
-    </svg>
-    <div style="position:absolute;left:0;right:0;bottom:0;text-align:center;">
-      <span class="num" style="font-size:18px;font-weight:700;color:var(--textPrimary);">${yesPct}%</span>
-    </div>
-  </div>`;
-}
-
-/* ---------------------------------------------------------------- */
-/* MARKET CARD                                                        */
-/* ---------------------------------------------------------------- */
-function marketCard(m, large) {
-  const catLabel = CATEGORIES.find(c => c.id === m.category)?.label || "";
-  return `
-  <div class="card" style="cursor:pointer;${large ? `background:linear-gradient(135deg,var(--surfaceHi),var(--surface));border-color:rgba(243,184,78,0.35);box-shadow:0 0 24px rgba(243,184,78,0.12);` : ""}" onclick="openDetail('${m.id}')">
-    <div class="row between g2" style="align-items:flex-start;">
-      <div class="row g2 wrap" style="align-items:flex-start;">
-        <div style="width:38px;height:38px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:19px;background:rgba(255,255,255,0.06);">${m.emoji}</div>
-        <div class="wrap">
-          <div class="row g1">
-            ${m.hot ? `<span style="font-size:10px;font-weight:700;color:var(--bg0);background:linear-gradient(90deg,var(--gold),var(--magenta));border-radius:999px;padding:1px 6px;">熱門</span>` : ""}
-            <span style="font-size:11px;color:var(--textMuted);">${catLabel}</span>
-          </div>
-          <div class="clamp2" style="font-size:14.5px;font-weight:700;color:var(--textPrimary);margin-top:2px;line-height:1.3;">${m.title}</div>
+  <section class="group">
+    <h2 class="group-title">老字號茶館</h2>
+    <p class="group-desc">從泡沫紅茶到珍珠奶茶，這四個名字寫下了台灣手搖飲的起點。</p>
+    <div class="grid">
+      <a class="card" href="https://www.chunshuitang.com.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">春水堂</div>
+          <div class="card-en">Chun Shui Tang</div>
         </div>
-      </div>
-      ${oracleDial(m.yesPct, 72)}
-    </div>
-    <div class="row between" style="font-size:11px;color:var(--textMuted);margin-top:8px;">
-      <span>代幣量 ${fmt(m.volume)}</span>
-      <span class="row g1">⏰ 剩 ${m.endsIn}</span>
-    </div>
-    <div style="text-align:right;font-size:10.5px;color:var(--violet);margin-top:6px;">⚡ 查看即時撮合 ›</div>
-    <div class="row g2" style="margin-top:8px;">
-      <button class="betbtn" style="background:rgba(58,223,160,0.14);color:var(--yes);border-color:rgba(58,223,160,0.4);" onclick="event.stopPropagation();openBet('${m.id}','YES')">YES ${m.yesPct}%</button>
-      <button class="betbtn" style="background:rgba(255,107,122,0.14);color:var(--no);border-color:rgba(255,107,122,0.4);" onclick="event.stopPropagation();openBet('${m.id}','NO')">NO ${100 - m.yesPct}%</button>
-    </div>
-  </div>`;
-}
-
-/* ---------------------------------------------------------------- */
-/* LOBBY                                                              */
-/* ---------------------------------------------------------------- */
-function chipsHTML() {
-  return CATEGORIES.map(c => `<button class="chip ${state.cat === c.id ? "active" : ""}" onclick="onCategoryClick('${c.id}')">${c.label}</button>`).join("");
-}
-function featuredHTML() {
-  if (state.cat !== "all" || state.query !== "") return "";
-  const featured = MARKETS.find(m => m.hot);
-  if (!featured) return "";
-  return `
-  <div style="margin-top:16px;">
-    <div class="row g1" style="color:var(--gold);font-size:12.5px;font-weight:700;margin-bottom:8px;">✨ 今日神諭焦點</div>
-    ${marketCard(featured, true)}
-  </div>`;
-}
-function marketListHTML() {
-  const q = state.query.trim();
-  const filtered = MARKETS.filter(m => (state.cat === "all" || m.category === state.cat) && (q === "" || m.title.includes(q)));
-  return `
-  <div style="font-size:12.5px;font-weight:700;color:var(--textSecondary);margin-bottom:8px;">全部盤口 · ${filtered.length}</div>
-  <div class="col g3">
-    ${filtered.map(m => marketCard(m, false)).join("")}
-    ${filtered.length === 0 ? `<div style="text-align:center;color:var(--textMuted);font-size:13px;padding:30px 0;">找不到符合的盤口，換個分類看看吧</div>` : ""}
-  </div>`;
-}
-function buildLobby() {
-  return `
-  <div style="padding:0 16px 16px;">
-    <div class="row g2" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:9px 12px;margin:12px 0;">
-      🔍
-      <input id="searchInput" oninput="onSearchInput(this.value)" placeholder="搜尋預測盤口"
-        style="background:transparent;border:none;outline:none;color:var(--textPrimary);font-size:13px;width:100%;" />
-    </div>
-    <div id="chipsContainer" class="row g2" style="overflow-x:auto;padding-bottom:4px;">${chipsHTML()}</div>
-    <div id="featuredContainer">${featuredHTML()}</div>
-    <div id="marketListContainer" style="margin-top:16px;">${marketListHTML()}</div>
-  </div>`;
-}
-function refreshLobbyDynamic(skipChips) {
-  if (!skipChips) document.getElementById("chipsContainer").innerHTML = chipsHTML();
-  document.getElementById("featuredContainer").innerHTML = featuredHTML();
-  document.getElementById("marketListContainer").innerHTML = marketListHTML();
-}
-function onCategoryClick(id) { state.cat = id; refreshLobbyDynamic(false); }
-function onSearchInput(v) { state.query = v; refreshLobbyDynamic(true); }
-
-/* ---------------------------------------------------------------- */
-/* LEADERBOARD                                                        */
-/* ---------------------------------------------------------------- */
-function buildLeaderboard() {
-  const myRank = 23;
-  const podium = LEADERBOARD.slice(0, 3);
-  const rest = LEADERBOARD.slice(3);
-  const order = [podium[1], podium[0], podium[2]];
-  const heights = [64, 86, 52];
-  const medal = ["#C9CFE0", "var(--gold)", "#D08A54"];
-
-  const podiumHTML = order.map((p, i) => `
-    <div class="col" style="align-items:center;width:92px;">
-      ${p.rank === 1 ? `<div style="margin-bottom:2px;">👑</div>` : `<div style="height:20px;"></div>`}
-      <div style="width:52px;height:52px;border-radius:50%;font-size:24px;display:flex;align-items:center;justify-content:center;background:var(--surfaceHi);border:2px solid ${medal[i]};">${p.avatar}</div>
-      <div style="font-size:12px;font-weight:700;color:var(--textPrimary);margin-top:6px;text-align:center;">${p.name}</div>
-      <div class="num" style="font-size:11px;color:var(--gold);">${fmt(p.tokens)}</div>
-      <div style="width:100%;height:${heights[i]}px;margin-top:8px;border-radius:10px 10px 0 0;background:linear-gradient(180deg, ${medal[i]}55, ${medal[i]}11);border:1px solid ${medal[i]}66;border-bottom:none;display:flex;justify-content:center;padding-top:6px;">
-        <span class="num" style="font-weight:800;color:${medal[i]};font-size:18px;">${p.rank}</span>
-      </div>
-    </div>`).join("");
-
-  const restHTML = rest.map(p => `
-    <div class="row g3" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;">
-      <span class="num" style="width:20px;text-align:center;font-weight:700;color:var(--textMuted);">${p.rank}</span>
-      <span style="font-size:20px;">${p.avatar}</span>
-      <span style="flex:1;font-size:13.5px;font-weight:600;color:var(--textPrimary);">${p.name}</span>
-      ${p.change === "up" ? `<span style="color:var(--yes);">📈</span>` : p.change === "down" ? `<span style="color:var(--no);">📉</span>` : ""}
-      <span class="num" style="font-weight:700;color:var(--gold);font-size:13px;">${fmt(p.tokens)}</span>
-    </div>`).join("");
-
-  return `
-  <div style="padding:0 16px 16px;">
-    <div style="font-size:17px;font-weight:800;color:var(--textPrimary);margin-top:16px;margin-bottom:2px;">神預測排行榜</div>
-    <div style="font-size:12px;color:var(--textMuted);margin-bottom:16px;">本週代幣累積排名</div>
-    <div class="row g3" style="align-items:flex-end;justify-content:center;">${podiumHTML}</div>
-    <div class="col g2" style="margin-top:24px;">${restHTML}</div>
-    <div class="row g3" style="margin-top:16px;background:linear-gradient(90deg, rgba(243,184,78,0.16), rgba(255,95,209,0.1));border:1px solid rgba(243,184,78,0.4);border-radius:14px;padding:10px 12px;">
-      <span class="num" style="width:20px;text-align:center;font-weight:700;color:var(--gold);">${myRank}</span>
-      <span style="font-size:20px;">🧑‍🚀</span>
-      <span style="flex:1;font-size:13.5px;font-weight:700;color:var(--textPrimary);">你</span>
-      <span class="num" style="font-weight:700;color:var(--gold);font-size:13px;">${fmt(state.tokens)}</span>
-    </div>
-  </div>`;
-}
-
-/* ---------------------------------------------------------------- */
-/* QUESTS                                                             */
-/* ---------------------------------------------------------------- */
-function buildQuests() {
-  const streakRow = STREAK_DAYS.map((d, i) => `
-    <div class="col g1" style="align-items:center;">
-      <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-        background:${STREAK_DONE[i] ? "linear-gradient(135deg,var(--gold),var(--magenta))" : "rgba(255,255,255,0.06)"};
-        border:${STREAK_DONE[i] ? "none" : "1px solid var(--border)"};">
-        ${STREAK_DONE[i] ? `<span style="font-size:13px;">🔥</span>` : ""}
-      </div>
-      <span style="font-size:10px;color:var(--textMuted);">${d}</span>
-    </div>`).join("");
-
-  const questItems = state.quests.map(q => {
-    const done = q.progress >= q.target;
-    return `
-    <div class="card" style="padding:14px;">
-      <div class="row between" style="margin-bottom:8px;">
-        <span style="font-size:13.5px;font-weight:700;color:var(--textPrimary);">${q.title}</span>
-        <span class="num row g1" style="font-size:12.5px;font-weight:700;color:var(--gold);">🪙 +${q.reward}</span>
-      </div>
-      <div class="row g3">
-        <div class="questbar">
-          <div style="width:${Math.min(100,(q.progress/q.target)*100)}%;height:100%;background:${done ? "linear-gradient(90deg,var(--yes),var(--gold))" : "linear-gradient(90deg,var(--violet),var(--magenta))"};"></div>
+        <div class="card-desc">珍珠奶茶發源地，台中起家的人文茶館。</div>
+        <div class="card-url">chunshuitang.com.tw</div>
+      </a>
+      <a class="card" href="https://www.tenren.com.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">天仁茗茶</div>
+          <div class="card-en">Ten Ren's Tea</div>
         </div>
-        <span class="num" style="font-size:11px;color:var(--textMuted);">${q.progress}/${q.target}</span>
-        ${q.claimed
-          ? `<span style="font-size:11.5px;color:var(--textMuted);display:flex;align-items:center;gap:3px;">✔ 已領取</span>`
-          : `<button ${done ? "" : "disabled"} onclick="claimQuest('${q.id}')" style="font-size:11.5px;font-weight:700;padding:5px 12px;border-radius:999px;flex-shrink:0;
-              background:${done ? "linear-gradient(90deg,var(--gold),var(--magenta))" : "rgba(255,255,255,0.06)"};
-              color:${done ? "var(--bg0)" : "var(--textMuted)"};
-              border:${done ? "none" : "1px solid var(--border)"};">領取</button>`}
-      </div>
-    </div>`;
-  }).join("");
-
-  return `
-  <div style="padding:0 16px 16px;">
-    <div style="font-size:17px;font-weight:800;color:var(--textPrimary);margin-top:16px;margin-bottom:2px;">每日任務</div>
-    <div style="font-size:12px;color:var(--textMuted);margin-bottom:14px;">每天 00:00 重置，完成任務領代幣</div>
-    <div class="card" style="margin-bottom:16px;">
-      <div class="row g1" style="margin-bottom:12px;"><span>🔥</span><span style="font-size:13px;font-weight:700;color:var(--textPrimary);">連續登入 4 天</span></div>
-      <div class="row between">${streakRow}</div>
-    </div>
-    <div class="col g3">${questItems}</div>
-  </div>`;
-}
-
-function claimQuest(id) {
-  const q = state.quests.find(q => q.id === id);
-  if (!q || q.claimed || q.progress < q.target) return;
-  q.claimed = true;
-  state.tokens += q.reward;
-  showToast(`已領取 ${q.reward} 代幣！`);
-  renderHeader();
-  document.getElementById("tabContent").innerHTML = buildQuests();
-}
-
-/* ---------------------------------------------------------------- */
-/* PROFILE                                                            */
-/* ---------------------------------------------------------------- */
-function buildProfile() {
-  const winRate = 58;
-  const stats = [
-    { label:"勝率", value:`${winRate}%` },
-    { label:"總場次", value: state.bets.length + 24 },
-    { label:"最佳連勝", value:"6" },
-  ];
-  const statsHTML = stats.map(s => `
-    <div class="card" style="padding:12px 0;text-align:center;">
-      <div class="num" style="font-size:16px;font-weight:800;color:var(--gold);">${s.value}</div>
-      <div style="font-size:11px;color:var(--textMuted);margin-top:2px;">${s.label}</div>
-    </div>`).join("");
-
-  const betsHTML = state.bets.length === 0
-    ? `<div style="text-align:center;color:var(--textMuted);font-size:13px;padding:24px 0;background:var(--surface);border-radius:14px;border:1px solid var(--border);">尚無下注紀錄，去大廳看看熱門預測吧！</div>`
-    : [...state.bets].reverse().map(b => {
-        const m = MARKETS.find(mk => mk.id === b.marketId);
-        return `
-        <div class="row g3" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;">
-          <span style="font-size:18px;">${m ? m.emoji : ""}</span>
-          <div class="wrap" style="flex:1;">
-            <div class="ellipsis" style="font-size:12.5px;font-weight:700;color:var(--textPrimary);">${m ? m.title : ""}</div>
-            <div style="font-size:11px;color:var(--textMuted);">${b.side} · ${fmt(b.amount)} 代幣</div>
-          </div>
-          <span style="font-size:11px;font-weight:700;color:var(--violet);background:rgba(156,107,255,0.14);border-radius:999px;padding:3px 9px;">待開獎</span>
-        </div>`;
-      }).join("");
-
-  return `
-  <div style="padding:0 16px 16px;">
-    <div class="col" style="align-items:center;margin:24px 0 20px;">
-      <div style="width:76px;height:76px;border-radius:50%;font-size:34px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--surfaceHi),var(--surface));border:2px solid var(--gold);">🧑‍🚀</div>
-      <div style="font-size:16px;font-weight:800;color:var(--textPrimary);margin-top:8px;">神預測見習生</div>
-      <span style="font-size:11px;font-weight:700;color:var(--bg0);background:var(--gold);border-radius:999px;padding:2px 10px;margin-top:4px;">Lv.7 占卜學徒</span>
-    </div>
-    <div class="row center g2" style="background:linear-gradient(135deg, rgba(243,184,78,0.16), rgba(156,107,255,0.12));border:1px solid rgba(243,184,78,0.35);border-radius:18px;padding:18px 0;margin-bottom:14px;">
-      <span style="font-size:22px;">🪙</span>
-      <span class="num" style="font-size:28px;font-weight:800;color:var(--textPrimary);" id="profileTokens">${fmt(state.tokens)}</span>
-    </div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;">${statsHTML}</div>
-    <div style="font-size:13px;font-weight:700;color:var(--textSecondary);margin-bottom:8px;">近期下注紀錄</div>
-    <div class="col g2">${betsHTML}</div>
-  </div>`;
-}
-
-/* ---------------------------------------------------------------- */
-/* BET SHEET                                                          */
-/* ---------------------------------------------------------------- */
-function openBet(marketId, side) {
-  state.betTarget = { marketId, side };
-  state.betAmount = 100;
-  renderBetSheet();
-}
-function closeBet() {
-  state.betTarget = null;
-  document.getElementById("betSheetRoot").innerHTML = "";
-}
-function setBetSide(side) {
-  state.betTarget.side = side;
-  renderBetSheet();
-}
-function setAmount(v) {
-  state.betAmount = v === "MAX" ? state.tokens : v;
-  renderBetSheet();
-}
-function onAmountInput(v) {
-  state.betAmount = Math.max(0, Number(v) || 0);
-  updateBetComputed();
-}
-function updateBetComputed() {
-  const m = MARKETS.find(mk => mk.id === state.betTarget.marketId);
-  const side = state.betTarget.side;
-  const pct = side === "YES" ? m.yesPct : 100 - m.yesPct;
-  const amount = state.betAmount;
-  const payout = amount > 0 ? Math.round(amount * (100 / pct)) : 0;
-  document.getElementById("payoutValue").textContent = fmt(payout);
-  const confirmBtn = document.getElementById("confirmBetBtn");
-  const valid = amount > 0 && amount <= state.tokens;
-  confirmBtn.disabled = !valid;
-  confirmBtn.style.background = valid ? "linear-gradient(90deg,var(--gold),var(--magenta))" : "rgba(255,255,255,0.08)";
-  confirmBtn.style.color = valid ? "var(--bg0)" : "var(--textMuted)";
-}
-function renderBetSheet() {
-  const t = state.betTarget;
-  if (!t) { document.getElementById("betSheetRoot").innerHTML = ""; return; }
-  const m = MARKETS.find(mk => mk.id === t.marketId);
-  const side = t.side;
-  const pct = side === "YES" ? m.yesPct : 100 - m.yesPct;
-  const amount = state.betAmount;
-  const payout = amount > 0 ? Math.round(amount * (100 / pct)) : 0;
-  const valid = amount > 0 && amount <= state.tokens;
-
-  document.getElementById("betSheetRoot").innerHTML = `
-  <div class="overlay">
-    <div style="position:absolute;inset:0;background:rgba(8,5,16,0.72);" onclick="closeBet()"></div>
-    <div class="sheet">
-      <div style="width:36px;height:4px;border-radius:999px;background:var(--border);margin:4px auto 14px;"></div>
-      <div class="row between" style="align-items:flex-start;">
-        <div class="row g2" style="max-width:85%;">
-          <span style="font-size:20px;">${m.emoji}</span>
-          <span style="font-size:14.5px;font-weight:700;color:var(--textPrimary);line-height:1.3;">${m.title}</span>
+        <div class="card-desc">1953 年創立，台灣最具規模的茶葉世家品牌。</div>
+        <div class="card-url">tenren.com.tw</div>
+      </a>
+      <a class="card" href="https://tw.tp-tea.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">茶湯會</div>
+          <div class="card-en">TP TEA</div>
         </div>
-        <button onclick="closeBet()" style="background:none;border:none;color:var(--textMuted);font-size:16px;">✖</button>
-      </div>
-      <div class="row g2" style="margin-top:16px;">
-        <button onclick="setBetSide('YES')" style="flex:1;padding:10px 0;border-radius:12px;font-weight:800;font-size:14px;
-          background:${side === "YES" ? "rgba(58,223,160,0.2)" : "transparent"};
-          border:1.5px solid ${side === "YES" ? "var(--yes)" : "var(--border)"};
-          color:${side === "YES" ? "var(--yes)" : "var(--textMuted)"};">YES ${m.yesPct}%</button>
-        <button onclick="setBetSide('NO')" style="flex:1;padding:10px 0;border-radius:12px;font-weight:800;font-size:14px;
-          background:${side === "NO" ? "rgba(255,107,122,0.2)" : "transparent"};
-          border:1.5px solid ${side === "NO" ? "var(--no)" : "var(--border)"};
-          color:${side === "NO" ? "var(--no)" : "var(--textMuted)"};">NO ${100 - m.yesPct}%</button>
-      </div>
-      <div style="font-size:12px;color:var(--textMuted);margin:16px 0 8px;">下注代幣數</div>
-      <div class="row between" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px 14px;">
-        <div class="row g2">
-          <span>🪙</span>
-          <input id="amountInput" type="number" value="${amount}" oninput="onAmountInput(this.value)"
-            style="background:transparent;border:none;outline:none;color:var(--textPrimary);font-size:20px;font-weight:800;width:110px;" class="num" />
+        <div class="card-desc">外帶茶飲第一品牌，春水堂體系下的街邊茶吧。</div>
+        <div class="card-url">tw.tp-tea.com</div>
+      </a>
+      <a class="card" href="http://www.50lan.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">50嵐</div>
+          <div class="card-en">50 Lan</div>
         </div>
-        <span style="font-size:11px;color:var(--textMuted);">持有 ${fmt(state.tokens)}</span>
-      </div>
-      <div class="row g2" style="margin-top:8px;">
-        ${[100,500,1000].map(a => `<button onclick="setAmount(${a})" style="flex:1;padding:7px 0;border-radius:10px;font-size:12.5px;font-weight:600;background:rgba(255,255,255,0.06);color:var(--textSecondary);border:1px solid var(--border);">${a}</button>`).join("")}
-        <button onclick="setAmount('MAX')" style="flex:1;padding:7px 0;border-radius:10px;font-size:12.5px;font-weight:700;background:rgba(243,184,78,0.14);color:var(--gold);border:1px solid rgba(243,184,78,0.4);">全部</button>
-      </div>
-      <div class="row between" style="margin-top:16px;font-size:12.5px;color:var(--textSecondary);">
-        <span>預估可得（含本金）</span>
-        <span id="payoutValue" class="num" style="color:var(--gold);font-weight:800;font-size:15px;">${fmt(payout)}</span>
-      </div>
-      <button id="confirmBetBtn" ${valid ? "" : "disabled"} onclick="confirmBet()" style="width:100%;margin-top:14px;padding:13px 0;border-radius:14px;font-size:15px;font-weight:800;border:none;
-        background:${valid ? "linear-gradient(90deg,var(--gold),var(--magenta))" : "rgba(255,255,255,0.08)"};
-        color:${valid ? "var(--bg0)" : "var(--textMuted)"};">確認下注</button>
+        <div class="card-desc">1994 年台南發跡，台灣手搖飲文化的代表性招牌。</div>
+        <div class="card-url">50lan.com</div>
+      </a>
     </div>
-  </div>`;
-}
-function confirmBet() {
-  const t = state.betTarget;
-  const amount = state.betAmount;
-  if (!t || amount <= 0 || amount > state.tokens) return;
-  state.tokens -= amount;
-  state.bets.push({ marketId: t.marketId, side: t.side, amount });
-  closeBet();
-  showToast("下注成功，靜候神諭揭曉！");
-  if (state.detailMarketId) {
-    renderDetailHeader(MARKETS.find(mk => mk.id === state.detailMarketId));
-  } else {
-    renderHeader();
-    if (state.tab === "profile") document.getElementById("tabContent").innerHTML = buildProfile();
-  }
-}
+  </section>
 
-/* ---------------------------------------------------------------- */
-/* TOAST                                                              */
-/* ---------------------------------------------------------------- */
-let toastTimer = null;
-function showToast(msg) {
-  const root = document.getElementById("toastRoot");
-  root.innerHTML = `<div style="position:absolute;top:66px;left:50%;transform:translateX(-50%);z-index:50;
-    background:var(--surfaceHi);border:1px solid var(--gold);color:var(--textPrimary);padding:9px 18px;border-radius:999px;
-    font-size:12.5px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,0.4);white-space:nowrap;">${msg}</div>`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { root.innerHTML = ""; }, 2200);
-}
-
-/* ---------------------------------------------------------------- */
-/* MARKET DETAIL — real-time matching page                            */
-/* ---------------------------------------------------------------- */
-function timeAgo(ts) {
-  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
-  if (s < 5) return "剛剛";
-  if (s < 60) return s + "秒前";
-  return Math.round(s / 60) + "分鐘前";
-}
-function seedTrades(pct) {
-  const arr = [];
-  let t = Date.now();
-  for (let i = 0; i < 6; i++) {
-    t -= Math.round(3000 + Math.random() * 6000);
-    const side = Math.random() * 100 < pct ? "YES" : "NO";
-    const price = side === "YES" ? pct : 100 - pct;
-    const trader = randomTrader();
-    arr.push({ side, price, amount: Math.round(50 + Math.random() * 950), who: trader.name, avatar: trader.avatar, ts: t });
-  }
-  return arr;
-}
-function orderBookLevels(pct) {
-  const yes = [], no = [];
-  for (let i = 0; i < 5; i++) {
-    yes.push({ price: Math.max(1, pct - i), size: Math.round(200 + Math.random() * 2800) });
-    no.push({ price: Math.max(1, (100 - pct) - i), size: Math.round(200 + Math.random() * 2800) });
-  }
-  return { yes, no };
-}
-function sparkline(history) {
-  const w = 300, h = 54, pad = 4;
-  const step = history.length > 1 ? (w - 2 * pad) / (history.length - 1) : 0;
-  const pts = history.map((v, i) => {
-    const x = pad + i * step;
-    const y = h - pad - (v / 100) * (h - 2 * pad);
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  const lastX = pad + (history.length - 1) * step;
-  const areaPts = `${pad},${h - pad} ${pts} ${lastX.toFixed(1)},${h - pad}`;
-  return `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" preserveAspectRatio="none">
-    <polygon points="${areaPts}" fill="rgba(243,184,78,0.12)" />
-    <polyline points="${pts}" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
-  </svg>`;
-}
-
-function openDetail(id) {
-  const m = MARKETS.find(mk => mk.id === id);
-  if (!live[id]) live[id] = { pct: m.yesPct, history: [m.yesPct], trades: seedTrades(m.yesPct), intervalId: null };
-  state.detailMarketId = id;
-  document.getElementById("bottomnav").style.display = "none";
-  renderDetailHeader(m);
-  renderDetailBody();
-  startLiveTicker(id);
-}
-function closeDetail() {
-  stopLiveTicker(state.detailMarketId);
-  state.detailMarketId = null;
-  document.getElementById("bottomnav").style.display = "flex";
-  renderHeader();
-  renderTab();
-}
-function startLiveTicker(id) {
-  stopLiveTicker(id);
-  live[id].intervalId = setInterval(() => tick(id), 2200);
-}
-function stopLiveTicker(id) {
-  if (id && live[id] && live[id].intervalId) { clearInterval(live[id].intervalId); live[id].intervalId = null; }
-}
-function tick(id) {
-  const L = live[id];
-  if (!L) return;
-  const delta = Math.round(Math.random() * 5 - 2.5);
-  L.pct = Math.min(97, Math.max(3, L.pct + delta));
-  L.history.push(L.pct);
-  if (L.history.length > 30) L.history.shift();
-  const side = Math.random() * 100 < L.pct ? "YES" : "NO";
-  const price = side === "YES" ? L.pct : 100 - L.pct;
-  const trader = randomTrader();
-  L.trades.unshift({ side, price, amount: Math.round(50 + Math.random() * 950), who: trader.name, avatar: trader.avatar, ts: Date.now() });
-  if (L.trades.length > 10) L.trades.pop();
-  if (state.detailMarketId === id) {
-    renderDetailBody();
-    renderDetailHeader(MARKETS.find(mk => mk.id === id));
-  }
-}
-function renderDetailHeader(m) {
-  document.getElementById("header").innerHTML = `
-  <div class="row g2">
-    <button onclick="closeDetail()" style="background:none;border:none;color:var(--textPrimary);font-size:18px;padding:2px 4px 2px 0;">←</button>
-    <span style="font-size:18px;">${m.emoji}</span>
-    <div class="wrap" style="flex:1;">
-      <div class="ellipsis" style="font-size:14px;font-weight:800;color:var(--textPrimary);">${m.title}</div>
-      <div style="font-size:11px;color:var(--textMuted);">${CATEGORIES.find(c => c.id === m.category)?.label || ""} · 剩 ${m.endsIn}</div>
+  <section class="group">
+    <h2 class="group-title">連鎖人氣品牌</h2>
+    <p class="group-desc">街頭巷尾最容易遇見、遍布全台與海外的手搖大廠。</p>
+    <div class="grid">
+      <a class="card" href="https://www.coco-tea.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">CoCo都可</div>
+          <div class="card-en">CoCo Fresh Tea &amp; Juice</div>
+        </div>
+        <div class="card-desc">1997 年淡水發跡，全球分店數最多的台灣飲料品牌。</div>
+        <div class="card-url">coco-tea.com</div>
+      </a>
+      <a class="card" href="https://www.gong-cha.com.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">貢茶</div>
+          <div class="card-en">Gong Cha</div>
+        </div>
+        <div class="card-desc">奶蓋茶的代表品牌，行銷全球二十多個地區。</div>
+        <div class="card-url">gong-cha.com.tw</div>
+      </a>
+      <a class="card" href="https://www.chingshin.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">清心福全</div>
+          <div class="card-en">Ching Shin</div>
+        </div>
+        <div class="card-desc">1987 年台南起家，親民價格的國民手搖飲。</div>
+        <div class="card-url">chingshin.tw</div>
+      </a>
+      <a class="card" href="http://macutea.com.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">麻古茶坊</div>
+          <div class="card-en">Macu Tea</div>
+        </div>
+        <div class="card-desc">主打完美茶湯溫度，全台門市數眾多的連鎖茶飲。</div>
+        <div class="card-url">macutea.com.tw</div>
+      </a>
+      <a class="card" href="https://www.milksha.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">迷客夏</div>
+          <div class="card-en">Milksha</div>
+        </div>
+        <div class="card-desc">2007 年台南佳里創立，以嚴選鮮乳聞名的品牌。</div>
+        <div class="card-url">milksha.com</div>
+      </a>
+      <a class="card" href="https://www.chatime.com.tw/zh/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">日出茶太</div>
+          <div class="card-en">Chatime</div>
+        </div>
+        <div class="card-desc">2005 年創立，橫跨全球六大洲的連鎖茶飲品牌。</div>
+        <div class="card-url">chatime.com.tw</div>
+      </a>
+      <a class="card" href="https://www.comebuy2002.com.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">COMEBUY</div>
+          <div class="card-en">Comebuy</div>
+        </div>
+        <div class="card-desc">2002 年台北創立，主打單杯現萃的茶飲品牌。</div>
+        <div class="card-url">comebuy2002.com.tw</div>
+      </a>
     </div>
-  </div>`;
-}
-function bookColumn(levels, max, color, align) {
-  return levels.map(l => {
-    const w = Math.round((l.size / max) * 100);
-    const bar = align === "right"
-      ? `<div style="position:absolute;right:0;top:0;bottom:0;width:${w}%;background:${color};opacity:0.2;"></div><span style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:10.5px;color:var(--textSecondary);" class="num">${fmt(l.size)}</span>`
-      : `<div style="position:absolute;left:0;top:0;bottom:0;width:${w}%;background:${color};opacity:0.2;"></div><span style="position:absolute;left:6px;top:50%;transform:translateY(-50%);font-size:10.5px;color:var(--textSecondary);" class="num">${fmt(l.size)}</span>`;
-    const priceTag = `<span class="num" style="width:32px;text-align:center;font-size:12px;font-weight:700;color:${color};flex-shrink:0;">${l.price}</span>`;
-    const barWrap = `<div style="flex:1;height:20px;position:relative;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;">${bar}</div>`;
-    return `<div class="row g2" style="padding:3px 0;">${align === "right" ? barWrap + priceTag : priceTag + barWrap}</div>`;
-  }).join("");
-}
-function renderDetailBody() {
-  const id = state.detailMarketId;
-  const m = MARKETS.find(mk => mk.id === id);
-  const L = live[id];
-  const pct = L.pct;
-  const prevPct = L.history.length > 1 ? L.history[L.history.length - 2] : pct;
-  const trendUp = pct >= prevPct;
-  const book = orderBookLevels(pct);
-  const maxYes = Math.max(...book.yes.map(l => l.size));
-  const maxNo = Math.max(...book.no.map(l => l.size));
+  </section>
 
-  const tradesHTML = L.trades.map(t => `
-    <div class="row g2" style="padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:16px;">${t.avatar}</span>
-      <div class="wrap" style="flex:1;">
-        <span style="font-size:12px;font-weight:600;color:var(--textPrimary);">${t.who}</span>
-        <span style="font-size:11.5px;color:${t.side === "YES" ? "var(--yes)" : "var(--no)"};margin-left:6px;">買入 ${t.side} @ ${t.price}</span>
-      </div>
-      <span class="num" style="font-size:11.5px;color:var(--textSecondary);">${fmt(t.amount)}</span>
-      <span style="font-size:10.5px;color:var(--textMuted);width:48px;text-align:right;flex-shrink:0;">${timeAgo(t.ts)}</span>
-    </div>`).join("");
+  <section class="group">
+    <h2 class="group-title">特色專門店</h2>
+    <p class="group-desc">各自鑽研一味，鮮果、黑糖、烏龍與熟成紅茶自成一派。</p>
+    <div class="grid">
+      <a class="card" href="https://www.dayungs.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">大苑子</div>
+          <div class="card-en">DaYung's</div>
+        </div>
+        <div class="card-desc">彰化員林起家，主打鮮果現搾的水果茶專賣。</div>
+        <div class="card-url">dayungs.com</div>
+      </a>
+      <a class="card" href="https://tigersugar.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">老虎堂</div>
+          <div class="card-en">Tiger Sugar</div>
+        </div>
+        <div class="card-desc">台中發跡，黑糖珍珠鮮奶掀起全球排隊熱潮。</div>
+        <div class="card-url">tigersugar.com</div>
+      </a>
+      <a class="card" href="https://kebuke.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">可不可熟成紅茶</div>
+          <div class="card-en">Kebuke</div>
+        </div>
+        <div class="card-desc">2008 年台中創立，以熟成紅茶與歐蕾系列著稱。</div>
+        <div class="card-url">kebuke.com</div>
+      </a>
+      <a class="card" href="https://www.meetfresh.com.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">鮮芋仙</div>
+          <div class="card-en">Meet Fresh</div>
+        </div>
+        <div class="card-desc">2007 年創立，芋圓地瓜圓甜品與飲料並重的品牌。</div>
+        <div class="card-url">meetfresh.com.tw</div>
+      </a>
+      <a class="card" href="https://www.truedan.com.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">珍煮丹</div>
+          <div class="card-en">Truedan</div>
+        </div>
+        <div class="card-desc">將珍珠煮成仙丹為理念，黑糖系列飲品的人氣品牌。</div>
+        <div class="card-url">truedan.com.tw</div>
+      </a>
+      <a class="card" href="https://yifangtea.com.tw/zh/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">一芳水果茶</div>
+          <div class="card-en">Yi Fang</div>
+        </div>
+        <div class="card-desc">傳承古早配方，主打新鮮熬煮的台灣水果茶。</div>
+        <div class="card-url">yifangtea.com.tw</div>
+      </a>
+      <a class="card" href="https://www.the-alley.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">鹿角巷</div>
+          <div class="card-en">The Alley</div>
+        </div>
+        <div class="card-desc">2013 年中壢創立，以設計美學打造的時尚茶飲品牌。</div>
+        <div class="card-url">the-alley.tw</div>
+      </a>
+      <a class="card" href="https://dejeng.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">得正</div>
+          <div class="card-en">Dejeng Oolong Tea</div>
+        </div>
+        <div class="card-desc">以春烏龍、輕烏龍、焙烏龍三種焙火程度為核心理念。</div>
+        <div class="card-url">dejeng.com</div>
+      </a>
+      <a class="card" href="https://www.xingfutang.com.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">幸福堂</div>
+          <div class="card-en">Xing Fu Tang</div>
+        </div>
+        <div class="card-desc">古法手炒黑糖珍珠的創始品牌，主打職人手作工藝。</div>
+        <div class="card-url">xingfutang.com.tw</div>
+      </a>
+      <a class="card" href="https://wanpotea.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">萬波島嶼紅茶</div>
+          <div class="card-en">Wanpo Tea Shop</div>
+        </div>
+        <div class="card-desc">以台灣眷村懷舊滋味為靈感，跨界聯名不斷的紅茶品牌。</div>
+        <div class="card-url">wanpotea.com</div>
+      </a>
+      <a class="card" href="http://www.yummy-town.tw/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">快樂檸檬</div>
+          <div class="card-en">Happy Lemon</div>
+        </div>
+        <div class="card-desc">以創新風味聞名，深耕海外市場的台灣茶飲品牌。</div>
+        <div class="card-url">yummy-town.tw</div>
+      </a>
+      <a class="card" href="https://www.presotea.com/" target="_blank" rel="noopener">
+        <div>
+          <div class="card-name">鮮茶道</div>
+          <div class="card-en">Presotea</div>
+        </div>
+        <div class="card-desc">2006 年成立，擁有全台最大契作茶園的專業茶飲品牌。</div>
+        <div class="card-url">presotea.com</div>
+      </a>
+    </div>
+  </section>
 
-  document.getElementById("tabContent").innerHTML = `
-  <div style="padding:0 16px 108px;">
-    <div class="card" style="margin-top:12px;text-align:center;">
-      <div class="row center g2">
-        <span class="num" style="font-size:40px;font-weight:800;color:var(--gold);">${pct}%</span>
-        <span style="font-size:14px;color:${trendUp ? "var(--yes)" : "var(--no)"};">${trendUp ? "▲" : "▼"}</span>
-      </div>
-      <div style="font-size:12px;color:var(--textMuted);margin:2px 0 10px;">目前 YES 機率（即時撮合）</div>
-      ${sparkline(L.history)}
-    </div>
+  <footer>
+    <p>以上連結皆為各品牌公開之官方網站，實際供應內容以官網公告為準。</p>
+    <p>手搖 · 台灣飲料店入口</p>
+  </footer>
 
-    <div class="row g1" style="margin-top:18px;margin-bottom:8px;">
-      <span style="font-size:12.5px;font-weight:700;color:var(--textSecondary);">📖 即時撮合訂單簿</span>
-      <span style="width:6px;height:6px;border-radius:50%;background:var(--yes);display:inline-block;animation:pulse 1.4s infinite;"></span>
-    </div>
-    <div class="card">
-      <div class="row between" style="margin-bottom:6px;">
-        <span style="font-size:11px;font-weight:700;color:var(--yes);">YES 買盤</span>
-        <span style="font-size:11px;font-weight:700;color:var(--no);">NO 買盤</span>
-      </div>
-      <div class="row g3" style="align-items:flex-start;">
-        <div style="flex:1;">${bookColumn(book.yes, maxYes, "var(--yes)", "left")}</div>
-        <div style="flex:1;">${bookColumn(book.no, maxNo, "var(--no)", "right")}</div>
-      </div>
-    </div>
-
-    <div class="row g1" style="margin-top:18px;margin-bottom:8px;">
-      <span style="font-size:12.5px;font-weight:700;color:var(--textSecondary);">⚡ 即時成交紀錄</span>
-    </div>
-    <div class="card" style="padding:2px 14px;">${tradesHTML}</div>
-  </div>
-  <div style="position:absolute;bottom:0;left:0;right:0;z-index:25;background:rgba(13,8,25,0.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));">
-    <div class="row g2">
-      <button class="betbtn" style="background:rgba(58,223,160,0.14);color:var(--yes);border-color:rgba(58,223,160,0.4);padding:12px 0;font-size:15px;" onclick="openBet('${id}','YES')">買 YES ${pct}%</button>
-      <button class="betbtn" style="background:rgba(255,107,122,0.14);color:var(--no);border-color:rgba(255,107,122,0.4);padding:12px 0;font-size:15px;" onclick="openBet('${id}','NO')">買 NO ${100 - pct}%</button>
-    </div>
-  </div>`;
-}
-
-/* ---------------------------------------------------------------- */
-/* HEADER + BOTTOM NAV                                                */
-/* ---------------------------------------------------------------- */
-function renderHeader() {
-  document.getElementById("header").innerHTML = `
-  <div class="row between">
-    <div class="row g1">
-      <span>✨</span>
-      <span style="font-size:16px;font-weight:800;letter-spacing:0.5px;
-        background-image:linear-gradient(90deg,var(--goldBright),var(--magenta));
-        -webkit-background-clip:text;-webkit-text-fill-color:transparent;">誰是神預測</span>
-    </div>
-    <div class="row g2">
-      <div class="pill row g1">🔥 <span class="num" style="font-size:12px;font-weight:700;color:var(--textSecondary);">4</span></div>
-      <div class="pill row g1">🪙 <span class="num" style="font-size:12px;font-weight:700;color:var(--gold);">${fmt(state.tokens)}</span></div>
-    </div>
-  </div>`;
-}
-function renderBottomNav() {
-  const items = [
-    { id:"lobby", label:"大廳", icon:"🏠" },
-    { id:"leaderboard", label:"排行榜", icon:"🏆" },
-    { id:"quests", label:"任務", icon:"✅" },
-    { id:"profile", label:"我的", icon:"👤" },
-  ];
-  document.getElementById("bottomnav").innerHTML = items.map(it => {
-    const active = state.tab === it.id;
-    return `<button class="navbtn" onclick="setTab('${it.id}')">
-      <span style="font-size:18px;filter:${active ? "none" : "grayscale(60%) opacity(0.7)"};">${it.icon}</span>
-      <span style="font-size:10.5px;font-weight:${active ? 700 : 500};color:${active ? "var(--gold)" : "var(--textMuted)"};">${it.label}</span>
-    </button>`;
-  }).join("");
-}
-
-/* ---------------------------------------------------------------- */
-/* TAB ROUTER                                                         */
-/* ---------------------------------------------------------------- */
-function renderTab() {
-  const el = document.getElementById("tabContent");
-  if (state.tab === "lobby") el.innerHTML = buildLobby();
-  else if (state.tab === "leaderboard") el.innerHTML = buildLeaderboard();
-  else if (state.tab === "quests") el.innerHTML = buildQuests();
-  else if (state.tab === "profile") el.innerHTML = buildProfile();
-}
-function setTab(tab) {
-  state.tab = tab;
-  renderBottomNav();
-  renderTab();
-}
-
-/* ---------------------------------------------------------------- */
-/* INIT                                                               */
-/* ---------------------------------------------------------------- */
-renderHeader();
-renderBottomNav();
-renderTab();
-</script>
+</div>
 </body>
 </html>
